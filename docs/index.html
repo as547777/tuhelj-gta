@@ -8044,7 +8044,7 @@ function updatePlayer(dt){
     const fw=[-sy*cp, spp, -cy*cp], rt=[cy,0,-sy]; const tv=new THREE.Vector3((fw[0]*-fz+rt[0]*fx)*sp,(fw[1]*-fz+up*0.7)*sp,(fw[2]*-fz+rt[2]*fx)*sp);
     P.vel.lerp(tv,1-Math.exp(-dt*5)); P.pos.addScaledVector(P.vel,dt); const g=getHeight(P.pos.x,P.pos.z); if(P.pos.y<g+0.3) P.pos.y=g+0.3; if(P.pos.y>g+700) P.pos.y=g+700; }
   else {
-    const aimWalk=COMBAT.ads&&COMBAT.armed; const sp=PLAYER.crouch?(run?2.6:1.5):aimWalk?1.6:run?5.8:3.0; const acc=P.ground?9:2.5; const tx=wx*sp, tz=wz*sp;
+    const aimWalk=COMBAT.ads&&COMBAT.armed; const sp=PLAYER.crouch?(run?2.4:1.2):aimWalk?(run?2.6:1.3):run?4.6:1.45; /* W = walk, Shift = run (GTA) */ const acc=P.ground?9:2.5; const tx=wx*sp, tz=wz*sp;
     P.vel.x+= (tx-P.vel.x)*(1-Math.exp(-dt*acc)); P.vel.z+=(tz-P.vel.z)*(1-Math.exp(-dt*acc));
     P.vel.y-=22*dt; if(P.ground && (KEYS.Space||TOUCH.jump) && !COMBAT.dead){ P.vel.y=6.0; P.ground=false; } TOUCH.jump=false;
     const ox=P.pos.x, oz=P.pos.z; P.pos.x+=P.vel.x*dt; P.pos.z+=P.vel.z*dt; P.pos.y+=P.vel.y*dt;
@@ -8185,7 +8185,7 @@ async function main(){
   await step(0.26,'Postavljam kuće…'); prepBuildings();
   await step(0.30,'Asfaltiram ceste…'); buildRoads(scene);
   await step(0.38,'Gradim crkvu i kuće…');
-  const cs=new ChunkSet(420); const HM=Object.assign(heroMaterials(),pubMaterials()); emitLandmarks(cs,scene); try{ photoHouse(cs,scene); }catch(e){ console.warn('kuća',e); } RNG=mulberry32(90210);
+  const cs=new ChunkSet(420); const HM=Object.assign(heroMaterials(),pubMaterials()); emitLandmarks(cs,scene); try{ photoHouse(cs,scene); }catch(e){ console.warn('kuća',e); } try{ photoCentre(cs,scene); }catch(e){ console.warn('centar',e); } RNG=mulberry32(90210);
   const special=new Set(['church','fire','townhall','chapel','school','shrine','tank','shop','cafe','parish','apt']);
   let i=0; for(const b of BLD){ if(special.has(b.k)||b.st) continue; if(b.k==='garage'||b.k==='shed'||b.k==='barn') emitOutbuilding(cs,b); else emitHouse(cs,b); if(++i%120===0){ UI.progress(0.38+0.14*i/BLD.length); await yieldFrame(); } }
   const pm=propMats(); const bm=Object.assign({},pm,HM,{brick:new THREE.MeshStandardMaterial({map:TEX.brick,vertexColors:true,roughness:0.95}),plinth:new THREE.MeshStandardMaterial({map:TEX.stone,vertexColors:true,roughness:0.95}),gold:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.9,roughness:0.3}),metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.55,roughness:0.4})}); addNormalMaps(bm);
@@ -9533,7 +9533,7 @@ function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady){ i
     else if(R.cat===0) clip=RB_IDLE[n]||'idle';
     else { const SP=(REAL.spd&&REAL.spd[R.g])||{}; // playback rate = ground speed / stride speed of the clip → feet stay planted
       if(R.cat===1){ clip='stroll'; ts=clamp(s/(SP.stroll||0.7),0.5,1.6); }
-      else if(R.cat===2){ clip=(n==='Kenka'||n==='Jovo')?'drunkwalk':'walk'; ts=clamp(s/(SP[clip]||SP.walk||1.0),0.6,2.0); }
+      else if(R.cat===2){ clip=(n==='Kenka'||n==='Jovo')?'drunkwalk':'walk'; const k=s/(SP[clip]||SP.walk||1.0); ts=clamp(k<1?k:Math.pow(k,0.7),0.6,1.6); }
       else { clip='run'; const k=s/(SP.run||2.9); ts=clamp(k<1?k:Math.pow(k,0.72),0.7,1.8); } }  // faster running = longer strides, not just faster legs
     rbPlay(R,clip,ts);
     R.m.position.y=A.forceY!==undefined&&A.forceClip?A.forceY:sitClip?(0.99-(REAL.pel[R.g][sitClip]||0.58)*R.sc):onBike?0.04:0;
@@ -9670,7 +9670,7 @@ function intExit(){ try{ blip('door'); }catch(e){} const I=INSIDE; INSIDE=null; 
 function intSpot(){ const I=INSIDE; if(!I) return null; const dx=PLAYER.pos.x-I.room.x, dz=PLAYER.pos.z-I.room.z; for(const s of I.spots) if(Math.hypot(dx-s.x,dz-s.z)<s.r) return s; return null; }
 function intNearDoor(){ intInit(); if(INSIDE||PLAYER.driving||PLAYER.riding||PLAYER.heli) return null; for(const I of INTS){ const d=I.door(); if(d&&Math.hypot(PLAYER.pos.x-d[0],PLAYER.pos.z-d[1])<I.r) return I; } return null; }
 function intUse(){ const s=intSpot(); if(s){ s.fn(); return true; } const I=intNearDoor(); if(I){ intEnter(I); return true; } return false; }
-function intPrompt(){ if(INSIDE){ const s=intSpot(); return s?s.t:''; } const I=intNearDoor(); return I?(I.ico+' Uđi: '+I.name):''; }
+function intPrompt(){ if(INSIDE){ const s=intSpot(); return s&&!/Izađi/.test(s.t)?s.t:''; } return ''; } /* doors: just walk through them (doorWalkTick) */
 function intIcons(){ intInit(); return INTS.filter(I=>I.id!=='pz').map(I=>[I.door(),I.ico]); }
 /* ---- building blocks ---- */
 const INT_BOX=[]; // room boxes, so the third-person camera stays inside
@@ -10242,44 +10242,54 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
   const g=(k)=>cs.get(k,cx,cz); const G=g('wall'), T=g('trim'), Wd=g('wood'), Mt=g('metal'), Cl=g('cloth'), Hd=g('hedge'), St=g('stonem'), Gl=g('glow');
   const Hh={wall:G,trim:T,glass:g('glassW'),slats:g('slats')};
   const YEL=lin('#e9c979'), RED=lin('#c4523d'), SAL=lin('#d98c70'), WHT=lin('#f4f3ef'), WOOD=lin('#6a3f27'), GUT=lin('#c9ccce');
-  const hl=6, hw=5, e=y0+5.0, pitch=34; const rt=e+hw*Math.tan(pitch*Math.PI/180);
+  // photo 35: [yellow low wing 0-3.6][red cross gable 3.6-6.0][yellow two storeys + round balcony 6.0-10.0][red 10.0-12.0] + covered terrace
+  const hl=6, hw=5, pitch=31, TP=Math.tan(pitch*Math.PI/180); const e=y0+5.9, eL=y0+3.55; const xM=-hl+3.6; // main body x from xM to +hl, low wing from -hl to xM
+  const rt=e+hw*TP, rtL=eL+hw*TP;
   const win=(m,h,o={})=>rectWindow(Hh,m,h,Object.assign({wc:YEL,rc:lin('#f1ead6'),fc:WHT,cols:1,dep:0.2,fw:0.07,sc:WHT,gv:'sheer'},o));
   const A=[-hl,hw], B=[hl,hw], Cc=[hl,-hw], Dd=[-hl,-hw];
-  const mF=segMap(F,ang,A,B), mE=segMap(F,ang,B,Cc), mB=segMap(F,ang,Cc,Dd), mW=segMap(F,ang,Dd,A);
-  // front: [yellow 0-3.2][red 3.2-5.6][yellow 5.6-8.8][red 8.8-12]
-  const hFront=[holeRect(1.0,1.9,y0+0.95,y0+2.05),holeRect(3.65,5.15,y0+0.12,y0+2.35),holeRect(5.95,6.6,y0+1.0,y0+2.05),holeRect(6.95,7.85,y0+0.5,y0+2.65),holeRect(9.4,9.85,y0+1.2,y0+2.05),
-    holeRect(6.75,7.65,y0+3.15,y0+5.0),holeRect(9.4,9.85,y0+3.5,y0+4.4),holeRect(1.0,1.8,y0+3.4,y0+4.3)];
+  const mF=segMap(F,ang,A,B), mE=segMap(F,ang,B,Cc), mB=segMap(F,ang,Cc,Dd), mW=segMap(F,ang,Dd,A), mM=segMap(F,ang,[xM,-hw],[xM,hw]);
   const band=(m,s0,s1,yA,yB,C,holes)=>{ const hs=holes.filter(h=>h[0][0]>=s0-1e-3&&h[1][0]<=s1+1e-3&&h[0][1]>=yA-1e-3&&h[2][1]<=yB+1e-3); facadeSeg(G,m,[[s0,yA],[s1,yA],[s1,yB],[s0,yB]],hs,C); };
-  band(mF,0,3.2,yb,e,YEL,hFront); band(mF,3.2,5.6,yb,e,RED,hFront); band(mF,5.6,8.8,yb,e,YEL,hFront); band(mF,8.8,12,yb,e,RED,hFront);
-  // front cross gable over the red band (attic triangle window)
-  { const gx0=3.0, gx1=5.8, gy=e, gpk=e+1.9; facadeSeg(G,mF,[[gx0,gy],[gx1,gy],[(gx0+gx1)/2,gpk]],[[[3.85,gy+0.15],[4.95,gy+0.15],[4.95,gy+0.85],[4.4,gy+1.35],[3.85,gy+0.85]]],RED);
-    const tri=[[3.85,gy+0.15],[4.95,gy+0.15],[4.95,gy+0.85],[4.4,gy+1.35],[3.85,gy+0.85]]; reveal(G,mF,tri,0,0.18,lin('#f1ead6')); frameRing(T,mF,tri,0.07,0.16,0.05,WHT); pane(Hh.glass,mF,insetPoly(tri,0.07),0.2,WHITE,GLASSV.plain); bar(T,mF,4.4,gy+0.2,4.4,gy+1.3,0.06,0.16,0.05,WHT);
-    const gc=F(-hl+(gx0+gx1)/2,0,hw+0.15); const gf=frame(gc[0],gc[2],ang+Math.PI/2); emitRoof(cs,gf,ang+Math.PI/2,1.9,1.55,gy,'gable',50,0.35,0.35,lin('#c8673b'),lin('#8a5e3e')); }
-  band(mE,0,10,yb,e,RED,[holeRect(3.0,3.8,y0+1.1,y0+2.0),holeRect(6.0,6.8,y0+1.1,y0+2.0)]); facadeSeg(G,mE,[[0,e],[10,e],[5,rt]],[holeRect(4.5,5.5,e+0.4,e+1.5)],RED);
-  band(mB,0,12,yb,e,YEL,[holeRect(2.0,3.2,y0+1.0,y0+2.1),holeRect(5.5,6.3,y0+1.3,y0+2.0),holeRect(8.4,9.6,y0+1.0,y0+2.1),holeRect(2.2,3.2,y0+3.3,y0+4.3),holeRect(8.6,9.6,y0+3.3,y0+4.3)]);
-  band(mW,0,10,yb,e,YEL,[holeRect(4.1,4.9,y0+1.0,y0+2.0)]); facadeSeg(G,mW,[[0,e],[10,e],[5,rt]],[holeRect(4.5,5.5,e+0.4,e+1.4)],YEL);
-  for(const h of [hFront[0],hFront[2],hFront[4],hFront[6],hFront[7]]) win(mF,h); win(mF,hFront[1],{cols:2,sill:false,gv:'blind'}); win(mF,hFront[5],{cols:1,sill:false});
-  win(mE,holeRect(3.0,3.8,y0+1.1,y0+2.0),{wc:RED}); win(mE,holeRect(6.0,6.8,y0+1.1,y0+2.0),{wc:RED}); win(mE,holeRect(4.5,5.5,e+0.4,e+1.5),{wc:RED,cols:2});
-  for(const h of [holeRect(2.0,3.2,y0+1.0,y0+2.1),holeRect(5.5,6.3,y0+1.3,y0+2.0),holeRect(8.4,9.6,y0+1.0,y0+2.1),holeRect(2.2,3.2,y0+3.3,y0+4.3),holeRect(8.6,9.6,y0+3.3,y0+4.3)]) win(mB,h,{cols:2});
-  win(mW,holeRect(4.1,4.9,y0+1.0,y0+2.0)); win(mW,holeRect(4.5,5.5,e+0.4,e+1.4),{cols:2});
+  const hFront=[holeRect(1.15,2.05,y0+0.95,y0+2.05), /*big glass door*/holeRect(3.95,5.65,y0+0.12,y0+2.45), /*flower window*/holeRect(6.45,7.15,y0+1.0,y0+2.15), /*door*/holeRect(7.75,8.6,y0+0.5,y0+2.65),
+    holeRect(10.6,11.05,y0+1.25,y0+2.05), /*balcony door*/holeRect(7.7,8.6,y0+3.2,y0+5.3), holeRect(6.55,7.2,y0+3.5,y0+4.6), holeRect(10.6,11.05,y0+3.6,y0+4.5)];
+  band(mF,0,3.6,yb,eL,YEL,hFront); band(mF,6.0,10.0,yb,e,YEL,hFront); band(mF,10.0,12,yb,e,RED,hFront);
+  // red cross gable with the big triangular window — a shallow projecting bay, so the main eave stops at it (photo)
+  { const PR=0.72, x0=xM, x1=0, gpk=e+1.9; band(mF,3.6,6.0,yb,e,RED,[]);
+    const mG=segMap(F,ang,[x0,hw+PR],[x1,hw+PR]), mS1=segMap(F,ang,[x0,hw],[x0,hw+PR]), mS2=segMap(F,ang,[x1,hw+PR],[x1,hw]);
+    const gd=holeRect(0.35,2.05,y0+0.12,y0+2.45), tri=[[0.32,y0+4.15],[2.08,y0+4.15],[2.08,y0+5.75],[1.2,y0+7.05],[0.32,y0+5.75]];
+    facadeSeg(G,mG,[[0,yb],[2.4,yb],[2.4,e],[1.2,gpk],[0,e]],[gd,tri],RED); for(const m of [mS1,mS2]) facadeSeg(G,m,[[0,yb],[PR,yb],[PR,e],[0,e]],[],RED);
+    win(mG,gd,{cols:2,sill:false,gv:'blind',wc:RED});
+    reveal(G,mG,tri,0,0.18,lin('#f1ead6')); frameRing(T,mG,tri,0.08,0.16,0.05,WHT); pane(Hh.glass,mG,insetPoly(tri,0.08),0.2,WHITE,GLASSV.sheer); bar(T,mG,1.2,y0+4.2,1.2,y0+7.0,0.07,0.16,0.05,WHT);
+    plinthSeg(g('plinth'),mG,yb,y0+0.32,[],SAL);
+    const gc=F((x0+x1)/2,0,hw+PR-1.5); const gf=frame(gc[0],gc[2],ang+Math.PI/2); emitRoof(cs,gf,ang+Math.PI/2,1.5,1.2,e,'gable',57,0.25,0.35,lin('#cc6c3e'),lin('#7a4e30'));
+    localCollider(F,ang,x0,x1,hw,hw+PR,yb-1,e+2);
+    // canopy over the big glass door
+    const cp=mG.P(1.2,0,0); const cf=frame(cp[0],cp[2],ang); emitRoof(cs,cf,ang,1.25,0.45,y0+2.85,'shed',22,0.12,0.12,lin('#cc6c3e'),lin('#7a4e30'),'roof',4); Wd.box(cf,-1.15,1.15,y0+2.7,y0+2.85,-0.05,0.45,lin('#6b3b22')); }
+  // end walls: low wing gable (left), wall above the wing, right red gable; back
+  band(mW,0,10,yb,eL,YEL,[holeRect(4.3,5.1,y0+1.0,y0+2.0)]); facadeSeg(G,mW,[[0,eL],[10,eL],[5,rtL]],[holeRect(4.55,5.45,eL+0.35,eL+1.2)],YEL);
+  facadeSeg(G,mM,[[0,eL],[10,eL],[10,e],[5,rt],[0,e]],[holeRect(4.5,5.5,e+0.35,e+1.4)],YEL);
+  band(mE,0,10,yb,e,RED,[holeRect(3.0,3.8,y0+1.1,y0+2.0),holeRect(6.0,6.8,y0+1.1,y0+2.0),holeRect(3.0,3.8,y0+3.6,y0+4.5)]); facadeSeg(G,mE,[[0,e],[10,e],[5,rt]],[holeRect(4.5,5.5,e+0.4,e+1.5)],RED);
+  const hBack=[holeRect(1.8,3.0,y0+1.0,y0+2.1),holeRect(5.2,6.0,y0+1.3,y0+2.0),holeRect(1.8,3.0,y0+3.4,y0+4.5),holeRect(5.4,6.4,y0+3.4,y0+4.5),holeRect(9.4,10.6,y0+1.0,y0+2.1)];
+  band(mB,0,8.4,yb,e,YEL,hBack); band(mB,8.4,12,yb,eL,YEL,hBack);
+  for(const i of [0,2,4,6,7]) win(mF,hFront[i],{wc:i>=4&&i!==6?RED:YEL}); win(mF,hFront[5],{cols:1,sill:false});
+  for(const h of [holeRect(3.0,3.8,y0+1.1,y0+2.0),holeRect(6.0,6.8,y0+1.1,y0+2.0),holeRect(3.0,3.8,y0+3.6,y0+4.5),holeRect(4.5,5.5,e+0.4,e+1.5)]) win(mE,h,{wc:RED});
+  for(const h of hBack) win(mB,h,{cols:2}); win(mW,holeRect(4.3,5.1,y0+1.0,y0+2.0)); win(mW,holeRect(4.55,5.45,eL+0.35,eL+1.2)); win(mM,holeRect(4.5,5.5,e+0.35,e+1.4));
   // front door: white with four small windows; three concrete steps
-  { const d=hFront[3]; reveal(G,mF,d,0,0.2,lin('#f1ead6')); T.box(mF.T,d[0][0],d[1][0],d[0][1],d[2][1],-0.2,-0.14,WHT); for(let i=0;i<4;i++) Hh.glass.box(mF.T,7.3,7.5,y0+1.15+i*0.33,y0+1.38+i*0.33,-0.14,-0.13,WHITE); Mt.box(mF.T,7.65,7.72,y0+1.4,y0+1.46,-0.14,-0.08,lin('#bdbdbd'));
-    for(let k=0;k<3;k++) St.box(mF.T,6.55-k*0.12,8.25+k*0.12,yb,y0+0.5-k*0.16,0,0.35+k*0.35,lin('#bdb8ad')); addFloor(F,ang,-hl+6.4,-hl+8.4,hw,hw+1.1,y0+0.18); }
-  // canopy over the big window
-  { const cf=frame(...(()=>{ const p=F(-hl+4.4,0,hw); return [p[0],p[2]]; })(),ang); emitRoof(cs,cf,ang,1.15,0.45,y0+2.75,'shed',22,0.1,0.1,lin('#c8673b'),lin('#8a5e3e'),'roof',4); Wd.box(cf,-1.05,1.05,y0+2.6,y0+2.75,-0.05,0.45,lin('#6b3b22')); }
-  // round balcony: slab, dark wooden balusters, handrail
-  { const bc=F(-hl+7.2,0,hw); const bf=frame(bc[0],bc[2],ang,0); const R=1.55, n=26; for(let i=0;i<n;i++){ const a0=Math.PI*i/n, a1=Math.PI*(i+1)/n; const p=(a,r,y)=>bf(Math.cos(a)*r*1.15,y,Math.sin(a)*r);
-      G.quad(p(a0,R,y0+2.95),p(a1,R,y0+2.95),p(a1,R,y0+3.12),p(a0,R,y0+3.12),[0,0],[1,0],[1,1],[0,1],YEL,[Math.cos(a0),0,Math.sin(a0)]); G.tri(bf(0,y0+3.12,0),p(a1,R,y0+3.12),p(a0,R,y0+3.12),[0,0],[1,0],[0,1],lin('#cfc9bb'),[0,1,0]); G.tri(bf(0,y0+2.95,0),p(a0,R,y0+2.95),p(a1,R,y0+2.95),[0,0],[1,0],[0,1],YEL,[0,-1,0]);
-      if(i%1===0){ const q=p(a0+0.06,R-0.06,0); Wd.box(frame(q[0],q[2],ang-a0,0),-0.045,0.045,y0+3.12,y0+4.05,-0.07,0.07,WOOD); }
-      const q0=p(a0,R-0.06,y0+4.05), q1=p(a1,R-0.06,y0+4.05); beam(Wd,q0,q1,0.06,WOOD); }
-    addFloor(bf,ang,-1.7,1.7,0,1.5,y0+3.12); }
+  { const d=hFront[3]; reveal(G,mF,d,0,0.2,lin('#f1ead6')); T.box(mF.T,d[0][0],d[1][0],d[0][1],d[2][1],-0.2,-0.14,WHT); for(let i=0;i<4;i++) Hh.glass.box(mF.T,8.08,8.27,y0+1.15+i*0.33,y0+1.38+i*0.33,-0.14,-0.13,WHITE); Mt.box(mF.T,8.45,8.52,y0+1.4,y0+1.46,-0.14,-0.08,lin('#bdbdbd'));
+    for(let k=0;k<3;k++) St.box(mF.T,7.35-k*0.12,9.05+k*0.12,yb,y0+0.5-k*0.16,0,0.35+k*0.35,lin('#c7c2b6')); addFloor(F,ang,-hl+7.2,-hl+9.2,hw,hw+1.1,y0+0.18); }
+  // round balcony over the door: yellow slab, dark turned wooden balusters, handrail
+  { const bc=F(-hl+8.15,0,hw); const bf=frame(bc[0],bc[2],ang,0); const R=1.45, n=30; for(let i=0;i<n;i++){ const a0=Math.PI*i/n, a1=Math.PI*(i+1)/n; const p=(a,r,y)=>bf(Math.cos(a)*r*1.2,y,Math.sin(a)*r);
+      G.quad(p(a0,R,y0+2.95),p(a1,R,y0+2.95),p(a1,R,y0+3.15),p(a0,R,y0+3.15),[0,0],[1,0],[1,1],[0,1],YEL,[Math.cos(a0),0,Math.sin(a0)]); G.tri(bf(0,y0+3.15,0),p(a1,R,y0+3.15),p(a0,R,y0+3.15),[0,0],[1,0],[0,1],lin('#cfc9bb'),[0,1,0]); G.tri(bf(0,y0+2.95,0),p(a0,R,y0+2.95),p(a1,R,y0+2.95),[0,0],[1,0],[0,1],YEL,[0,-1,0]);
+      if(i%2===0){ const q=p(a0+0.05,R-0.07,0); Wd.box(frame(q[0],q[2],ang-a0,0),-0.035,0.035,y0+3.15,y0+4.1,-0.045,0.045,lin('#7a4a2c')); }
+      beam(Wd,p(a0,R-0.07,y0+4.12),p(a1,R-0.07,y0+4.12),0.065,lin('#6a3f27')); beam(Wd,p(a0,R-0.07,y0+3.28),p(a1,R-0.07,y0+3.28),0.035,lin('#6a3f27')); }
+    addFloor(bf,ang,-1.7,1.7,0,1.45,y0+3.15); }
   // downpipes and lamp
-  for(const s of [0.25,5.5,8.95]){ const p=mF.P(s,0,-0.12); Mt.cyl(frame(p[0],p[2],ang,0),0.05,0.05,yb+0.2,e-0.1,8,GUT,1,false); }
-  { const p=mF.P(8.3,0,-0.06); const lf=frame(p[0],p[2],ang,0); Mt.box(lf,-0.07,0.07,y0+2.2,y0+2.5,-0.02,0.14,lin('#3a3a3a')); Gl.box(lf,-0.05,0.05,y0+2.24,y0+2.44,0.02,0.12,lin('#ffe3a0')); }
-  // plinth band and roof
-  for(const m of [mF,mE,mB,mW]) plinthSeg(g('plinth'),m,yb,y0+0.32,m===mF?[[6.4,8.4]]:[],SAL);
-  emitRoof(cs,F,ang,hl,hw,e,'gable',pitch,0.65,0.6,lin('#cc6c3e'),lin('#8a5e3e'));
-  for(const sz of [-1,1]){ const ey=e-0.6*Math.tan(pitch*Math.PI/180)-0.12; Mt.box(F,-hl-0.6,hl+0.6,ey-0.12,ey,sz*(hw+0.62)-0.07,sz*(hw+0.62)+0.07,GUT); }
+  for(const [s,top] of [[0.2,eL],[3.55,eL],[6.05,e],[9.95,e]]){ const p=mF.P(s,0,-0.12); Mt.cyl(frame(p[0],p[2],ang,0),0.05,0.05,yb+0.2,top-0.1,8,GUT,1,false); }
+  { const p=mF.P(9.15,0,-0.06); const lf=frame(p[0],p[2],ang,0); Mt.box(lf,-0.07,0.07,y0+2.2,y0+2.5,-0.02,0.14,lin('#3a3a3a')); Gl.box(lf,-0.05,0.05,y0+2.24,y0+2.44,0.02,0.12,lin('#ffe3a0')); }
+  // plinth band and roofs (main body + lower left wing), white gutters
+  for(const m of [mF,mE,mB,mW]) plinthSeg(g('plinth'),m,yb,y0+0.32,m===mF?[[7.2,9.2]]:[],SAL);
+  { const mc=F((xM+hl)/2,0,0); emitRoof(cs,frame(mc[0],mc[2],ang),ang,(hl-xM)/2,hw,e,'gable',pitch,0.65,0.6,lin('#cc6c3e'),lin('#7a4e30'));
+    const wc=F((-hl+xM)/2,0,0); emitRoof(cs,frame(wc[0],wc[2],ang),ang,(xM+hl)/2,hw,eL,'gable',pitch,0.6,0.6,lin('#cc6c3e'),lin('#7a4e30'));
+    for(const sz of [-1,1]){ const ey=e-0.6*TP-0.12, eyL=eL-0.6*TP-0.12; Mt.box(F,sz>0?0:xM,hl+0.65,ey-0.12,ey,sz*(hw+0.62)-0.07,sz*(hw+0.62)+0.07,GUT); Mt.box(F,-hl-0.6,xM,eyL-0.12,eyL,sz*(hw+0.62)-0.07,sz*(hw+0.62)+0.07,GUT); } }
   // covered terrace on the right (photo 4): hipped roof on posts, lattice frieze, salmon parapet
   { const tf=frame(...(()=>{ const p=F(hl+2.3,0,1.4); return [p[0],p[2]]; })(),ang); const ty=y0+0.05, th=y0+2.7;
     St.box(tf,-2.3,2.3,yb,ty,-3.6,3.6,lin('#c8c3b8')); addFloor(tf,ang,-2.3,2.3,-3.6,3.6,ty);
@@ -10289,11 +10299,11 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
     emitRoof(cs,tf,ang,2.6,3.9,th,'hip',24,0.35,0.35,lin('#cc6c3e'),lin('#8a5e3e'));
     }
   // flowers under the window, potted plants by the steps
-  for(let k=0;k<7;k++){ const q=mF.P(6.0+k*0.09,y0+1.0,-0.22); lathe(Hd,frame(q[0],q[2],ang,q[1]),[[0.06,0],[0.05,0.1],[0,0.12]],6,lin(k%2?'#d8344a':'#3f7a33')); }
+  for(let k=0;k<7;k++){ const q=mF.P(6.5+k*0.09,y0+1.0,-0.22); lathe(Hd,frame(q[0],q[2],ang,q[1]),[[0.06,0],[0.05,0.1],[0,0.12]],6,lin(k%2?'#d8344a':'#3f7a33')); }
   // the yard (photo 1 / 4): just a paved forecourt down to the lane — no outbuilding
   { const Pv=cs.get('floorT',cx,cz); floorPoly(Pv,F,[[-hl-1.5,hw+0.2],[hl+4.6,hw+0.2],[hl+4.6,hw+9.5],[-hl-1.5,hw+9.5]],Math.max(y0-0.12,getHeight(...(()=>{ const p=F(0,0,hw+5); return [p[0],p[2]]; })())+0.05),lin('#ebe5d8'),0.6);
 }
-  PHOTO.door=(()=>{ const p=F(-hl+7.4,0,hw+1.9); return [p[0],p[2]]; })();
+  PHOTO.door=(()=>{ const p=F(-hl+8.2,0,hw+1.9); return [p[0],p[2]]; })();
   photoYard(cs,scene,F,ang,y0); }
 // 4) the yard and the lane (photos 1, 5, 6): bins, basketball hoop on a vine-covered lamp post, asters, lattice fence
 function photoYard(cs,scene,F,ang,y0){ const g=(k)=>cs.get(k,F(0,0,0)[0],F(0,0,0)[2]); const Wd=g('wood'), Mt=g('metal'), Hd=g('hedge'), Gl=g('glow'), Cl=g('cloth');
@@ -10358,6 +10368,41 @@ function homeIntInit(){ if(HOME.intDone||!INTS.length||!PHOTO.door) return; HOME
     spots:[{x:6.0,z:-2.4,r:1.1,t:'👕 Ormar — presvuci se',fn:openWardrobe},{x:4.6,z:-2.7,r:1.2,t:'🛏️ Krevet — odspavaj (spremi igru)',fn:sleepMenu},{x:-5.8,z:-4.3,r:1.1,t:'🚿 Tuš — istuširaj se',fn:shower},
       {x:4.3,z:1.4,r:1.0,t:'📺 Televizor — Zagorje TV vijesti',fn:watchTV},{x:-1.5,z:4.4,r:1.0,t:'🛋️ Uredi kuću — namještaj',fn:decorMenu},{x:0,z:5.0,r:1.2,t:'🚪 Izađi van',fn:()=>intExit()}],
     hello(){ UI.toast('🏡 Doma si'); }}); }
+/* ---- doors you just walk through (no E): step into the green ring to go in, walk into the exit to leave ---- */
+const DOORW={away:true,cool:0};
+function doorWalkTick(){ if(!GAME.started||PLAYER.driving||PLAYER.riding||PLAYER.heli||COMBAT.dead||GTA.dlg||COMBAT.menuOpen||!INTS.length) return;
+  const P=PLAYER.pos, v=PLAYER.vel, sp=Math.hypot(v.x,v.z); if(GAME.time<DOORW.cool) return;
+  const pts=[]; if(!INSIDE){ for(const I of INTS){ const d=I.door(); if(d) pts.push({x:d[0],z:d[1],r:1.25,go:()=>intEnter(I)}); } }
+  else { const R=INSIDE.room; for(const s of INSIDE.spots) if(/Izađi/.test(s.t)) pts.push({x:R.x+s.x,z:R.z+s.z,r:1.0,go:()=>intExit()}); }
+  let near=null, nd=1e9; for(const q of pts){ const d=Math.hypot(P.x-q.x,P.z-q.z); if(d<nd){ nd=d; near=q; } }
+  if(!near) return; if(nd>2.2) DOORW.away=true;
+  if(DOORW.away&&nd<near.r&&sp>0.4&&((near.x-P.x)*v.x+(near.z-P.z)*v.z>-0.2||nd<0.6)){ DOORW.away=false; DOORW.cool=GAME.time+1.2; near.go(); } }
+/* ---- village centre from Street View: bus stops with BUS markings, outdoor gym, blue bridge railings over the Horvatska ---- */
+function busTex(){ const c=cvs(512,256), g=c.getContext('2d'); g.clearRect(0,0,512,256); g.fillStyle='rgba(240,190,40,0.92)'; g.font='900 150px Manrope, Arial'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('BUS',256,135); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
+function photoCentre(cs,scene){ const Mt=cs.get('metal',CENTER[0],CENTER[1]), G=cs.get('wall',CENTER[0],CENTER[1]), Wd=cs.get('wood',CENTER[0],CENTER[1]), Gs=cs.get('glassW',CENTER[0],CENTER[1]);
+  const AL=lin('#c9ced2'), BLUE=lin('#2f63b8'), GRN=lin('#2e8b3a');
+  const stops=(D.pois||[]).filter(p=>p.k==='bus_stop'&&Math.hypot(p.x-CENTER[0],p.z-CENTER[1])<500);
+  const bt=busTex(); const busM=new THREE.MeshBasicMaterial({map:bt,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-6});
+  stops.forEach((p,si)=>{ const n=nearestRoad(p.x,p.z,30,s=>s.t!=='track'&&s.t!=='path'); if(!n) return; const s=n.s; const nx=-s.tz, nz=s.tx; const side=((p.x-s.x)*nx+(p.z-s.z)*nz)>=0?1:-1;
+    const off=s.w/2+2.0; const x=s.x+nx*side*off, z=s.z+nz*side*off; if(BHASH.hit(x,z,1.5)) return; const y=getHeight(x,z); const a=Math.atan2(s.tz,s.tx); const f=frame(x,z,a,y);
+    // slab, posts, glass back + sides, roof plate, bench, timetable
+    G.box(f,-2.3,2.3,-0.1,0.12,-1.0,1.1,lin('#d8d4cb')); addFloor(f,a,-2.3,2.3,-1.0,1.1,y+0.12);
+    for(const [px,pz] of [[-2.0,0.9],[2.0,0.9],[-2.0,-0.75],[2.0,-0.75]]) Mt.box(f,px-0.05,px+0.05,0.12,2.6,pz-0.05,pz+0.05,AL);
+    Gs.box(f,-2.0,2.0,0.3,2.4,side*0.9-0.02,side*0.9+0.02,WHITE); Gs.box(f,-2.02,-1.98,0.3,2.4,-0.75,0.9,WHITE); Mt.box(f,-2.3,2.3,2.6,2.68,-1.0,1.15,AL);
+    Wd.box(f,-1.5,1.5,0.5,0.55,side*0.55-0.2,side*0.55+0.2,lin('#6d4a2e')); Mt.box(f,1.55,1.95,0.6,1.9,side*0.85-0.03,side*0.85+0.03,lin('#f2f2ee'));
+    addCollider(...(()=>{ const q=f(0,0,side*0.9); return [q[0],q[2]]; })(),a,4.2,0.2,y-1,y+2.6);
+    // yellow BUS lettering + kerb line on the road
+    const ry=getHeight(s.x,s.z)+0.11; const m=new THREE.Mesh(new THREE.PlaneGeometry(3.2,1.6),busM); m.rotation.x=-Math.PI/2; m.rotation.z=-a+(side>0?-Math.PI/2:Math.PI/2); const q=[s.x+nx*side*(s.w/2-0.9),s.z+nz*side*(s.w/2-0.9)]; m.position.set(q[0],ry,q[1]); scene.add(m);
+    // outdoor gym next to the first stop (photo: green bars on gravel behind the shelter)
+    if(si===0){ for(let k=0;k<4;k++){ const gx=x+nx*side*(5+k%2*3)+s.tx*(k*2.6-3), gz=z+nz*side*(5+k%2*3)+s.tz*(k*2.6-3); if(BHASH.hit(gx,gz,1)) continue; const gy=getHeight(gx,gz); const gf=frame(gx,gz,a,gy);
+        G.box(gf,-1.3,1.3,-0.05,0.04,-0.9,0.9,lin('#d9d3c6')); for(const px of [-1.0,1.0]) Mt.box(gf,px-0.06,px+0.06,0,2.3,-0.06,0.06,GRN); Mt.box(gf,-1.0,1.0,2.2,2.3,-0.05,0.05,GRN); if(k%2) Mt.box(gf,-0.8,0.8,1.0,1.06,-0.4,0.4,GRN); addCollider(gx,gz,a,2.2,0.3,gy-1,gy+2.3); } }
+    PHOTO.stops=(PHOTO.stops||[]).concat([[x,z]]); });
+  // blue railings where centre roads cross the Horvatska creek
+  for(const w of WATER){ for(let i=0;i<w.P.length-1;i++){ const a0=w.P[i], a1=w.P[i+1];
+    for(const r of ROADS){ if(!r.S||r.t==='path'||r.t==='track') continue; for(let j=0;j<r.S.length-1;j++){ const b0=r.S[j], b1=r.S[j+1]; if(Math.hypot(b0[0]-CENTER[0],b0[1]-CENTER[1])>650) continue;
+        const d1x=a1[0]-a0[0], d1z=a1[1]-a0[1], d2x=b1[0]-b0[0], d2z=b1[1]-b0[1]; const den=d1x*d2z-d1z*d2x; if(Math.abs(den)<1e-6) continue; const t=((b0[0]-a0[0])*d2z-(b0[1]-a0[1])*d2x)/den, u=((b0[0]-a0[0])*d1z-(b0[1]-a0[1])*d1x)/den; if(t<0||t>1||u<0||u>1) continue;
+        for(const sd of [1,-1]){ for(let k=Math.max(0,j-5);k<Math.min(r.S.length-1,j+6);k++){ const p=r.S[k], tg=r.T[k]; const nx=-tg[1]*sd, nz=tg[0]*sd; const x=p[0]+nx*(r.w/2+0.35), z=p[1]+nz*(r.w/2+0.35); const y=getHeight(p[0],p[1])+0.08; const ff=frame(x,z,Math.atan2(tg[1],tg[0]),y);
+            Mt.box(ff,-0.04,0.04,0,1.05,-0.04,0.04,BLUE); Mt.box(ff,-0.78,0.78,0.98,1.05,-0.035,0.035,BLUE); Mt.box(ff,-0.78,0.78,0.12,0.17,-0.03,0.03,BLUE); for(let q=-3;q<=3;q++) Mt.box(ff,q*0.22-0.012,q*0.22+0.012,0.15,1.0,-0.012,0.012,BLUE); addCollider(x,z,Math.atan2(tg[1],tg[0]),1.6,0.15,y-1,y+1.1); } } } } } } }
 
 /* ===================== voices: subtitles that play by themselves, people who talk, drivers in cars =====================
    Dialogue runs like GTA subtitles (E / click only skips). Villagers greet you and react to guns and police,
@@ -10397,7 +10442,7 @@ function voicesTick(dt){ if(!GAME.started) return; dlgTick(dt); VOX.t-=dt;
   if(GTA.wanted>0&&!VOX.w){ VOX.w=true; meSay(pickL(SAY.me.wanted)); } if(GTA.wanted===0&&VOX.w){ VOX.w=false; if(!COMBAT.dead) meSay(pickL(SAY.me.lost)); }
   if(PLAYER.driving&&!VOX.car){ VOX.car=true; if(Math.random()<0.4) meSay(pickL(SAY.me.car)); } if(!PLAYER.driving) VOX.car=false;
   if(COMBAT.hp<VOX.hp-15&&!COMBAT.dead) meSay(pickL(SAY.me.hurt)); VOX.hp=COMBAT.hp;
-  driversTick(); storyAutoStart(); }
+  driversTick(); storyAutoStart(); try{ doorWalkTick(); }catch(e){} }
 /* ---- story missions start when you walk up to the ★ (no key needed) ---- */
 function storyAutoStart(){ if(GTA.mission||GTA.dlg||PLAYER.driving||COMBAT.dead||COMBAT.menuOpen) return; const M=storyNext(); if(!M) return; const p=npcPos(M.giver); if(!p) return; const d=Math.hypot(p[0]-PLAYER.pos.x,p[1]-PLAYER.pos.z);
   if(d<2.6&&!VOX.autoBlock){ VOX.autoBlock=true; startMission(M); } if(d>6) VOX.autoBlock=false; }

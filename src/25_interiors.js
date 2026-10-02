@@ -24,7 +24,7 @@ function intExit(){ try{ blip('door'); }catch(e){} const I=INSIDE; INSIDE=null; 
 function intSpot(){ const I=INSIDE; if(!I) return null; const dx=PLAYER.pos.x-I.room.x, dz=PLAYER.pos.z-I.room.z; for(const s of I.spots) if(Math.hypot(dx-s.x,dz-s.z)<s.r) return s; return null; }
 function intNearDoor(){ intInit(); if(INSIDE||PLAYER.driving||PLAYER.riding||PLAYER.heli) return null; for(const I of INTS){ const d=I.door(); if(d&&Math.hypot(PLAYER.pos.x-d[0],PLAYER.pos.z-d[1])<I.r) return I; } return null; }
 function intUse(){ const s=intSpot(); if(s){ s.fn(); return true; } const I=intNearDoor(); if(I){ intEnter(I); return true; } return false; }
-function intPrompt(){ if(INSIDE){ const s=intSpot(); return s?s.t:''; } const I=intNearDoor(); return I?(I.ico+' Uđi: '+I.name):''; }
+function intPrompt(){ if(INSIDE){ const s=intSpot(); return s&&!/Izađi/.test(s.t)?s.t:''; } return ''; } /* doors: just walk through them (doorWalkTick) */
 function intIcons(){ intInit(); return INTS.filter(I=>I.id!=='pz').map(I=>[I.door(),I.ico]); }
 /* ---- building blocks ---- */
 const INT_BOX=[]; // room boxes, so the third-person camera stays inside

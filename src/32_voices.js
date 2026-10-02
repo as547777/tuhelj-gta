@@ -36,7 +36,7 @@ function voicesTick(dt){ if(!GAME.started) return; dlgTick(dt); VOX.t-=dt;
   if(GTA.wanted>0&&!VOX.w){ VOX.w=true; meSay(pickL(SAY.me.wanted)); } if(GTA.wanted===0&&VOX.w){ VOX.w=false; if(!COMBAT.dead) meSay(pickL(SAY.me.lost)); }
   if(PLAYER.driving&&!VOX.car){ VOX.car=true; if(Math.random()<0.4) meSay(pickL(SAY.me.car)); } if(!PLAYER.driving) VOX.car=false;
   if(COMBAT.hp<VOX.hp-15&&!COMBAT.dead) meSay(pickL(SAY.me.hurt)); VOX.hp=COMBAT.hp;
-  driversTick(); storyAutoStart(); }
+  driversTick(); storyAutoStart(); try{ doorWalkTick(); }catch(e){} }
 /* ---- story missions start when you walk up to the ★ (no key needed) ---- */
 function storyAutoStart(){ if(GTA.mission||GTA.dlg||PLAYER.driving||COMBAT.dead||COMBAT.menuOpen) return; const M=storyNext(); if(!M) return; const p=npcPos(M.giver); if(!p) return; const d=Math.hypot(p[0]-PLAYER.pos.x,p[1]-PLAYER.pos.z);
   if(d<2.6&&!VOX.autoBlock){ VOX.autoBlock=true; startMission(M); } if(d>6) VOX.autoBlock=false; }

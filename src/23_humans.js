@@ -80,7 +80,7 @@ function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady){ i
     else if(R.cat===0) clip=RB_IDLE[n]||'idle';
     else { const SP=(REAL.spd&&REAL.spd[R.g])||{}; // playback rate = ground speed / stride speed of the clip → feet stay planted
       if(R.cat===1){ clip='stroll'; ts=clamp(s/(SP.stroll||0.7),0.5,1.6); }
-      else if(R.cat===2){ clip=(n==='Kenka'||n==='Jovo')?'drunkwalk':'walk'; ts=clamp(s/(SP[clip]||SP.walk||1.0),0.6,2.0); }
+      else if(R.cat===2){ clip=(n==='Kenka'||n==='Jovo')?'drunkwalk':'walk'; const k=s/(SP[clip]||SP.walk||1.0); ts=clamp(k<1?k:Math.pow(k,0.7),0.6,1.6); }
       else { clip='run'; const k=s/(SP.run||2.9); ts=clamp(k<1?k:Math.pow(k,0.72),0.7,1.8); } }  // faster running = longer strides, not just faster legs
     rbPlay(R,clip,ts);
     R.m.position.y=A.forceY!==undefined&&A.forceClip?A.forceY:sitClip?(0.99-(REAL.pel[R.g][sitClip]||0.58)*R.sc):onBike?0.04:0;

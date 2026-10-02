@@ -30,7 +30,7 @@ async function main(){
   await step(0.26,'Postavljam kuće…'); prepBuildings();
   await step(0.30,'Asfaltiram ceste…'); buildRoads(scene);
   await step(0.38,'Gradim crkvu i kuće…');
-  const cs=new ChunkSet(420); const HM=Object.assign(heroMaterials(),pubMaterials()); emitLandmarks(cs,scene); try{ photoHouse(cs,scene); }catch(e){ console.warn('kuća',e); } RNG=mulberry32(90210);
+  const cs=new ChunkSet(420); const HM=Object.assign(heroMaterials(),pubMaterials()); emitLandmarks(cs,scene); try{ photoHouse(cs,scene); }catch(e){ console.warn('kuća',e); } try{ photoCentre(cs,scene); }catch(e){ console.warn('centar',e); } RNG=mulberry32(90210);
   const special=new Set(['church','fire','townhall','chapel','school','shrine','tank','shop','cafe','parish','apt']);
   let i=0; for(const b of BLD){ if(special.has(b.k)||b.st) continue; if(b.k==='garage'||b.k==='shed'||b.k==='barn') emitOutbuilding(cs,b); else emitHouse(cs,b); if(++i%120===0){ UI.progress(0.38+0.14*i/BLD.length); await yieldFrame(); } }
   const pm=propMats(); const bm=Object.assign({},pm,HM,{brick:new THREE.MeshStandardMaterial({map:TEX.brick,vertexColors:true,roughness:0.95}),plinth:new THREE.MeshStandardMaterial({map:TEX.stone,vertexColors:true,roughness:0.95}),gold:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.9,roughness:0.3}),metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.55,roughness:0.4})}); addNormalMaps(bm);
