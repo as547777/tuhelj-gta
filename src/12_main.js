@@ -24,7 +24,7 @@ async function main(){
   const scene=new THREE.Scene(); GAME.scene=scene; const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.15,7000); GAME.camera=camera;
   await step(0.03,'Učitavam teren…'); decodeHeights();
   { const cb=D.bld.find(b=>b.k==='cafe'); if(cb&&cb.r.length===1){ const r=cb.r[0]; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=7.0, lz=-5.1; cb.r.push([r[0]+c*lx-sn*lz, r[1]+sn*lx+c*lz, r[2], 7.4, 2.6, r[5]]); } }
-  photoTerrain(); photoLand(); gradeRoads(); try{ photoStream(); }catch(e){ console.warn('potok',e); } flattenSites();
+  photoTerrain(); photoLand(); gradeRoads(); try{ schoolTerrain(); }catch(e){ console.warn('škola',e); } flattenSites(); try{ creekBuild(); }catch(e){ console.warn('potok',e); }
   await step(0.08,'Izrađujem teksture…'); buildTextures(); photoTextures(); buildWindowAtlas();
   await step(0.16,'Crtam polja i livade…'); paintGround(GAME.ios?3072:(q>=2?4096:3072));
   await step(0.26,'Postavljam kuće…'); prepBuildings();
@@ -38,11 +38,11 @@ async function main(){
   await step(0.54,'Uređujem dvorišta…'); paintYards(BLD); paintAprons(BLD); 
   await step(0.58,'Postavljam stupove i ograde…'); buildProps(scene,q); try{ await waitPack('vehicles',7000); prepVehicles(); }catch(e){ console.warn('vozila',e); } buildCars(scene); buildCourts(scene);
   finishGround();
-  await step(0.66,'Oblikujem brežuljke…'); const tmat=makeTerrainMaterial(); for(const m of buildTerrainMeshes(tmat)) scene.add(m);
-  await step(0.72,'Sadim šume i voćnjake…'); placeTrees(); try{ photoTrees(); photoHillWoods(); }catch(e){ console.warn(e); }
+  await step(0.66,'Oblikujem brežuljke…'); const tmat=makeTerrainMaterial({cut:true}); for(const m of buildTerrainMeshes(tmat)) scene.add(m); try{ creekMeshes(scene); }catch(e){ console.warn('potok-mesh',e); }
+  await step(0.72,'Sadim šume i voćnjake…'); placeTrees(); try{ photoTrees(); photoHillWoods(); creekTreeFilter(); }catch(e){ console.warn(e); }
   await step(0.8,'Sadim stabla…'); buildTrees(scene,q); buildCorn(scene); try{ photoWillows(scene); }catch(e){ console.warn(e); }
   await step(0.88,'Kosim travu…'); buildGrass(scene,GRASSN[2],30); VEG.grass.geometry.instanceCount=GRASSN[q];
-  await step(0.92,'Palim sunce…'); buildSky(scene); SKY.setShadowQuality(q); setTimeOfDay(renderer,scene,GAME.hour); buildWater(scene);
+  await step(0.92,'Palim sunce…'); buildSky(scene); SKY.setShadowQuality(q); setTimeOfDay(renderer,scene,GAME.hour); buildWater(scene); try{ lightsInit(scene); }catch(e){ console.warn('svjetla',e); }
   await step(0.96,'Crtam kartu…'); buildMapCanvas(); setupMap(); setupMenus();
   setupInput(renderer.domElement,onLock); scene.add(camera); buildViewModels(); buildDrinkMenu(); pkSetup(); renderer.shadowMap.autoUpdate=false; renderer.shadowMap.needsUpdate=true;
   renderer.domElement.addEventListener('mousedown',e=>{ if(GAME.started && !document.pointerLockElement && !GAME.touch && !GAME.dragLook && !UI.mapOpen && !GAME.paused) renderer.domElement.requestPointerLock(); });
@@ -64,7 +64,7 @@ async function main(){
     if(innerHeight>0 && !(Math.abs(camera.aspect-innerWidth/innerHeight)<1e-3)) onResize();
     if(GAME.started){ if(!GAME.paused){ if(PLAYER.heli) heliTick(dt); else if(PLAYER.driving) updateDriving(dt); else if(PLAYER.riding) updateRiding(dt); else updatePlayer(dt); } if(PLAYER.heli) heliCamera(camera,dt); else if(PLAYER.driving||PLAYER.riding) carCamera(camera,dt); else if(PKC.sit) pkCamera(camera); else applyCamera(camera);
       if(fr%6===0){ const inCar=PLAYER.driving||PLAYER.riding; const nv=(!inCar&&!GAME.paused)?(nearestVehicle(PLAYER.pos.x,PLAYER.pos.z,3.4,true)||((g)=>g?g.T.v:null)(grabbableCar(PLAYER.pos.x,PLAYER.pos.z,3.4))):null; GAME.nearCar=nv; const cb=document.getElementById('carbtn'); if(cb){ cb.classList.toggle('on',!!nv); const sp=cb.querySelector('span'); if(sp) sp.textContent=nv&&nv.remote?'Sjedni':'Vozi'; } const pr=document.getElementById('prompt'); if(pr){ const gg=giverNear(); const txt=GTA.dlg?'':PLAYER.heli?'E — izađi iz helikoptera (na tlu)':gg?'E — misija: '+gg.title:nearHeli()?'E — uđi u helikopter':intPrompt()?'E — '+intPrompt():(!PLAYER.driving&&nearPt(HOME_POS(),4))?(GTA.home?'E — odmori se kod kuće':'E — kupi stan Kod Ruže (800 €)'):PLAYER.driving?'E — izađi iz auta · V — pogled iz auta':PLAYER.riding?'E — izađi (suvozač) · V — pogled':(nv?(nv.remote?'E — sjedni kao suvozač':(nv.truck?'E — uđi u vatrogasno vozilo':nv.bike?'E — sjedni na bicikl':nv.label?'E — uđi u '+nv.label:'E — uđi u auto')):(nearValentina()?'E — naruči kod Valentine':nearBar()?'E — naruči piće na šanku':(nearPoker()?'E — sjedni za poker':(LANDMARKS.churchDoor&&Math.hypot(PLAYER.pos.x-LANDMARKS.churchDoor.x,PLAYER.pos.z-LANDMARKS.churchDoor.z)<7?'Crkva je otvorena — samo uđi ⛪':'')))); if(pr.dataset.t!==txt){ pr.dataset.t=txt; pr.innerHTML=promptHTML(txt); } pr.classList.toggle('on',!!txt); } }
-      netTick(dt); occupantTick(); npcTick(dt); lifeTick(dt); gtaTick(dt); gta2Tick(dt); owTick(dt); modelsTick(); combatTick(dt); weaponTick(dt); tpsTick(dt); pokerTick(dt); try{ intTick(dt); }catch(e){ console.warn(e); } try{ parkedTick(); }catch(e){ console.warn("parked",e); } try{ lawTick(dt); }catch(e){ console.warn('law',e); } try{ homeTick(dt); storyTick(dt); voicesTick(dt); }catch(e){ console.warn('story',e); } humansTick(dt); tpsLate(); try{ lawLate(); }catch(e){ console.warn('lawLate',e); } if(COMBAT.hold&&COMBAT.armed) fireGun(); }
+      netTick(dt); occupantTick(); npcTick(dt); lifeTick(dt); gtaTick(dt); gta2Tick(dt); owTick(dt); modelsTick(); combatTick(dt); weaponTick(dt); tpsTick(dt); pokerTick(dt); try{ intTick(dt); }catch(e){ console.warn(e); } try{ creekTick(dt); lightsTick(); radioTick(dt); }catch(e){} try{ parkedTick(); }catch(e){ console.warn("parked",e); } try{ lawTick(dt); }catch(e){ console.warn('law',e); } try{ homeTick(dt); storyTick(dt); voicesTick(dt); }catch(e){ console.warn('story',e); } humansTick(dt); tpsLate(); try{ lawLate(); }catch(e){ console.warn('lawLate',e); } if(COMBAT.hold&&COMBAT.armed) fireGun(); }
     else { startCam(camera,dt); lookTick(dt); }
     const cp=GAME.started?PLAYER.pos:camera.position; VEG.uniforms.uPlayer.value.set(cp.x,cp.y,cp.z); VEG.uniforms.uTime.value=GAME.time; SKY.uni.uTime.value=GAME.time;
     if(Math.hypot(cp.x-VEG.lastRebuild.x,cp.z-VEG.lastRebuild.z)>((PLAYER.driving||PLAYER.riding)?38:14)) rebuildNearTrees(cp.x,cp.z);

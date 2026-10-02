@@ -85,3 +85,18 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
   auti iz prometa i zaustavljena policija/hitna se mogu oteti (carjack)
 - kotač oružja: nove detaljne ikone (WDRAW) — Glock, MP5, pumparica, M4, snajper s optikom, RPG-7
 - učitavanje radi i u pozadinskoj kartici (yieldFrame s timeoutom)
+
+## Runda: potok, škola, HUD, radio, rasvjeta (listopad 2026)
+- Pristavčica (34_creek.js): točno po igračevoj liniji — preko livade, ispod mosta s plavom ogradom kod stanice/workout parka,
+  između kuće i duge štale, pa dalje u Horvatsku. Vlastito fino korito (ravno → kosina → voda → kosina → ravno),
+  getHeight() prati korito, grubi teren se ispod reže maskom (CREEK.tex), trava se ne crta u koritu, voda teče (animirana normal mapa).
+  Mostovi: betonska ploča, krila, plava ograda na svakom prijelazu ceste.
+- obiteljska kuća: primaknuta putu (photoMoveHouse), jedan krov u istoj razini, deblji zaobljeni balkon; ispred sivi Golf V i crni Passat
+- brtija (cafeFit): zabat na pločniku ceste od sjevera, pročelje uz glavnu cestu; zid/kapija u ravnini zabata; aneks sa staklenom terasom i nadstrešnicom
+- trg sa stupom asfaltiran + kamena gredica s cvijećem; parkiralište kod crkve samo na parceli kuće, ne preko popločenja
+- škola (38_school.js): stara zgrada uz cestu, bijela krila s crvenim krovovima, sportska dvorana, igralište s mrežama i tribinom;
+  parkiralište i vrtić na NIŽOJ razini (schoolTerrain), helikopter na parkiralištu
+- GTA HUD (35_hud.js): radar dolje lijevo + zelena/plava traka, novac gore desno, velike zvjezdice samo kad te traže; maknuti Požar, lokacija, tipke, autorska prava u igri
+- rasvjeta (36_lights.js): lampe svijetle noću, točkasta svjetla oko kamere, farovi na autu
+- radio (37_radio.js): sintetizirane stanice (Radio Kaj, Hit FM Tuhelj, Noćna vožnja, Lounge Krapina), R ili kotačić u autu
+- kamera auta bliže (4.7 m), parkirani auti nikad na kolniku

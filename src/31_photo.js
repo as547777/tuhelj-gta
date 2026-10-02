@@ -5,7 +5,10 @@
 const PHOTO={};
 function photoHouseRaw(){ return D.bld.find(b=>/Slavi/.test(b.n||'')); }
 // 1) terrain (before road grading and building pads)
-function photoTerrain(){ const hb=photoHouseRaw(); if(!hb) return; const H=[hb.r[0][0],hb.r[0][1]], C=[-326,-5];
+// the house stands close to the gravel lane (photo 6): pull the OSM footprint up to ~7 m from the lane
+function photoMoveHouse(hb){ if(hb.moved) return; hb.moved=true; const lane=ROADS.find(r=>r.t==='unclassified'&&r.P.some(p=>Math.hypot(p[0]+434,p[1]+119)<12)); if(!lane) return; const r0=hb.r[0]; const n=nearOnPoly(lane.P,r0[0],r0[1]); const want=5+7.0; if(n.d<=want) return;
+  const ux=(n.x-r0[0])/n.d, uz=(n.z-r0[1])/n.d, mv=n.d-want; for(const q of hb.r){ q[0]+=ux*mv; q[1]+=uz*mv; } if(hb.dw){ hb.dw=[hb.dw[0]+ux*mv*0.3,hb.dw[1]+uz*mv*0.3]; } }
+function photoTerrain(){ const hb=photoHouseRaw(); if(!hb) return; photoMoveHouse(hb); const H=[hb.r[0][0],hb.r[0][1]], C=[-326,-5];
   const ax=C[0]-H[0], az=C[1]-H[1], L=Math.hypot(ax,az), ux=ax/L, uz=az/L; const hC=173.3, hH=178.6;
   PHOTO.axis={H,C,L,ux,uz};
   for(let iz=0;iz<NZ;iz++) for(let ix=0;ix<NX;ix++){ const x=X0+ix*CELL, z=Z0+iz*CELL; const dx=x-H[0], dz=z-H[1]; const t=(dx*ux+dz*uz)/L, d=Math.abs(-dx*uz+dz*ux);
@@ -38,15 +41,22 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   // drop OSM houses between that lane and the meadow
   { const lane=ROADS.find(r=>r.t==='unclassified'&&r.P.some(p=>Math.hypot(p[0]+434,p[1]+119)<12)); if(lane){ const laneZ=(x)=>{ let best=null,bd=1e9; for(let i=0;i<lane.P.length-1;i++){ const a=lane.P[i], b=lane.P[i+1]; if((x-a[0])*(x-b[0])<=0){ const t=(x-a[0])/((b[0]-a[0])||1e-6); return a[1]+(b[1]-a[1])*t; } const d=Math.min(Math.abs(x-a[0]),Math.abs(x-b[0])); if(d<bd){ bd=d; best=Math.abs(x-a[0])<Math.abs(x-b[0])?a[1]:b[1]; } } return best; };
       for(let i=D.bld.length-1;i>=0;i--){ const q=D.bld[i]; if(q.n) continue; const r0=q.r[0]; if(r0[0]<-445||r0[0]>-280) continue; const lz=laneZ(r0[0]); if(lz===null) continue; if(r0[1]>lz+4&&r0[1]<lz+70) D.bld.splice(i,1); } } }
-  // Kafić Putniku sits on the bend: move it up to the road and turn it to follow the curve (Mapillary 924510798093512)
-  { const c=D.bld.find(q=>q.k==='cafe'); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+232,p[1]+36)<15)); if(c&&rd){ const o=c.r[0]; let best=null,bd=1e9; for(const p of rd.P){ const d=Math.hypot(p[0]-o[0],p[1]-o[1]); if(d<bd){ bd=d; best=p; } }
-      const ux=(best[0]-o[0])/bd, uz=(best[1]-o[1])/bd, mv=4.6, rot=0.17, ccx=o[0], ccz=o[1]; const cr=Math.cos(rot), sr=Math.sin(rot);
-      for(const r of c.r){ const dx=r[0]-ccx, dz=r[1]-ccz; r[0]=ccx+dx*cr-dz*sr+ux*mv; r[1]=ccz+dx*sr+dz*cr+uz*mv; r[2]+=rot; }
-      if(c.dw){ c.dw=[c.dw[0]+ux*mv*0.5,c.dw[1]+uz*mv*0.5]; } } }
+  // Kafić Putniku sits right on the bend (Street View "38 Tuhelj"): its gable on the pavement of the road from the north,
+  // its long front and the arcade along the main road. Found by a small search over turn + shift.
+  { const c=D.bld.find(q=>q.k==='cafe'); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+232,p[1]+36)<15)&&r.P.some(p=>Math.hypot(p[0]+250,p[1]+83)<8)); if(c&&rd){ const RP=smoothCorners(rd.P,8,2).filter(p=>p[0]>-300&&p[0]<-150&&p[1]>-120&&p[1]<0); const o=c.r[0]; const cx=o[0], cz=o[1], a0=o[2];
+      const LOC={WN:[-10.5,-5.25],WS:[-10.5,4.25],F1:[-3.5,4.25],F2:[3.6,4.25],A1:[8.4,4.0],A2:[10.4,2.0]}; const want=5.7; const dist=(x,z)=>nearOnPoly(RP,x,z).d;
+      const cost=(d,tx,tz)=>{ const cc=Math.cos(a0+d), ss=Math.sin(a0+d); let J=0; const D2={}; for(const k in LOC){ const [lx,lz]=LOC[k]; const x=cx+tx+cc*lx-ss*lz, z=cz+tz+ss*lx+cc*lz; const dd=dist(x,z); D2[k]=dd; if(dd<want-0.4) J+=200*(want-0.4-dd)**2; }
+        J+=(D2.WN-want)**2+(D2.WS-want)**2*0.6+(D2.F1-want)**2+(D2.F2-want)**2*0.8+(D2.A1-want)**2*0.6; return J; };
+      let best=[0,0,0], bj=1e18; for(let d=-0.8;d<=0.35;d+=0.04) for(let tx=-14;tx<=14;tx+=1) for(let tz=-14;tz<=14;tz+=1){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } }
+      { const b0=best.slice(); for(let d=b0[0]-0.04;d<=b0[0]+0.04;d+=0.01) for(let tx=b0[1]-1;tx<=b0[1]+1;tx+=0.25) for(let tz=b0[2]-1;tz<=b0[2]+1;tz+=0.25){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } } }
+      const [rot,mx,mz]=best; const cr=Math.cos(rot), sr=Math.sin(rot); for(const r of c.r){ const dx=r[0]-cx, dz=r[1]-cz; r[0]=cx+mx+dx*cr-dz*sr; r[1]=cz+mz+dx*sr+dz*cr; r[2]+=rot; }
+      if(c.dw){ c.dw=[c.dw[0]+mx,c.dw[1]+mz]; } PHOTO.cafeFit={rot,mx,mz,J:bj};
+      // the apartment stands in the yard behind the house, its gable (balcony) facing the gate
+      const A=c.r[0], ca=Math.cos(A[2]), sa=Math.sin(A[2]); const lp=(lx,lz)=>[A[0]+ca*lx-sa*lz, A[1]+sa*lx+ca*lz]; PUBYARD.apt=lp(1.5,-13.6); PUBYARD.aptA=A[2]+Math.PI/2; PUBYARD.gate=lp(-11.6,-10.4); } }
   // Street View (Oct 2026): the house beside the church does not exist — its plot is a car park
   for(let i=D.bld.length-1;i>=0;i--){ const r=D.bld[i].r[0]; if(D.bld[i].k==='house'&&Math.hypot(r[0]+309.8,r[1]+22)<3){ PHOTO.churchPark=r.slice(); D.bld.splice(i,1); } }
   // "Kod Ruže" stands inside the pub's walled yard, just behind the café (Street View "38 Tuhelj"); the gate opens to the road from Lovrečan
-  { const a=D.bld.find(q=>q.k==='apt'||/Kod Ru/.test(q.n||'')||(q.k==='house'&&Math.hypot(q.r[0][0]+203.9,q.r[0][1]+76.5)<3)); if(a){ a.k='apt'; a.n='Studio apartman Kod Ruže'; const r0=a.r[0]; const dx=PUBYARD.apt[0]-r0[0], dz=PUBYARD.apt[1]-r0[1]; for(const q of a.r){ q[0]+=dx; q[1]+=dz; } a.dw=PUBYARD.gate.slice(); } }
+  { const a=D.bld.find(q=>q.k==='apt'||/Kod Ru/.test(q.n||'')||(q.k==='house'&&Math.hypot(q.r[0][0]+203.9,q.r[0][1]+76.5)<3)); if(a){ a.k='apt'; a.n='Studio apartman Kod Ruže'; const r0=a.r[0]; const dx=PUBYARD.apt[0]-r0[0], dz=PUBYARD.apt[1]-r0[1]; for(const q of a.r){ q[0]+=dx; q[1]+=dz; if(PUBYARD.aptA!==undefined) q[2]=PUBYARD.aptA; } a.dw=PUBYARD.gate.slice(); } }
   // the bus stop is on the café side of the road, in front of the gravel lot east of the arcade (Street View)
   { const p=(D.pois||[]).find(q=>q.k==='bus_stop'&&Math.hypot(q.x+213,q.z+30)<8); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+213,q[1]+30)<12)); if(p&&rd){ const n=nearOnPoly(rd.P,p.x,p.z); p.x=n.x+n.tz*4.5; p.z=n.z-n.tx*4.5; } }
   NOHEDGE.push([-211,-42,10],[PUBYARD.apt[0]-1,PUBYARD.apt[1]+1,15],[-309.8,-22,11]);
@@ -64,7 +74,7 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
   const Hh={wall:G,trim:T,glass:g('glassW'),slats:g('slats')};
   const YEL=lin('#e9c979'), RED=lin('#c4523d'), SAL=lin('#d98c70'), WHT=lin('#f4f3ef'), WOOD=lin('#6a3f27'), GUT=lin('#c9ccce');
   // photo 35: [yellow low wing 0-3.6][red cross gable 3.6-6.0][yellow two storeys + round balcony 6.0-10.0][red 10.0-12.0] + covered terrace
-  const hl=6, hw=5, pitch=31, TP=Math.tan(pitch*Math.PI/180); const e=y0+5.9, eL=y0+3.55; const xM=-hl+3.6; // main body x from xM to +hl, low wing from -hl to xM
+  const hl=6, hw=5, pitch=31, TP=Math.tan(pitch*Math.PI/180); const e=y0+5.7, eL=e; /* one continuous eave and ridge over the whole house (photo 4) */ const xM=-hl+3.6; // main body x from xM to +hl, low wing from -hl to xM
   const rt=e+hw*TP, rtL=eL+hw*TP;
   const win=(m,h,o={})=>rectWindow(Hh,m,h,Object.assign({wc:YEL,rc:lin('#f1ead6'),fc:WHT,cols:1,dep:0.2,fw:0.07,sc:WHT,gv:'sheer'},o));
   const A=[-hl,hw], B=[hl,hw], Cc=[hl,-hw], Dd=[-hl,-hw];
@@ -87,20 +97,20 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
     const cp=mG.P(1.2,0,0); const cf=frame(cp[0],cp[2],ang); emitRoof(cs,cf,ang,1.25,0.45,y0+2.85,'shed',22,0.12,0.12,lin('#cc6c3e'),lin('#7a4e30'),'roof',4); Wd.box(cf,-1.15,1.15,y0+2.7,y0+2.85,-0.05,0.45,lin('#6b3b22')); }
   // end walls: low wing gable (left), wall above the wing, right red gable; back
   band(mW,0,10,yb,eL,YEL,[holeRect(4.3,5.1,y0+1.0,y0+2.0)]); facadeSeg(G,mW,[[0,eL],[10,eL],[5,rtL]],[holeRect(4.55,5.45,eL+0.35,eL+1.2)],YEL);
-  facadeSeg(G,mM,[[0,eL],[10,eL],[10,e],[5,rt],[0,e]],[holeRect(4.5,5.5,e+0.35,e+1.4)],YEL);
+
   band(mE,0,10,yb,e,RED,[holeRect(3.0,3.8,y0+1.1,y0+2.0),holeRect(6.0,6.8,y0+1.1,y0+2.0),holeRect(3.0,3.8,y0+3.6,y0+4.5)]); facadeSeg(G,mE,[[0,e],[10,e],[5,rt]],[holeRect(4.5,5.5,e+0.4,e+1.5)],RED);
   const hBack=[holeRect(1.8,3.0,y0+1.0,y0+2.1),holeRect(5.2,6.0,y0+1.3,y0+2.0),holeRect(1.8,3.0,y0+3.4,y0+4.5),holeRect(5.4,6.4,y0+3.4,y0+4.5),holeRect(9.4,10.6,y0+1.0,y0+2.1)];
   band(mB,0,8.4,yb,e,YEL,hBack); band(mB,8.4,12,yb,eL,YEL,hBack);
   for(const i of [0,2,4,6,7]) win(mF,hFront[i],{wc:i>=4&&i!==6?RED:YEL}); win(mF,hFront[5],{cols:1,sill:false});
   for(const h of [holeRect(3.0,3.8,y0+1.1,y0+2.0),holeRect(6.0,6.8,y0+1.1,y0+2.0),holeRect(3.0,3.8,y0+3.6,y0+4.5),holeRect(4.5,5.5,e+0.4,e+1.5)]) win(mE,h,{wc:RED});
-  for(const h of hBack) win(mB,h,{cols:2}); win(mW,holeRect(4.3,5.1,y0+1.0,y0+2.0)); win(mW,holeRect(4.55,5.45,eL+0.35,eL+1.2)); win(mM,holeRect(4.5,5.5,e+0.35,e+1.4));
+  for(const h of hBack) win(mB,h,{cols:2}); win(mW,holeRect(4.3,5.1,y0+1.0,y0+2.0)); win(mW,holeRect(4.55,5.45,eL+0.35,eL+1.2)); 
   // front door: white with four small windows; three concrete steps
   { const d=hFront[3]; reveal(G,mF,d,0,0.2,lin('#f1ead6')); T.box(mF.T,d[0][0],d[1][0],d[0][1],d[2][1],-0.2,-0.14,WHT); for(let i=0;i<4;i++) Hh.glass.box(mF.T,8.08,8.27,y0+1.15+i*0.33,y0+1.38+i*0.33,-0.14,-0.13,WHITE); Mt.box(mF.T,8.45,8.52,y0+1.4,y0+1.46,-0.14,-0.08,lin('#bdbdbd'));
     for(let k=0;k<3;k++) St.box(mF.T,7.35-k*0.12,9.05+k*0.12,yb,y0+0.5-k*0.16,0,0.35+k*0.35,lin('#c7c2b6')); addFloor(F,ang,-hl+7.2,-hl+9.2,hw,hw+1.1,y0+0.18); }
   // round balcony over the door: yellow slab, dark turned wooden balusters, handrail
   { const bc=F(-hl+8.15,0,hw); const bf=frame(bc[0],bc[2],ang,0); const R=1.45, n=30; for(let i=0;i<n;i++){ const a0=Math.PI*i/n, a1=Math.PI*(i+1)/n; const p=(a,r,y)=>bf(Math.cos(a)*r*1.2,y,Math.sin(a)*r);
-      G.quad(p(a0,R,y0+2.95),p(a1,R,y0+2.95),p(a1,R,y0+3.15),p(a0,R,y0+3.15),[0,0],[1,0],[1,1],[0,1],YEL,[Math.cos(a0),0,Math.sin(a0)]); G.tri(bf(0,y0+3.15,0),p(a1,R,y0+3.15),p(a0,R,y0+3.15),[0,0],[1,0],[0,1],lin('#cfc9bb'),[0,1,0]); G.tri(bf(0,y0+2.95,0),p(a0,R,y0+2.95),p(a1,R,y0+2.95),[0,0],[1,0],[0,1],YEL,[0,-1,0]);
-      if(i%2===0){ const q=p(a0+0.05,R-0.07,0); Wd.box(frame(q[0],q[2],ang-a0,0),-0.035,0.035,y0+3.15,y0+4.1,-0.045,0.045,lin('#7a4a2c')); }
+      G.quad(p(a0,R,y0+2.7),p(a1,R,y0+2.7),p(a1,R,y0+3.15),p(a0,R,y0+3.15),[0,0],[1,0],[1,1],[0,1],YEL,[Math.cos(a0),0,Math.sin(a0)]); G.quad(p(a0,R,y0+2.7),p(a0,R*0.55,y0+2.92),p(a1,R*0.55,y0+2.92),p(a1,R,y0+2.7),[0,0],[1,0],[1,1],[0,1],lin('#efe2b8'),[0,-1,0]); /* thick rounded slab with a curved soffit over the door */ G.tri(bf(0,y0+3.15,0),p(a1,R,y0+3.15),p(a0,R,y0+3.15),[0,0],[1,0],[0,1],lin('#cfc9bb'),[0,1,0]); G.tri(bf(0,y0+2.98,0),p(a0,R*0.55,y0+2.92),p(a1,R*0.55,y0+2.92),[0,0],[1,0],[0,1],lin('#efe2b8'),[0,-1,0]);
+      { const q=p(a0+0.05,R-0.07,0); Wd.box(frame(q[0],q[2],ang-a0,0),-0.04,0.04,y0+3.15,y0+4.1,-0.05,0.05,lin('#6e4128')); }
       beam(Wd,p(a0,R-0.07,y0+4.12),p(a1,R-0.07,y0+4.12),0.065,lin('#6a3f27')); beam(Wd,p(a0,R-0.07,y0+3.28),p(a1,R-0.07,y0+3.28),0.035,lin('#6a3f27')); }
     addFloor(bf,ang,-1.7,1.7,0,1.45,y0+3.15); }
   // downpipes and lamp
@@ -108,8 +118,7 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
   { const p=mF.P(9.15,0,-0.06); const lf=frame(p[0],p[2],ang,0); Mt.box(lf,-0.07,0.07,y0+2.2,y0+2.5,-0.02,0.14,lin('#3a3a3a')); Gl.box(lf,-0.05,0.05,y0+2.24,y0+2.44,0.02,0.12,lin('#ffe3a0')); }
   // plinth band and roofs (main body + lower left wing), white gutters
   for(const m of [mF,mE,mB,mW]) plinthSeg(g('plinth'),m,yb,y0+0.32,m===mF?[[7.2,9.2]]:[],SAL);
-  { const mc=F((xM+hl)/2,0,0); emitRoof(cs,frame(mc[0],mc[2],ang),ang,(hl-xM)/2,hw,e,'gable',pitch,0.65,0.6,lin('#cc6c3e'),lin('#7a4e30'));
-    const wc=F((-hl+xM)/2,0,0); emitRoof(cs,frame(wc[0],wc[2],ang),ang,(xM+hl)/2,hw,eL,'gable',pitch,0.6,0.6,lin('#cc6c3e'),lin('#7a4e30'));
+  { emitRoof(cs,frame(cx,cz,ang),ang,hl,hw,e,'gable',pitch,0.65,0.6,lin('#cc6c3e'),lin('#7a4e30'));
     for(const sz of [-1,1]){ const ey=e-0.6*TP-0.12, eyL=eL-0.6*TP-0.12; Mt.box(F,sz>0?0:xM,hl+0.65,ey-0.12,ey,sz*(hw+0.62)-0.07,sz*(hw+0.62)+0.07,GUT); Mt.box(F,-hl-0.6,xM,eyL-0.12,eyL,sz*(hw+0.62)-0.07,sz*(hw+0.62)+0.07,GUT); } }
   // covered terrace on the right (photo 4): hipped roof on posts, lattice frieze, salmon parapet
   { const tf=frame(...(()=>{ const p=F(hl+2.3,0,1.4); return [p[0],p[2]]; })(),ang); const ty=y0+0.05, th=y0+2.7;
@@ -122,7 +131,7 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
   // flowers under the window, potted plants by the steps
   for(let k=0;k<7;k++){ const q=mF.P(6.5+k*0.09,y0+1.0,-0.22); lathe(Hd,frame(q[0],q[2],ang,q[1]),[[0.06,0],[0.05,0.1],[0,0.12]],6,lin(k%2?'#d8344a':'#3f7a33')); }
   // the yard (photo 1 / 4): just a paved forecourt down to the lane — no outbuilding
-  { const Pv=cs.get('floorT',cx,cz); floorPoly(Pv,F,[[-hl-1.5,hw+0.2],[hl+4.6,hw+0.2],[hl+4.6,hw+9.5],[-hl-1.5,hw+9.5]],Math.max(y0-0.12,getHeight(...(()=>{ const p=F(0,0,hw+5); return [p[0],p[2]]; })())+0.05),lin('#ebe5d8'),0.6);
+  { const Pv=cs.get('floorT',cx,cz); floorPoly(Pv,F,[[-hl-1.5,hw+0.2],[hl+4.6,hw+0.2],[hl+4.6,hw+4.9],[-hl-1.5,hw+4.9]],Math.max(y0-0.12,getHeight(...(()=>{ const p=F(0,0,hw+3); return [p[0],p[2]]; })())+0.05),lin('#ebe5d8'),0.6);
 }
   PHOTO.door=(()=>{ const p=F(-hl+8.2,0,hw+1.9); return [p[0],p[2]]; })();
   photoYard(cs,scene,F,ang,y0); }
@@ -217,7 +226,7 @@ function photoCentre(cs,scene){ const Mt=cs.get('metal',CENTER[0],CENTER[1]), G=
     // blue bus-stop sign on a pole
     { const q=f(-2.6,0,side*-0.6); const sf=frame(q[0],q[2],a,y); Mt.cyl(sf,0.035,0.035,0,2.6,8,AL,1,false); Mt.box(sf,-0.32,0.32,2.2,2.62,-0.02,0.02,lin('#1f4fa8')); Mt.box(sf,-0.26,0.26,2.28,2.54,-0.025,0.025,lin('#f4f4f2')); }
     if(si===0){ // Street View "41 Tuhelj": fenced gravel workout park behind the shelter, benches, green steel equipment
-      const gc=[x+nx*side*9+s.tx*6, z+nz*side*9+s.tz*6]; const gy=getHeight(gc[0],gc[1]); const gf=frame(gc[0],gc[1],a,gy); const GW2=8, GD=5;
+      const gc=[x+nx*side*9+s.tx*6, z+nz*side*9+s.tz*6]; for(let k=0;k<30&&typeof creekDist==='function'&&creekDist(gc[0],gc[1])<10.5;k++){ gc[0]-=s.tx*(side>0?1:-1)*0; gc[1]-=1; } /* keep the outdoor gym out of the creek (it is just north of it) */ const gy=getHeight(gc[0],gc[1]); const gf=frame(gc[0],gc[1],a,gy); const GW2=8, GD=5;
       G.box(gf,-GW2,GW2,-0.05,0.06,-GD,GD,lin('#d9d3c6')); addFloor(gf,a,-GW2,GW2,-GD,GD,gy+0.06);
       for(let k=-GW2;k<=GW2+0.01;k+=2){ for(const zz of [-GD,GD]) Mt.box(gf,k-0.03,k+0.03,0,0.9,zz-0.03,zz+0.03,GRN); } for(let k=-GD;k<=GD+0.01;k+=2){ for(const xx of [-GW2,GW2]) Mt.box(gf,xx-0.03,xx+0.03,0,0.9,k-0.03,k+0.03,GRN); }
       for(const zz of [-GD,GD]) Mt.box(gf,-GW2,GW2,0.85,0.9,zz-0.02,zz+0.02,GRN); for(const xx of [-GW2,GW2]) Mt.box(gf,xx-0.02,xx+0.02,0.85,0.9,-GD,GD,GRN);
@@ -230,7 +239,7 @@ function photoCentre(cs,scene){ const Mt=cs.get('metal',CENTER[0],CENTER[1]), G=
         addCollider(...(()=>{ const p=gf(ex,0,ez); return [p[0],p[2]]; })(),a,1.9,0.7,gy-1,gy+2.4); }
       Wd.box(frame(...(()=>{ const p=gf(-GW2-1.4,0,0); return [p[0],p[2]]; })(),a,gy),-0.9,0.9,0.42,0.47,-0.2,0.2,lin('#6d4a2e'));
       // wire fence on wooden posts along the meadow side of the road, ~70 m south from the stop
-      const r=s.road; if(r&&r.S){ const i0=s.i; for(let k=i0+8;k<Math.min(r.S.length,i0+56);k+=2){ const p=r.S[k], tg=r.T[k]; const fx=p[0]+(-tg[1])*side*(r.w/2+2.2), fz=p[1]+tg[0]*side*(r.w/2+2.2); if(BHASH.hit(fx,fz,1)) continue; const fy=getHeight(fx,fz); const ff=frame(fx,fz,Math.atan2(tg[1],tg[0]),fy);
+      const r=s.road; if(r&&r.S){ const i0=s.i; for(let k=i0+8;k<Math.min(r.S.length,i0+56);k+=2){ const p=r.S[k], tg=r.T[k]; const fx=p[0]+(-tg[1])*side*(r.w/2+2.2), fz=p[1]+tg[0]*side*(r.w/2+2.2); if(BHASH.hit(fx,fz,1)||(typeof creekDist==='function'&&creekDist(fx,fz)<CREEK.Wc+0.4)) continue; const fy=getHeight(fx,fz); const ff=frame(fx,fz,Math.atan2(tg[1],tg[0]),fy);
           Wd.box(ff,-0.05,0.05,0,1.25,-0.05,0.05,lin('#8a6a4a')); for(const wy of [0.55,1.05]) Mt.box(ff,-1.5,1.5,wy,wy+0.012,-0.006,0.006,lin('#9a9a96')); } }
       // convex traffic mirror at the curve
       { const q=[s.x+(-s.tz)*-side*(s.w/2+1.2)+s.tx*-10, s.z+s.tx*-side*(s.w/2+1.2)+s.tz*-10]; const qy=getHeight(q[0],q[1]); const mf=frame(q[0],q[1],a+Math.PI/2,qy); Mt.cyl(mf,0.04,0.04,0,2.8,8,lin('#9aa0a4'),1,false);
@@ -238,7 +247,7 @@ function photoCentre(cs,scene){ const Mt=cs.get('metal',CENTER[0],CENTER[1]), G=
         const rim=new THREE.Mesh(new THREE.RingGeometry(0.42,0.5,24),new THREE.MeshBasicMaterial({color:0xd8262e,side:THREE.DoubleSide})); rim.position.copy(mir.position); rim.rotation.y=-a; scene.add(rim); } }
     PHOTO.stops=(PHOTO.stops||[]).concat([[x,z]]); });
   // blue railings where centre roads cross the Horvatska creek
-  for(const w of WATER){ for(let i=0;i<w.P.length-1;i++){ const a0=w.P[i], a1=w.P[i+1];
+  for(const w of WATER){ if(/Pristav/.test(w.n||'')) continue; /* its bridges are built by the creek module */ for(let i=0;i<w.P.length-1;i++){ const a0=w.P[i], a1=w.P[i+1];
     for(const r of ROADS){ if(!r.S||r.t==='path'||r.t==='track') continue; for(let j=0;j<r.S.length-1;j++){ const b0=r.S[j], b1=r.S[j+1]; if(Math.hypot(b0[0]-CENTER[0],b0[1]-CENTER[1])>650) continue;
         const d1x=a1[0]-a0[0], d1z=a1[1]-a0[1], d2x=b1[0]-b0[0], d2z=b1[1]-b0[1]; const den=d1x*d2z-d1z*d2x; if(Math.abs(den)<1e-6) continue; const t=((b0[0]-a0[0])*d2z-(b0[1]-a0[1])*d2x)/den, u=((b0[0]-a0[0])*d1z-(b0[1]-a0[1])*d1x)/den; if(t<0||t>1||u<0||u>1) continue;
         for(const sd of [1,-1]){ for(let k=Math.max(0,j-5);k<Math.min(r.S.length-1,j+6);k++){ const p=r.S[k], tg=r.T[k]; const nx=-tg[1]*sd, nz=tg[0]*sd; const x=p[0]+nx*(r.w/2+0.35), z=p[1]+nz*(r.w/2+0.35); const y=getHeight(p[0],p[1])+0.08; const ff=frame(x,z,Math.atan2(tg[1],tg[0]),y);

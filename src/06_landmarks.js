@@ -64,7 +64,7 @@ function townhall(cs,scene,b){
 function postTex(){ const c=cvs(256,256), g=c.getContext('2d'); g.fillStyle='#ffd21a'; g.beginPath(); g.arc(128,128,124,0,TAU); g.fill(); g.strokeStyle='#1a3f8f'; g.lineWidth=18; g.beginPath(); g.arc(128,128,70,Math.PI*0.2,Math.PI*1.2); g.stroke(); g.fillStyle='#1a3f8f'; g.font='900 64px Manrope, Arial'; g.textAlign='center'; g.fillText('HP',128,150); return mkTex(c,{repeat:false}); }
 /* ---------- hand-placed centre buildings ---------- */
 function centreBuilding(cs,scene,b){
-  const st=b.st||b.k; if(st==='cafe'){ cafe(cs,scene,b); return; } const s=styleFor(b);
+  const st=b.st||b.k; if(st==='cafe'){ cafe(cs,scene,b); return; } if(st==='kinder') return; /* built with the school (38_school.js) */ const s=styleFor(b);
   if(st==='shopPink'){ s.wall=lin('#efe7d6'); s.plinth=lin('#8c2a26'); s.roof=lin('#4f3328'); s.sof=lin('#5a3a26'); s.roofType='hip'; s.pitch=32; s.win='roller_brown'; s.balcony=false; s.garage=false; }
   if(st==='shopCream'){ s.wall=lin('#efe2c4'); s.roof=lin('#a54a31'); s.roofType='gable'; s.pitch=30; s.balcony=false; s.garage=false; }
   if(st==='cafe'){ s.wall=lin('#f1e8d6'); s.roof=lin('#b85b37'); s.roofType='gable'; s.pitch=28; s.balcony=false; s.garage=false; s.chim=true; }
@@ -171,7 +171,9 @@ function statueColumn(cs,x,z){ const y=getHeight(x,z); const f=frame(x,z,0.3); c
   lathe(S,f,[[0,y+7.15],[0.12,y+7.2],[0.13,y+7.35],[0.09,y+7.48],[0,y+7.52]],10,lin('#ece7da'));
   const g=cs.get('gold',x,z); lathe(g,f,[[0.2,y+7.55],[0.24,y+7.55],[0.24,y+7.6],[0.2,y+7.6]],14,lin('#c9a55a'));
   addCollider(x,z,0.3,3.2,3.2,y-1,y+8);
-  PROPS_EXTRA.push({t:'bushring',x,z,r:2.6});
+  // low stone planter with flowers round the column; the square around it is asphalt (photoPaving)
+  { const P=cs.get('stonem',x,z), Hd=cs.get('hedge',x,z); for(let k=0;k<12;k++){ const a0=k/12*TAU, a1=(k+1)/12*TAU; const R=2.7; const m=[(Math.cos(a0)+Math.cos(a1))/2*R,(Math.sin(a0)+Math.sin(a1))/2*R]; P.box(frame(x+m[0],z+m[1],(a0+a1)/2+Math.PI/2,y),-R*0.27,R*0.27,-0.3,0.38,-0.12,0.12,lin('#bdb7aa'),0.6); }
+    for(let k=0;k<26;k++){ const a=k/26*TAU*3.1, r=1.75+((k*37)%10)/10*0.75; const px=x+Math.cos(a)*r, pz=z+Math.sin(a)*r; lathe(Hd,frame(px,pz,a,y+0.22),[[0.16,0],[0.14,0.16],[0,0.22]],6,lin(k%3===0?'#d8344a':k%3===1?'#e9b81a':'#4f7d34')); } }
   LANDMARKS.column={x:x+8,z:z-6,look:[x,z]};
 }
 const LANDMARKS={};

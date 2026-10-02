@@ -174,13 +174,14 @@ function finishGround(){
   const id=GROUND.MX.getContext('2d').getImageData(0,0,GROUND.MW,GROUND.MH); GROUND.mixData=id.data;
 }
 function mixAt(x,z){ const ix=clamp(Math.floor((x-X0)/GW*GROUND.MW),0,GROUND.MW-1), iz=clamp(Math.floor((z-Z0)/GH*GROUND.MH),0,GROUND.MH-1); const k=(iz*GROUND.MW+ix)*4, d=GROUND.mixData; return [d[k]/255,d[k+1]/255,d[k+2]/255]; }
-function makeTerrainMaterial(){
-  const mat=new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.96, metalness:0});
-  mat.onBeforeCompile=(sh)=>{
+function makeTerrainMaterial(opt={}){
+  const mat=new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.96, metalness:0}); const cut=!!(opt.cut&&typeof CREEK!=='undefined'&&CREEK.tex); mat.customProgramCacheKey=()=>'terrain'+(cut?'Cut':'');
+  mat.onBeforeCompile=(sh)=>{ if(cut) Object.assign(sh.uniforms,{uCk:{value:CREEK.tex},uCkB:{value:CREEK.texB}});
     Object.assign(sh.uniforms,{uAlb:{value:GROUND.alb},uMix:{value:GROUND.mix},uGrass:{value:TEX.grass},uDirt:{value:TEX.dirt},uLitter:{value:TEX.litter},uOrigin:{value:new THREE.Vector2(X0,Z0)},uSize:{value:new THREE.Vector2(GW,GH)}});
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <fog_vertex>','#include <fog_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-uniform sampler2D uAlb,uMix,uGrass,uDirt,uLitter; uniform vec2 uOrigin,uSize; varying vec3 vWP;`).replace('#include <map_fragment>',`
+uniform sampler2D uAlb,uMix,uGrass,uDirt,uLitter; uniform vec2 uOrigin,uSize; varying vec3 vWP;`+(cut?'\nuniform sampler2D uCk; uniform vec4 uCkB;':'')).replace('#include <map_fragment>',(cut?`vec2 cku=(vWP.xz-uCkB.xy)/uCkB.zw; if(cku.x>0.0&&cku.x<1.0&&cku.y>0.0&&cku.y<1.0&&texture2D(uCk,cku).g>0.5) discard;
+`:'')+`
 vec2 suv=(vWP.xz-uOrigin)/uSize;
 vec3 alb=texture2D(uAlb,suv).rgb;
 vec3 w=texture2D(uMix,suv).rgb; float ws=w.r+w.g+w.b; float wg=w.r+max(0.0,1.0-ws); w/=max(ws,1.0);

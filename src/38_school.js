@@ -1,0 +1,64 @@
+/* ===================== OŠ Lijepa naša Tuhelj — from the Street View shots =====================
+   On the main road the old two-storey school (cream, pink plinth, flag); behind it the white modern wings with red
+   roofs, the big sports hall with the white-panelled gable, the fenced court (red-orange posts, nets, concrete
+   tribune). The access road runs DOWN to the car park and the kindergarten (white, flat roof, green fence), which sit
+   on a lower level than the school, not up the hill. */
+const SCH={old:[-234,-252,0,13,21],wing:[-210,-258,0,30,12],wing2:[-206,-246,0,22,8],hall:[-175,-254,0,30,22],court:[-198,-224,38,20],kinder:[-116,-146,0.05,30,11]};
+const SCH_LV={top:173.9,court:173.7,low:170.8};
+function schoolTerrain(){ const sb=D.bld.find(b=>b.k==='school'); if(sb){ sb.r=[SCH.old,SCH.wing,SCH.wing2,SCH.hall].map(r=>[r[0],r[1],r[2],Math.max(r[3],r[4]),Math.min(r[3],r[4]),15].map((v,i)=>i===2&&r[4]>r[3]?r[2]+Math.PI/2:v)); sb.st='school2'; }
+  if(!D.bld.some(b=>b.st==='kinder')) D.bld.push({k:'house',st:'kinder',n:'Dječji vrtić',lv:1,f:2,r:[[SCH.kinder[0],SCH.kinder[1],SCH.kinder[2],SCH.kinder[3],SCH.kinder[4],15]]});
+  NOHEDGE.push([-120,-165,48],[-200,-240,40]);
+  for(const l of LAND){ if(l.t==='pitch'){ const c=polyCentroid(l.P); if(Math.hypot(c[0]+195,c[1]+225)<30) l.t='schoolpitch'; } }
+  const Z=[{x0:-243,x1:-152,z0:-282,z1:-238,h:SCH_LV.top,bl:16},{x0:-221,x1:-174,z0:-238,z1:-206,h:SCH_LV.court,bl:10},{x0:-160,x1:-72,z0:-206,z1:-126,h:SCH_LV.low,bl:46}];
+  for(let iz=0;iz<NZ;iz++) for(let ix=0;ix<NX;ix++){ const x=X0+ix*CELL, z=Z0+iz*CELL; if(x<-300||x>0||z<-340||z>-70) continue; const k=iz*NX+ix; let h=HEI[k];
+    for(const q of Z){ const dx=Math.max(q.x0-x,0,x-q.x1), dz=Math.max(q.z0-z,0,z-q.z1); const d=Math.hypot(dx,dz); const w=1-smooth(0,q.bl,d); if(w>0) h+=(q.h-h)*w; } HEI[k]=h; } }
+function schoolFacade(cs,b,r,o){ const [cx,cz,ang,L,W]=r; const f=frame(cx,cz,ang); const hl=L/2, hw=W/2; const y0=o.y0, yb=SCH_LV.low-2; const e=y0+o.h;
+  emitWalls(cs,f,ang,hl,hw,yb,e,o.roof==='gable'?'gable':'none',o.pitch,o.wall,'wall'); emitPlinth(cs,f,ang,hl,hw,yb,y0+(o.plH||0.5),o.plinth||lin('#9a958a')); emitRoof(cs,f,ang,hl,hw,e,o.roof,o.pitch,o.ov||0.6,o.ov||0.6,o.roofC,o.sof||lin('#e9e4da'),'roof',15);
+  const Wn=cs.get('win',cx,cz); for(let sk=0;sk<4;sk++){ const si=sideInfo(sk,hl,hw); const n=Math.max(1,Math.floor(si.len/(o.step||3.2))); for(let k=0;k<n;k++){ const t=-si.e+si.len*(k+0.5)/n; for(const yy of o.rows) decal(Wn,f,ang,si,t,y0+yy,o.win,0.05,o.ws||1); } }
+  localCollider(f,ang,-hl,hl,-hw,hw,yb-1,e+4); return {f,hl,hw,e}; }
+school=function(cs,scene,b){ const y0=SCH_LV.top+0.15; b.y0=y0; const T=cs.get('trim',-210,-250), Mt=cs.get('metal',-210,-250), G=cs.get('wall',-210,-250);
+  // old school on the road: cream, pink plinth, hip roof, cornices
+  { const r=SCH.old; const o=schoolFacade(cs,b,[r[0],r[1],r[2]+Math.PI/2,r[4],r[3]],{y0,h:8.6,roof:'hip',pitch:33,wall:lin('#ece4cf'),plinth:lin('#c9a39a'),plH:1.25,roofC:lin('#6e4535'),win:'old4',rows:[1.45,5.0],step:3.4,ws:1.05});
+    const {f,hl,hw}=o; T.box(f,-hl-0.08,hl+0.08,y0+4.2,y0+4.45,-hw-0.08,hw+0.08,lin('#f4efe2')); T.box(f,-hl-0.12,hl+0.12,y0+8.35,y0+8.6,-hw-0.12,hw+0.12,lin('#f4efe2'));
+    const side=sideInfo(2,hl,hw); const dp=wallPoint(f,side,0,0.06); decal(cs.get('win',r[0],r[1]),f,r[2]+Math.PI/2,side,0,y0-0.02,'door_glass',0.08,1.1);
+    // flags on the corner and two wall lanterns
+    { const fp=wallPoint(f,side,side.e-0.6,0.5); const pf=frame(fp[0],fp[2],0,y0+5.6); const fl=[flagTex(),countyFlagTex()]; for(let i=0;i<2;i++){ const a=-0.6-i*0.35; beam(Mt,pf(0,0,0),pf(Math.cos(a)*2.2,1.2,Math.sin(a)*0.3),0.025,lin('#d8d8d4')); const m=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.8),new THREE.MeshStandardMaterial({map:fl[i],side:THREE.DoubleSide,roughness:0.8})); const q=pf(Math.cos(a)*2.0,0.95-i*0.1,Math.sin(a)*0.3); m.position.set(q[0],q[1]-0.4,q[2]); m.rotation.y=Math.PI/2+0.3; scene.add(m); } }
+    for(const t of [-side.e*0.55,side.e*0.55]){ const lp=wallPoint(f,side,t,0.3); const lf=frame(lp[0],lp[2],0,y0+3.2); Mt.box(lf,-0.12,0.12,0,0.4,-0.12,0.12,lin('#2b2b2b')); cs.get('glow',lp[0],lp[2]).box(lf,-0.09,0.09,0.05,0.35,-0.09,0.09,lin('#ffe3a0')); }
+    const sp=wallPoint(f,side,0,0.12); signMesh(scene,signTex(['Osnovna škola Lijepa naša'],{w:1024,h:128,bg:'#f6f1ea',fg:'#2a4a7a',border:null,size:56}),5.6,0.7,sp[0],y0+3.55,sp[2],sideAngle(r[2]+Math.PI/2,side));
+    LANDMARKS.school={x:dp[0]-14,z:dp[2],look:[r[0],r[1]]}; }
+  // white modern wings with low red roofs and long window bands
+  for(const key of ['wing','wing2']){ const r=SCH[key]; const two=key==='wing'; schoolFacade(cs,b,r,{y0,h:two?7.4:3.8,roof:'gable',pitch:14,wall:lin('#f1f0eb'),plinth:lin('#d6d3cc'),roofC:lin('#b2463b'),sof:lin('#f1f0eb'),win:'school',rows:two?[0.9,4.4]:[0.9],step:2.6,ov:0.9}); }
+  // sports hall: salmon walls, grey band with clerestory windows, white panels on the west gable
+  { const r=SCH.hall; const o=schoolFacade(cs,b,r,{y0,h:9.2,roof:'gable',pitch:9,wall:lin('#ebc6ab'),plinth:lin('#d6d3cc'),roofC:lin('#8f4337'),win:'school',rows:[6.6],step:3.0,ov:0.7}); const {f,hl,hw,e}=o;
+    for(const sz of [-1,1]) T.box(f,-hl-0.05,hl+0.05,e-1.9,e,sz*hw-0.06,sz*hw+0.06,lin('#9ea4a7'));
+    for(let k=0;k<5;k++) T.box(f,-hl-0.07,-hl-0.02,y0+0.6+k*1.55,y0+2.0+k*1.55,-hw*0.55,hw*0.55,lin('#f5f5f2')); }
+  // the court: grey asphalt, white lines, handball goals, basketball hoops, red-orange posts with nets, concrete tribune
+  { const [cx,cz,L,W]=SCH.court; const P=[[cx-L/2,cz-W/2],[cx+L/2,cz-W/2],[cx+L/2,cz+W/2],[cx-L/2,cz+W/2]]; paveArea(scene,P,'concrete',{tile:9,roads:true});
+    const LM=new THREE.MeshStandardMaterial({color:0xeeeeea,roughness:0.7,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-8}); const hx=L/2-1, hz=W/2-1;
+    for(const [a,b2] of [[[cx-hx,cz-hz],[cx+hx,cz-hz]],[[cx+hx,cz-hz],[cx+hx,cz+hz]],[[cx+hx,cz+hz],[cx-hx,cz+hz]],[[cx-hx,cz+hz],[cx-hx,cz-hz]],[[cx,cz-hz],[cx,cz+hz]]]) groundLine(scene,LM,a[0],a[1],b2[0],b2[1],0.08);
+    for(const sd of [-1,1]){ let prev=null; for(let k=0;k<=16;k++){ const a=-Math.PI/2+k/16*Math.PI; const p=[cx+sd*(hx-Math.cos(a)*6),cz+Math.sin(a)*6]; if(prev) groundLine(scene,LM,prev[0],prev[1],p[0],p[1],0.08); prev=p; } }
+    { let prev=null; for(let k=0;k<=24;k++){ const a=k/24*TAU; const p=[cx+Math.cos(a)*2.2,cz+Math.sin(a)*2.2]; if(prev) groundLine(scene,LM,prev[0],prev[1],p[0],p[1],0.08); prev=p; } }
+    const y=getHeight(cx,cz); const BL=lin('#2c55a8'), WH=lin('#f2f2ee'), OR=lin('#d4623c');
+    for(const sd of [-1,1]){ const gx=cx+sd*hx; const gf=frame(gx,cz,0,y); for(const zz of [-1.5,1.5]) Mt.box(gf,-0.04,0.04,0,2.0,zz-0.04,zz+0.04,zz>0?BL:WH); Mt.box(gf,-0.04,0.04,1.96,2.04,-1.5,1.5,BL); for(const zz of [-1.5,1.5]) beam(Mt,gf(0,2.0,zz),gf(sd*0.9,0,zz),0.02,WH); addCollider(gx,cz,0,0.4,3.2,y-1,y+2.1);
+      const bf=frame(cx,cz+sd*(hz+0.6),0,y); Mt.box(bf,-0.06,0.06,0,3.3,-0.06,0.06,WH); Mt.box(bf,-0.9,0.9,2.9,3.95,sd*-0.32-0.02,sd*-0.32+0.02,WH); Mt.cyl(frame(cx,cz+sd*(hz+0.2),0,y),0.23,0.23,3.05,3.07,12,OR,1,false); }
+    const netM=new THREE.MeshStandardMaterial({map:netTex(),transparent:true,alphaTest:0.3,side:THREE.DoubleSide,roughness:0.9}); netM.map.wrapS=netM.map.wrapT=THREE.RepeatWrapping;
+    const ex=L/2+0.4, ez=W/2+0.4, H=5.2; const sides=[[[cx-ex,cz-ez],[cx+ex,cz-ez]],[[cx+ex,cz-ez],[cx+ex,cz+ez]],[[cx+ex,cz+ez],[cx-ex,cz+ez]],[[cx-ex,cz+ez],[cx-ex,cz-ez]]];
+    for(const [a,b2] of sides){ const dl=Math.hypot(b2[0]-a[0],b2[1]-a[1]); const an=Math.atan2(b2[1]-a[1],b2[0]-a[0]); const n=Math.ceil(dl/4);
+      for(let k=0;k<=n;k++){ const x=a[0]+(b2[0]-a[0])*k/n, z=a[1]+(b2[1]-a[1])*k/n; Mt.cyl(frame(x,z,0,getHeight(x,z)),0.05,0.05,0,H,8,OR,1,false); }
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(dl,H-0.2),netM.clone()); m.material.map=netM.map.clone(); m.material.map.repeat.set(dl/1.2,(H-0.2)/1.2); m.material.map.needsUpdate=true; m.position.set((a[0]+b2[0])/2,getHeight((a[0]+b2[0])/2,(a[1]+b2[1])/2)+H/2,(a[1]+b2[1])/2); m.rotation.y=-an; scene.add(m);
+      const mid=[(a[0]+b2[0])/2,(a[1]+b2[1])/2]; addCollider(mid[0],mid[1],an,dl,0.15,y-1,y+H); }
+    // tribune: concrete steps along the north side, toward the school
+    { const St=cs.get('curb',cx,cz); for(let k=0;k<4;k++){ const z1=cz-ez-1.2-k*0.8; St.box(frame(cx-6,0,0,0),-9,9,y-0.3,y+0.42*(k+1),z1-0.8,z1,lin('#c9c6be'),0.8); } addFloor(frame(cx-6,0,0,0),0,-9,9,cz-ez-1.2-3.2,cz-ez-1.2,y+0.42); } }
+  // the access road down to the car park: car park on the lower level with grass islands, trees and P signs
+  { const P=[[-156,-197],[-88,-192],[-86,-152],[-154,-156]]; paveArea(scene,P,'asphalt',{tile:4,roads:true}); const K=cs.get('curb',-120,-175), Hd=cs.get('hedge',-120,-175), Wd=cs.get('wood',-120,-175);
+    for(const [ix,iz,il] of [[-138,-176,22],[-108,-174,20]]){ const y=getHeight(ix,iz); const f=frame(ix,iz,0.05,y); K.box(f,-il/2,il/2,-0.2,0.16,-1.4,1.4,lin('#cfccc4'),0.7); Hd.box(f,-il/2+0.15,il/2-0.15,0.1,0.18,-1.25,1.25,lin('#6d8f45'),0.7); localCollider(f,0.05,-il/2,il/2,-1.4,1.4,y-1,y+0.3);
+      for(let t=-il/2+2;t<=il/2-2;t+=6){ const q=f(t,0,0); Wd.cyl(frame(q[0],q[2],0,y),0.1,0.08,0.1,2.2,6,lin('#5a4634'),1,false); const crown=new THREE.IcosahedronGeometry(1.5,1); const pos=crown.attributes.position; for(let i=0;i<pos.count;i+=3){ const Q=[0,1,2].map(k=>[q[0]+pos.getX(i+k),y+3.0+pos.getY(i+k)*0.85,q[2]+pos.getZ(i+k)]); Hd.tri(Q[0],Q[1],Q[2],[0,0],[1,0],[0,1],lin('#4f7d34'),[Q[0][0]-q[0],Q[0][1]-y-3,Q[0][2]-q[2]]); } addCollider(q[0],q[2],0,0.4,0.4,y-1,y+3); } }
+    for(let k=0;k<8;k++){ const x=-150+k*8.2; for(const z of [-190.5,-157.5]){ if((k+(z>-170?1:0))%3===0) continue; EXTRA_PARK.push([x,z,Math.PI/2,'']); } }
+    const ps=signTex(['P'],{w:256,h:256,bg:'#1f5fbf',fg:'#ffffff',border:'#ffffff',bw:14,size:190}); for(const [x,z] of [[-154,-158],[-118,-195],[-160,-188]]){ const y=getHeight(x,z); Mt.cyl(frame(x,z,0,y),0.04,0.04,0,2.6,8,lin('#a8adb0'),1,false); signMesh(scene,ps,0.6,0.6,x,y+2.45,z+0.05,0); signMesh(scene,ps,0.6,0.6,x,y+2.45,z-0.05,Math.PI); }
+    LANDMARKS.heliPad={x:-100,z:-182}; }
+  // kindergarten: white, flat roof with a parapet, wooden window frames, pergola entrance, green mesh fence
+  { const r=SCH.kinder; const [kx,kz,ka,kl,kw]=r; const f=frame(kx,kz,ka); const y=getHeight(kx,kz)+0.12; const hl=kl/2, hw=kw/2; const WH=lin('#f6f6f3');
+    G.box(f,-hl,hl,y-1.2,y+3.6,-hw,hw,WH,1.2); T.box(f,-hl-0.05,hl+0.05,y+3.6,y+3.95,-hw-0.05,hw+0.05,lin('#e9e9e4')); localCollider(f,ka,-hl,hl,-hw,hw,y-1,y+4);
+    const Wn=cs.get('win',kx,kz); for(let sk=0;sk<4;sk++){ const si=sideInfo(sk,hl,hw); const n=Math.max(1,Math.floor(si.len/2.4)); for(let k=0;k<n;k++){ const t=-si.e+si.len*(k+0.5)/n; decal(Wn,f,ka,si,t,y+0.9,'modern',0.05,0.9); } }
+    const Wd=cs.get('wood',kx,kz); for(let t=-3;t<=3;t+=2){ const q=f(hl*0.55+t,0,hw+2.4); Wd.box(frame(q[0],q[2],ka,y),-0.07,0.07,0,2.6,-0.07,0.07,lin('#b98a55')); } Wd.box(f,hl*0.55-3.2,hl*0.55+3.2,y+2.5,y+2.65,hw,hw+2.5,lin('#b98a55'));
+    const fM=lin('#2f6b45'); const fp=[[-hl-3,-hw-3],[hl+3,-hw-3],[hl+3,hw+7],[-hl-3,hw+7]]; for(let i=0;i<4;i++){ const a=f(fp[i][0],0,fp[i][1]), b2=f(fp[(i+1)%4][0],0,fp[(i+1)%4][1]); const dl=Math.hypot(b2[0]-a[0],b2[2]-a[2]); const an=Math.atan2(b2[2]-a[2],b2[0]-a[0]); for(let t=0;t<dl;t+=2.5){ const x=a[0]+(b2[0]-a[0])*t/dl, z=a[2]+(b2[2]-a[2])*t/dl; if(i===2&&Math.abs(t-dl*0.3)<2) continue; const yy=getHeight(x,z); const ff=frame(x,z,an,yy); Mt.box(ff,0,Math.min(2.5,dl-t),0,1.5,-0.02,0.02,fM); addCollider(...(()=>{ const q=ff(Math.min(1.25,(dl-t)/2),0,0); return [q[0],q[2]]; })(),an,Math.min(2.5,dl-t),0.1,yy-1,yy+1.5); } } } };

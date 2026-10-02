@@ -149,15 +149,15 @@ function buildGrass(scene,count,R){
   g.setAttribute('aOff',new THREE.InstancedBufferAttribute(off,3)); g.instanceCount=count;
   const mat=new THREE.MeshStandardMaterial({color:0xffffff,side:THREE.DoubleSide,roughness:0.95,metalness:0});
   const U=VEG.uniforms; const hTex=heightTexture();
-  mat.onBeforeCompile=(sh)=>{ Object.assign(sh.uniforms,{uPlayer:U.uPlayer,uTime:U.uTime,uT:{value:T},uR:{value:R},uH:{value:hTex},uMix:{value:GROUND.mix},uAlb:{value:GROUND.alb},uOrigin:{value:new THREE.Vector2(X0,Z0)},uSize:{value:new THREE.Vector2(GW,GH)},uCell:{value:CELL},uN:{value:new THREE.Vector2(NX,NZ)}});
+  mat.onBeforeCompile=(sh)=>{ Object.assign(sh.uniforms,{uPlayer:U.uPlayer,uTime:U.uTime,uT:{value:T},uR:{value:R},uH:{value:hTex},uMix:{value:GROUND.mix},uAlb:{value:GROUND.alb},uOrigin:{value:new THREE.Vector2(X0,Z0)},uSize:{value:new THREE.Vector2(GW,GH)},uCell:{value:CELL},uN:{value:new THREE.Vector2(NX,NZ)},uCk:{value:(typeof CREEK!=='undefined'&&CREEK.tex)||GROUND.mix},uCkB:{value:(typeof CREEK!=='undefined'&&CREEK.texB)||new THREE.Vector4(0,0,-1,-1)}});
     sh.vertexShader=sh.vertexShader.replace('#include <common>',`#include <common>
-attribute vec3 aOff; attribute float bh; uniform vec3 uPlayer; uniform float uTime,uT,uR,uCell; uniform sampler2D uH,uMix,uAlb; uniform vec2 uOrigin,uSize,uN; varying float vBH; varying vec3 vTint;
+attribute vec3 aOff; attribute float bh; uniform vec3 uPlayer; uniform float uTime,uT,uR,uCell; uniform sampler2D uH,uMix,uAlb,uCk; uniform vec4 uCkB; uniform vec2 uOrigin,uSize,uN; varying float vBH; varying vec3 vTint;
 float hF(ivec2 p){ p=clamp(p,ivec2(0),ivec2(uN)-1); return texelFetch(uH,p,0).r; }
 float terrainH(vec2 w){ vec2 f=(w-uOrigin)/uCell; ivec2 i=ivec2(floor(f)); vec2 t=f-floor(f); float a=hF(i), b=hF(i+ivec2(1,0)), c=hF(i+ivec2(0,1)), d=hF(i+ivec2(1,1)); return (t.x+t.y<=1.0)? a+(b-a)*t.x+(c-a)*t.y : d+(c-d)*(1.0-t.x)+(b-d)*(1.0-t.y); }`)
       .replace('#include <begin_vertex>',`
 vec2 base=uPlayer.xz; vec2 wp=base+mod(aOff.xy-base,uT)-uT*0.5;
 float dist=distance(wp,base); float fade=1.0-smoothstep(uR*0.55,uR,dist);
-vec2 suv=(wp-uOrigin)/uSize; vec3 mx=texture(uMix,suv).rgb; float dens=mx.r*(1.0-mx.g*1.6)*(1.0-mx.b*1.5);
+vec2 suv=(wp-uOrigin)/uSize; vec3 mx=texture(uMix,suv).rgb; float dens=mx.r*(1.0-mx.g*1.6)*(1.0-mx.b*1.5); { vec2 cku=(wp-uCkB.xy)/uCkB.zw; if(uCkB.z>0.0&&cku.x>0.0&&cku.x<1.0&&cku.y>0.0&&cku.y<1.0&&texture(uCk,cku).g>0.3) dens=-1.0; }
 float hs=(0.16+0.3*fract(aOff.z*13.7))*(0.5+0.6*mx.r)*fade;
 float a=aOff.z*6.2831*9.0; float ca=cos(a), sa=sin(a);
 vec3 transformed=vec3(position.x*ca-position.z*sa, position.y*hs, position.x*sa+position.z*ca);

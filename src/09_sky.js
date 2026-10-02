@@ -62,7 +62,7 @@ function updateSun(p){ const d=SKY.dir; const sun=SKY.sun; // snap to shadow tex
   sun.target.position.copy(base); sun.position.copy(base).addScaledVector(d,400); sun.target.updateMatrixWorld(); }
 function buildWater(scene){
   const gb=new GB(); const C=new THREE.Color(1,1,1);
-  for(const w of WATER){ const P=smoothCorners(w.P,4,2); const S=resample(P,2); if(S.length<2) continue; const T=tangents(S); const wd=w.n&&/Horvatska/.test(w.n)?2.4:1.5;
+  for(const w of WATER){ if(/Pristav/.test(w.n||'')) continue; const P=smoothCorners(w.P,4,2); const S=resample(P,2); if(S.length<2) continue; const T=tangents(S); const wd=w.n&&/Horvatska/.test(w.n)?2.4:1.5;
     let prevY=null; const rows=S.map((p,i)=>{ let y=Math.min(getHeight(p[0],p[1]),getHeight(p[0]-T[i][1]*wd/2,p[1]+T[i][0]*wd/2),getHeight(p[0]+T[i][1]*wd/2,p[1]-T[i][0]*wd/2))+0.12; if(prevY!==null) y=Math.min(y,prevY+0.05); prevY=y; return [[p[0]-T[i][1]*wd/2,y,p[1]+T[i][0]*wd/2],[p[0]+T[i][1]*wd/2,y,p[1]-T[i][0]*wd/2],p[2]]; });
     for(let i=0;i<rows.length-1;i++){ const a=rows[i], b=rows[i+1]; gb.quad(a[0],a[1],b[1],b[0],[0,a[2]/6],[1,a[2]/6],[1,b[2]/6],[0,b[2]/6],C,[0,1,0]); } }
   const mat=new THREE.MeshStandardMaterial({color:0x3d4a38,roughness:0.08,metalness:0.0,normalMap:TEX.waterN,normalScale:new THREE.Vector2(0.35,0.35),transparent:true,opacity:0.92});

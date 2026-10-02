@@ -71,11 +71,11 @@ function buildProps(scene,quality){
   buildSignposts(scene,cs);
   /* ---- street lamps in the centre ---- */
   for(const pts of SIDEWALKS){ for(let k=6;k<pts.length;k+=20){ const p=pts[k]; const x=p.ot[0]-p.n[0]*0.3, z=p.ot[2]-p.n[1]*0.3; if(BHASH.hit(x,z,1)) continue; const y=p.ot[1]; const ang=Math.atan2(-p.n[0],p.n[1]); const f=frame(x,z,Math.atan2(p.n[1],p.n[0]),y);
-      const G=T('metal',x,z); const lc=lin('#6c7176'); G.cyl(f,0.08,0.06,0,7.2,6,lc,1,false); G.box(f,-1.4,0.05,7.1,7.2,-0.04,0.04,lc); G.box(f,-1.9,-1.2,6.98,7.14,-0.16,0.16,lin('#4a4e52')); addCollider(x,z,0,0.3,0.3,y-1,y+7); } }
+      const G=T('metal',x,z); const lc=lin('#6c7176'); G.cyl(f,0.08,0.06,0,7.2,6,lc,1,false); G.box(f,-1.4,0.05,7.1,7.2,-0.04,0.04,lc); G.box(f,-1.9,-1.2,6.98,7.14,-0.16,0.16,lin('#4a4e52')); addCollider(x,z,0,0.3,0.3,y-1,y+7); { const hp=f(-1.55,6.95,0); LAMPS.push({x:hp[0],y:hp[1],z:hp[2],a:Math.atan2(p.n[1],p.n[0])}); } } }
   /* ---- fences & hedges along house lots ---- */
   const fenceMats={bars:fenceTex('bars'),picket:fenceTex('picket'),mesh:fenceTex('mesh')};
   const fg={bars:new GB(),picket:new GB(),mesh:new GB()};
-  for(const b of BLD){ if(b.k!=='house' || !b.dw || RNG()>0.5) continue; const n=nearestRoad(b.dw[0],b.dw[1],6); if(!n) continue; const s=n.s; const [cx,cz]=b.rect; const toH=[cx-s.x,cz-s.z]; const nx=-s.tz, nz=s.tx; const side=(toH[0]*nx+toH[1]*nz)>0?1:-1;
+  for(const b of BLD){ if(b.k!=='house' || !b.dw || b.st==='photo' || RNG()>0.5) continue; const n=nearestRoad(b.dw[0],b.dw[1],6); if(!n) continue; const s=n.s; const [cx,cz]=b.rect; const toH=[cx-s.x,cz-s.z]; const nx=-s.tz, nz=s.tx; const side=(toH[0]*nx+toH[1]*nz)>0?1:-1;
     const off=s.w/2+(s.t==='residential'||s.t==='service'?0.9:1.6); const len=Math.max(b.rect[3],b.rect[4])+rnd(4,10); const kind=wpick([['hedge',30],['bars',30],['picket',18],['mesh',22]]);
     const gap0=-1.6+rnd(-2,2), gap1=gap0+3.2;
     const ox=s.x+nx*side*off, oz=s.z+nz*side*off; // projected base
