@@ -12,9 +12,9 @@ addEventListener('keydown',e=>{ if(e.target&&e.target.tagName==='INPUT') return;
 const _tv=new THREE.Vector3(), _tw=new THREE.Vector3(), _tq=new THREE.Quaternion(), _tq2=new THREE.Quaternion(), _tq3=new THREE.Quaternion();
 function tpsForward(out){ const P=PLAYER, cp=Math.cos(P.pitch); return out.set(-Math.sin(P.yaw)*cp,Math.sin(P.pitch),-Math.cos(P.yaw)*cp); }
 // is the straight line a→b blocked by terrain or a building/wall collider?  returns the free fraction 0..1
-function tpsFree(a,b){ const L=a.distanceTo(b); const n=Math.max(2,Math.ceil(L/0.18)); for(let i=1;i<=n;i++){ const t=i/n; const x=a.x+(b.x-a.x)*t, y=a.y+(b.y-a.y)*t, z=a.z+(b.z-a.z)*t;
+function tpsFree(a,b){ const L=a.distanceTo(b); const n=Math.max(2,Math.ceil(L/0.18)); for(let i=1;i<=n;i++){ const t=i/n; const x=a.x+(b.x-a.x)*t, y=a.y+(b.y-a.y)*t, z=a.z+(b.z-a.z)*t; if(t*L<0.4) continue; // standing next to a wall must not collapse the camera
     if(!INSIDE&&y<getHeight(x,z)+0.25) return Math.max(0,(i-1)/n);
-    for(const o of BHASH.near(x,z)){ if(y>o.y1+0.1||y<o.y0-0.1) continue; if(!INSIDE&&o.y1-getHeight(o.cx,o.cz)<1.4) continue; /* look over fences and low walls */ const dx=x-o.cx, dz=z-o.cz; const lx=dx*o.c+dz*o.s, lz=-dx*o.s+dz*o.c; if(Math.abs(lx)<o.hl+0.14&&Math.abs(lz)<o.hw+0.14) return Math.max(0,(i-1)/n); } }
+    for(const o of BHASH.near(x,z)){ if(y>o.y1+0.1||y<o.y0-0.1) continue; if(!INSIDE&&o.y1-getHeight(o.cx,o.cz)<1.4) continue; /* look over fences and low walls */ const dx=x-o.cx, dz=z-o.cz; const lx=dx*o.c+dz*o.s, lz=-dx*o.s+dz*o.c; if(Math.abs(lx)<o.hl+0.32&&Math.abs(lz)<o.hw+0.32) return Math.max(0,(i-1)/n); } }
   return 1; }
 const _fpApplyCamera=applyCamera;
 applyCamera=function(cam){ if(!tpsActive()){ _fpApplyCamera(cam); return; }
@@ -23,11 +23,11 @@ applyCamera=function(cam){ if(!tpsActive()){ _fpApplyCamera(cam); return; }
     const f=TPS.face, fx=-Math.sin(f), fz=-Math.cos(f); const t=GAME.time*0.25; const ox=fx*Math.cos(Math.sin(t)*0.5)-fz*Math.sin(Math.sin(t)*0.5), oz=fz*Math.cos(Math.sin(t)*0.5)+fx*Math.sin(Math.sin(t)*0.5);
     const piv=new THREE.Vector3(P.pos.x,P.pos.y+1.05,P.pos.z); const want=new THREE.Vector3(P.pos.x+ox*2.1-fz*0.5,P.pos.y+1.35,P.pos.z+oz*2.1+fx*0.5); const fr=tpsFree(piv,want); cam.position.lerpVectors(piv,want,Math.max(0.45,fr*0.95)); cam.lookAt(P.pos.x-fz*0.35,P.pos.y+1.0,P.pos.z+fx*0.35); return; }
   const pitch=clamp(P.pitch,-1.15,0.95);
-  const indoor=!!INSIDE||floorAt(P.pos.x,P.pos.z)>getHeight(P.pos.x,P.pos.z)+0.4;
-  let dist=lerp(lerp(3.7,2.8,a),1.35,k), side=lerp(lerp(0.32,0.55,a),0.62,k), up=lerp(0.28,0.12,k);
+  const indoor=!!INSIDE||floorAt(P.pos.x,P.pos.z)>getHeight(P.pos.x,P.pos.z)+0.4; TPS.indoor=indoor;
+  let dist=lerp(lerp(2.55,2.05,a),1.2,k), side=lerp(lerp(0.36,0.52,a),0.6,k), up=lerp(0.16,0.1,k);
   if(indoor){ dist=Math.min(dist,lerp(2.2,1.25,k)); side=Math.min(side,0.45); }
   if(dead){ dist=4.2; side=0; up=0.9; }
-  const piv=_tv.set(P.pos.x,P.pos.y+(dead?0.4:1.58),P.pos.z);
+  const piv=_tv.set(P.pos.x,(TPS.ys!==undefined&&P.ground?TPS.ys:P.pos.y)+(dead?0.4:1.6),P.pos.z);
   const fw=tpsForward(_tw).clone(), rt=new THREE.Vector3(Math.cos(P.yaw),0,-Math.sin(P.yaw));
   const sidePt=piv.clone().addScaledVector(rt,side).add(new THREE.Vector3(0,up,0)); const sideOk=tpsFree(piv,sidePt); sidePt.lerpVectors(piv,sidePt,sideOk);
   const want=sidePt.clone().addScaledVector(fw,-dist); const f=tpsFree(sidePt,want); const d=Math.max(0.35,dist*f-0.15);
@@ -49,7 +49,9 @@ function tpsTick(dt){ TPS.dt=dt; const C=COMBAT, act=tpsActive();
   const hs=Math.hypot(P.vel.x,P.vel.z); if(C.dead){ P.yaw+=dt*0.22; P.pitch+=(-0.5-P.pitch)*Math.min(1,dt*1.5); }
   let want=TPS.face; if(armed||C.ads) want=P.yaw; else if(hs>0.6) want=faceYaw(P.vel.x,P.vel.z);
   TPS.face=angLerp(TPS.face,want,Math.min(1,dt*(armed?16:10)));
-  A.group.position.set(P.pos.x,P.pos.y,P.pos.z); A.group.rotation.set(C.dead?-Math.PI/2*0.98:0,TPS.face,0);
+  // steps and kerbs: ease the body up instead of popping (falling stays instant)
+  if(TPS.ys===undefined||Math.abs(P.pos.y-TPS.ys)>1.2||!P.ground) TPS.ys=P.pos.y; else TPS.ys+=(P.pos.y-TPS.ys)*Math.min(1,dt*(P.pos.y>TPS.ys?11:20));
+  A.group.position.set(P.pos.x,TPS.ys,P.pos.z); A.group.rotation.set(C.dead?-Math.PI/2*0.98:0,TPS.face,0);
   if(C.dead) A.group.position.y+=0.2; A.dead=C.dead;
   A.forceClip=C.drink?'drink':null; A.spdOv=P.ground?hs:Math.min(hs,2);
   // procedural fallback body: swing legs/arms from speed
@@ -106,8 +108,16 @@ function holdGun(A,wi,dir,gun,recoil){ const H=GUN_HOLD[wi]; if(!H||!gun) return
     const g=A.group; base=new THREE.Vector3(0,1.38,0).applyMatrix4(g.matrixWorld); gun.position.copy(base).addScaledVector(rt,H.shoulder?0.15:0.2).addScaledVector(dir,H.shoulder?0.1:0.42).addScaledVector(upv,H.shoulder?0.18:0); }
   gun.lookAt(_ikT.copy(gun.position).sub(dir)); gun.visible=true;
   return gun.position.clone().addScaledVector(dir,gun.userData.len*0.5+0.03); }
+/* foot IK: drop the pelvis to the lower foot's ground and lift the other foot onto its own ground (slopes, kerbs, steps) */
+const _fl=new THREE.Vector3(), _fr=new THREE.Vector3();
+function footIK(A){ const R=A.real; if(!R||!R.m.visible) return; const m=R.m, g=k=>m.getObjectByName('Bip01_'+k); if(!R.legs) R.legs={lt:g('L_Thigh'),lc:g('L_Calf'),lf:g('L_Foot'),rt:g('R_Thigh'),rc:g('R_Calf'),rf:g('R_Foot')}; const L=R.legs; if(!L.lf||!L.rf) return;
+  const base=A.group.position.y; m.updateMatrixWorld(true); L.lf.getWorldPosition(_fl); L.rf.getWorldPosition(_fr);
+  const dl=groundAt(_fl.x,_fl.z)-base, dr=groundAt(_fr.x,_fr.z)-base; const drop=clamp(Math.min(dl,dr,0),-0.4,0); R.ikDrop=(R.ikDrop||0)+(drop-(R.ikDrop||0))*0.35;
+  m.position.y+=R.ikDrop; m.updateMatrixWorld(true);
+  const fw=new THREE.Vector3(-Math.sin(TPS.face),0,-Math.cos(TPS.face));
+  for(const [t,c,f,d] of [[L.lt,L.lc,L.lf,dl],[L.rt,L.rc,L.rf,dr]]){ const lift=clamp(d-R.ikDrop,0,0.45); if(lift<0.01) continue; const fp=f.getWorldPosition(new THREE.Vector3()); const tp=t.getWorldPosition(new THREE.Vector3()); armIK(t,c,f,fp.add(new THREE.Vector3(0,lift,0)),tp.addScaledVector(fw,1.2)); } }
 function tpsLate(){ const act=tpsActive(); const C=COMBAT; for(const k in TPS.guns) TPS.guns[k].visible=false; TPS.hasMuzzle=false; if(!act||!ME_AV||!ME_AV.group.visible) return;
-  const A=ME_AV, R=A.real;
+  const A=ME_AV, R=A.real; if(PLAYER.ground&&!C.dead) footIK(A);
   if(R&&R.cur){ const P=PLAYER; const fx=-Math.sin(TPS.face), fz=-Math.cos(TPS.face); const back=(P.vel.x*fx+P.vel.z*fz)<-0.4; R.cur.timeScale=back?-Math.abs(R.cur.timeScale):Math.abs(R.cur.timeScale); }
   if(!C.armed||C.dead||C.drink||TPS.armK<0.3) return;
   const gun=tpsGun(C.wi); if(!gun) return; A.group.updateMatrixWorld(true);

@@ -82,14 +82,20 @@ function updateDriving(dt){ const v=PLAYER.driving; if(!v) return; const s=v.st;
 }
 function carCamera(cam,dt){ const v=PLAYER.driving||PLAYER.riding; const s=v.st;
   if(!CARCAM.init||CARCAM.sy===undefined) CARCAM.sy=s.yaw; let dyw=s.yaw-CARCAM.sy; while(dyw>Math.PI) dyw-=TAU; while(dyw<-Math.PI) dyw+=TAU; CARCAM.sy+=dyw*(1-Math.exp(-dt*3.2));
-  if(!v.interior&&!v.formula&&!v.bike&&!v.tractor) buildCockpit(v); for(const o of DRIVE){ if(o.interior) o.interior.visible=(o===v&&CARCAM.first); if(o.exterior){ const hide=(o===v&&CARCAM.first); for(const m of o.exterior) if(m!==o.interior) m.visible=!hide; } } if(v.wheelG) v.wheelG.rotation.x=-s.steer*4.5; if(v.speedNeedle){ const kmh=Math.abs(s.v||0)*3.6; v.speedNeedle.rotation.x=-2.36+Math.min(1,kmh/220)*4.71; v.rpmNeedle.rotation.x=-2.36+Math.min(1,0.12+(kmh%40)/40*0.5+kmh/400)*4.71; }
+  // first person = hood camera (the old box cockpit looked dark and blocky); the car body stays visible
+  const hood=CARCAM.first&&!v.bike&&!v.formula&&!v.truck&&!v.tractor;
+  if(!hood&&CARCAM.first&&!v.interior&&!v.formula&&!v.bike&&!v.tractor) buildCockpit(v); for(const o of DRIVE){ if(o.interior) o.interior.visible=(o===v&&CARCAM.first&&!hood); if(o.exterior){ const hide=(o===v&&CARCAM.first&&!hood); for(const m of o.exterior) if(m!==o.interior) m.visible=!hide; } }
+  if(hood){ const cfx=-Math.sin(s.yaw), cfz=-Math.cos(s.yaw); const fo=(v.halfL||2.2)*0.32, eh=(v.roofY||1.45)*0.86+0.05;
+    cam.position.set(s.x+cfx*fo, s.y+eh, s.z+cfz*fo); cam.rotation.set(-0.05+s.pitch*0.85+CARCAM.pitchFP, s.yaw+CARCAM.orbit, -s.roll*0.5, 'YXZ'); const f=70+Math.min(12,Math.abs(s.v||0)*0.35); if(Math.abs(cam.fov-f)>0.3){ cam.fov=f; cam.updateProjectionMatrix(); } CARCAM.init=true; if(CARCAM.t>0.7) CARCAM.pitchFP*=Math.exp(-dt*3); if(ME_AV) ME_AV.group.visible=false; return; } if(v.wheelG) v.wheelG.rotation.x=-s.steer*4.5; if(v.speedNeedle){ const kmh=Math.abs(s.v||0)*3.6; v.speedNeedle.rotation.x=-2.36+Math.min(1,kmh/220)*4.71; v.rpmNeedle.rotation.x=-2.36+Math.min(1,0.12+(kmh%40)/40*0.5+kmh/400)*4.71; }
   if(CARCAM.first){ const cfx=-Math.sin(s.yaw), cfz=-Math.cos(s.yaw), rx=Math.cos(s.yaw), rz=-Math.sin(s.yaw); const SS=(v.formula||v.bike)?[[0.05,0]]:v.truck?SEATS_TRUCK:SEATS_CAR; const sk=Math.min(SS.length-1,mySeat(v)); const fo=SS[sk][0]-(v.truck?0.03:0.06), side=SS[sk][1]; const eh=v.eyeH||(v.bike?1.66:v.formula?0.86:v.truck?2.4:1.24);
     cam.position.set(s.x+cfx*fo+rx*side, s.y+eh, s.z+cfz*fo+rz*side); cam.rotation.set(-0.06+s.pitch*0.85+CARCAM.pitchFP, s.yaw+CARCAM.orbit, -s.roll*0.6, 'YXZ'); if(cam.fov!==82){ cam.fov=82; cam.updateProjectionMatrix(); } CARCAM.init=true; if(CARCAM.t>0.7) CARCAM.pitchFP*=Math.exp(-dt*3); return; }
-  if(cam.fov!==72){ cam.fov=72; cam.updateProjectionMatrix(); }
+  { const f=62+Math.min(14,Math.abs(s.v||0)*0.4); if(Math.abs(cam.fov-f)>0.3){ cam.fov=f; cam.updateProjectionMatrix(); } }
   const yaw=CARCAM.sy+CARCAM.orbit; const fx=-Math.sin(yaw), fz=-Math.cos(yaw);
-  const back=v.truck?11:6.4, up=v.truck?4.2:2.35; const tx=s.x-fx*back, tz=s.z-fz*back; let ty=s.y+up+CARCAM.pitch*back; ty=Math.max(ty,getHeight(tx,tz)+0.7);
-  const k=1-Math.exp(-dt*9); if(!CARCAM.init||cam.position.distanceTo(new THREE.Vector3(tx,ty,tz))>40){ cam.position.set(tx,ty,tz); CARCAM.init=true; } else { cam.position.x+=(tx-cam.position.x)*k; cam.position.y+=(ty-cam.position.y)*k; cam.position.z+=(tz-cam.position.z)*k; }
-  cam.lookAt(s.x,s.y+1.25,s.z); }
+  const big=v.truck?2:1, back=v.truck?11:v.bike?3.6:5.9+Math.min(1.2,Math.abs(s.v||0)*0.04), up=v.truck?4.2:v.bike?1.9:1.95; let tx=s.x-fx*back, tz=s.z-fz*back; let ty=s.y+up+CARCAM.pitch*back; ty=Math.max(ty,getHeight(tx,tz)+0.7);
+  // don't let walls and houses get between the camera and the car
+  if(typeof tpsFree==='function'){ const a=new THREE.Vector3(s.x,s.y+1.4*big,s.z), b=new THREE.Vector3(tx,ty,tz); const fr=tpsFree(a,b); if(fr<1){ const q=a.lerp(b,Math.max(0.25,fr-0.05)); tx=q.x; ty=q.y; tz=q.z; } }
+  const k=1-Math.exp(-dt*7); if(!CARCAM.init||cam.position.distanceTo(new THREE.Vector3(tx,ty,tz))>40){ cam.position.set(tx,ty,tz); CARCAM.init=true; } else { cam.position.x+=(tx-cam.position.x)*k; cam.position.y+=(ty-cam.position.y)*k; cam.position.z+=(tz-cam.position.z)*k; }
+  const la=Math.min(4,Math.abs(s.v||0)*0.15); cam.lookAt(s.x-Math.sin(s.yaw)*la,s.y+1.2*big,s.z-Math.cos(s.yaw)*la); }
 function clusterTex(){ const c=cvs(512,200), g=c.getContext('2d'); g.fillStyle='#0b0c0e'; g.fillRect(0,0,512,200);
   const dial=(cx,max,step,lab)=>{ g.strokeStyle='#d9dde2'; g.lineWidth=3; g.beginPath(); g.arc(cx,100,82,Math.PI*0.75,Math.PI*2.25); g.stroke(); g.fillStyle='#e8ebee'; g.font='600 15px Manrope, Arial'; g.textAlign='center';
     for(let k=0;k<=max;k+=step){ const a=Math.PI*0.75+(k/max)*Math.PI*1.5; g.fillRect(0,0,0,0); g.beginPath(); g.moveTo(cx+Math.cos(a)*82,100+Math.sin(a)*82); g.lineTo(cx+Math.cos(a)*70,100+Math.sin(a)*70); g.stroke(); g.fillText(String(k),cx+Math.cos(a)*56,106+Math.sin(a)*56); }

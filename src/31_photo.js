@@ -81,13 +81,16 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
     for(const [x,z] of [[2.2,3.5],[2.2,-3.5],[-2.2,3.5]]){ Wd.box(tf,x-0.08,x+0.08,ty,th,z-0.08,z+0.08,lin('#5b3524')); }
     for(const [a,c2,z0,z1] of [[-2.3,2.3,3.45,3.55],[2.15,2.25,-3.6,3.6]]) Hh.slats.box(tf,a,c2,th-0.65,th-0.05,z0,z1,lin('#7a4a30'));
     emitRoof(cs,tf,ang,2.6,3.9,th,'hip',24,0.35,0.35,lin('#cc6c3e'),lin('#4e2d1f'));
-    Wd.box(tf,-1.2,0.6,ty,ty+0.75,-1.2,0.6,lin('#7a5032')); localCollider(tf,ang,-1.2,0.6,-1.2,0.6,ty-1,ty+0.8); }
+    }
   // flowers under the window, potted plants by the steps
   for(let k=0;k<7;k++){ const q=mF.P(6.0+k*0.09,y0+1.0,-0.22); lathe(Hd,frame(q[0],q[2],ang,q[1]),[[0.06,0],[0.05,0.1],[0,0.12]],6,lin(k%2?'#d8344a':'#3f7a33')); }
-  for(const s of [6.3,8.5]){ const q=mF.P(s,0,-0.9); lathe(Cl,frame(q[0],q[2],ang,y0+0.18),[[0.12,0],[0.17,0.3],[0,0.3]],12,lin('#8a5a3a')); }
-  // the low outbuilding below the balcony: red-tiled gable roof (photo 1)
-  { const o=BLD.find(q=>q.rect&&Math.hypot(q.rect[0]+437,q.rect[1]+131)<4); if(o){ o.st='photo'; const [ox,oz,oa,oL,oW]=o.rect; const of=frame(ox,oz,oa); const oy=(o.hmin+o.hmax)/2+0.05, ob=o.hmin-0.4, oe=oy+2.7;
-      emitWalls(cs,of,oa,oL/2,oW/2,ob,oe,'gable',24,lin('#ece5d6'),'wall'); emitPlinth(cs,of,oa,oL/2,oW/2,ob,oy+0.3,lin('#9a948a')); emitRoof(cs,of,oa,oL/2,oW/2,oe,'gable',24,0.45,0.4,lin('#cc6c3e'),lin('#e0dcd2')); o.top=oe; } }
+  // the yard (photo 1 / 4): paved forecourt down to the lane, and a single garage with a red-tiled roof below the balcony
+  { const o=BLD.find(q=>q.rect&&Math.hypot(q.rect[0]+437,q.rect[1]+131)<4); if(o){ o.st='photo'; const [ox,oz,oa]=o.rect; const of=frame(ox,oz,oa); const oy=getHeight(ox,oz)+0.06;
+      const Pv=cs.get('floorT',ox,oz); floorPoly(Pv,F,[[-hl-1.5,hw+0.2],[hl+4.6,hw+0.2],[hl+4.6,hw+9.5],[-hl-1.5,hw+9.5]],Math.max(y0-0.12,getHeight(...(()=>{ const p=F(0,0,hw+5); return [p[0],p[2]]; })())+0.05),lin('#ebe5d8'),0.6);
+      const gL=6.2, gW=3.6, ge=oy+2.55; const gf=frame(ox,oz,oa); emitWalls(cs,gf,oa,gL/2,gW/2,oy-0.5,ge,'gable',26,lin('#ece5d6'),'wall'); emitPlinth(cs,gf,oa,gL/2,gW/2,oy-0.5,oy+0.25,lin('#9a948a'));
+      emitRoof(cs,gf,oa,gL/2,gW/2,ge,'gable',26,0.4,0.35,lin('#cc6c3e'),lin('#e0dcd2'));
+      g('trim').box(gf,gL/2+0.01,gL/2+0.05,oy,oy+2.2,-1.35,1.35,lin('#f1f0ec')); for(let k=0;k<6;k++) g('trim').box(gf,gL/2+0.05,gL/2+0.06,oy+0.15+k*0.36,oy+0.18+k*0.36,-1.3,1.3,lin('#cfcfcf'));
+      addCollider(ox,oz,oa,gL,gW,oy-2,ge+2); o.top=ge; } }
   PHOTO.door=(()=>{ const p=F(-hl+7.4,0,hw+1.9); return [p[0],p[2]]; })();
   photoYard(cs,scene,F,ang,y0); }
 // 4) the yard and the lane (photos 1, 5, 6): bins, basketball hoop on a vine-covered lamp post, asters, lattice fence

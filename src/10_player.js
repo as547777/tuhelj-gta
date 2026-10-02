@@ -38,7 +38,7 @@ function updatePlayer(dt){
     const fw=[-sy*cp, spp, -cy*cp], rt=[cy,0,-sy]; const tv=new THREE.Vector3((fw[0]*-fz+rt[0]*fx)*sp,(fw[1]*-fz+up*0.7)*sp,(fw[2]*-fz+rt[2]*fx)*sp);
     P.vel.lerp(tv,1-Math.exp(-dt*5)); P.pos.addScaledVector(P.vel,dt); const g=getHeight(P.pos.x,P.pos.z); if(P.pos.y<g+0.3) P.pos.y=g+0.3; if(P.pos.y>g+700) P.pos.y=g+700; }
   else {
-    const aimWalk=COMBAT.ads&&COMBAT.armed; const sp=aimWalk?1.9:run?6.9:3.8; const acc=P.ground?9:2.5; const tx=wx*sp, tz=wz*sp;
+    const aimWalk=COMBAT.ads&&COMBAT.armed; const sp=aimWalk?1.6:run?6.4:3.6; const acc=P.ground?9:2.5; const tx=wx*sp, tz=wz*sp;
     P.vel.x+= (tx-P.vel.x)*(1-Math.exp(-dt*acc)); P.vel.z+=(tz-P.vel.z)*(1-Math.exp(-dt*acc));
     P.vel.y-=22*dt; if(P.ground && (KEYS.Space||TOUCH.jump) && !COMBAT.dead){ P.vel.y=6.0; P.ground=false; } TOUCH.jump=false;
     const ox=P.pos.x, oz=P.pos.z; P.pos.x+=P.vel.x*dt; P.pos.z+=P.vel.z*dt; P.pos.y+=P.vel.y*dt;

@@ -15,7 +15,11 @@ function realInit(){ if(REAL.started||typeof SOLDIER_B64==='undefined'||!THREE.G
     new THREE.GLTFLoader().parse(buf.buffer,'',(g)=>{ REAL.gltf=g; g.scene.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } }); REAL.ready=true; },(e)=>{ console.warn('glTF',e); }); }catch(e){ console.warn('real',e); } }
 function rbInit(){ if(REAL.rbStarted||typeof loadModelPack!=='function') return; REAL.rbStarted=true;
   Promise.all([loadModelPack('anims'),loadModelPack(peoplePack())]).then(([AN,PE])=>{
-    for(const g of ['m','f']){ const G=AN&&AN['anim_'+g]; if(!G) continue; for(const c of G.animations){ c.tracks=c.tracks.filter(t=>!/Footsteps|MotionExtraction/.test(t.name)); REAL.clips[g][c.name]=c; const pt=c.tracks.find(t=>t.name==='Bip01.position'); REAL.pel[g][c.name]=pt?pt.values[1]*0.01:0.9; } }
+    for(const g of ['m','f']){ const G=AN&&AN['anim_'+g]; if(!G) continue; REAL.spd=REAL.spd||{m:{},f:{}}; for(const c of G.animations){ c.tracks=c.tracks.filter(t=>!/Footsteps|MotionExtraction/.test(t.name)); REAL.clips[g][c.name]=c; const pt=c.tracks.find(t=>t.name==='Bip01.position'); REAL.pel[g][c.name]=pt?pt.values[1]*0.01:0.9;
+        // mocap walk/run cycles carry root motion (the pelvis travels ~1-2 m forward, then snaps back on loop → the character
+        // "goes forward and gets pulled back"). Remove the drift and remember the real stride speed to drive the playback rate.
+        if(pt&&pt.values.length>=6){ const v=pt.values, tm=pt.times, n=tm.length, dur=tm[n-1]-tm[0]||1; const dx=v[3*n-3]-v[0], dz=v[3*n-1]-v[2];
+          if(Math.hypot(dx,dz)>20){ for(let i=0;i<n;i++){ const k=(tm[i]-tm[0])/dur; v[3*i]-=dx*k; v[3*i+2]-=dz*k; } REAL.spd[g][c.name]=Math.hypot(dx,dz)*0.01/dur; } } } }
     for(const k of Object.keys(PE||{})){ const G=PE[k]; G.scene.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=false; if(o.material) o.material.envMapIntensity=0.55; } }); REAL.rb[k]=G; }
     REAL.rbReady=Object.keys(REAL.rb).length>0&&Object.keys(REAL.clips.m).length>0;
   }).catch(e=>console.warn('ljudi:',e&&e.message)); }
@@ -40,21 +44,23 @@ function rbPlay(R,name,ts){ let a=R.act[name]; if(!a&&RB_FALL[name]) a=R.act[RB_
 function seatedFlag(A){ A.seatT=GAME.time; }
 /* who should look how: players choose a skin (SKINS), villagers get a Rocketbox avatar by name */
 function wantedKey(A,kind,n){ if(kind==='me'){ if(!OW.skinSet&&!(OW.skin|0)){ const nm=String(NET.name||'Igrač'); const L=rbFemale({},nm)?[5,6]:[2,3,4]; OW.skin=L[hashN(nm)%L.length]; } return (SKINS[OW.skin|0]||{}).k||null; } if(kind==='remote') return (SKINS[A._sk|0]||{}).k||null; if(OW.realPeople===false||A.noReal) return null; return REAL.rbReady?rbKeyFor(A,n):null; }
-function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady) return;
+function waitingPeople(){ return OW.realPeople!==false&&!MODELS.failed[peoplePack()]&&!MODELS.failed.anims&&!REAL.rbReady&&GAME.time<90; }
+function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady){ if(waitingPeople()){ const hide=A=>{ if(A&&A.group&&A!==ME_AV) showProc(A,false); }; for(const N of NPCS) hide(N.A); for(const V of LIFE.villagers) hide(V.A); for(const Q of GTA.peds) hide(Q.A); for(const A of EXTRA_PEOPLE) hide(A); for(const A of INT_PEOPLE) hide(A); } return; }
   const cand=[]; const push=(A,kind,n)=>{ if(A&&A.group) cand.push({A,kind,n}); };
   for(const R of NET.remotes.values()) if(R.av){ R.av._sk=R.sk|0; push(R.av,'remote',R.name); } if(ME_AV) push(ME_AV,'me',NET.name);
   for(const N of NPCS) push(N.A,'npc',N.d.n); for(const V of LIFE.villagers) push(V.A,'npc',V.n); if(typeof INT_PEOPLE!=='undefined') for(const A of INT_PEOPLE) push(A,'npc',A.name); if(typeof SHOPIN!=='undefined'&&SHOPIN.cashier&&!(typeof INT_PEOPLE!=='undefined'&&INT_PEOPLE.includes(SHOPIN.cashier))) push(SHOPIN.cashier,'npc',SHOPIN.cashier.name); for(const Q of GTA.peds) push(Q.A,'npc',Q.A.name); for(const A of EXTRA_PEOPLE) push(A,'npc',A.name);
   if(typeof PK3!=='undefined'&&PK3&&PK3.npc) for(const [n,A] of PK3.npc){ A.pk=true; push(A,'npc',n); }
-  const cam=GAME.camera.position; const MAXR=GAME.touch?10:26, RMAX=GAME.touch?60:105;
+  const cam=GAME.camera.position; const MAXR=GAME.touch?12:40, RMAX=GAME.touch?70:140;
   const FR=REAL.fr||(REAL.fr=new THREE.Frustum()), PM=REAL.pm||(REAL.pm=new THREE.Matrix4()), SPH=REAL.sph||(REAL.sph=new THREE.Sphere(new THREE.Vector3(),1.5)); GAME.camera.updateMatrixWorld(); PM.multiplyMatrices(GAME.camera.projectionMatrix,GAME.camera.matrixWorldInverse); FR.setFromProjectionMatrix(PM);
   REAL.sortT-=dt; if(REAL.sortT<=0){ REAL.sortT=0.3; const L=cand.filter(c=>c.A.group.visible).map(c=>({c,d:Math.hypot(c.A.group.position.x-cam.x,c.A.group.position.z-cam.z)})).filter(e=>e.d<RMAX||e.c.kind!=='npc').sort((a,b)=>a.d-b.d); REAL.chosen=new Set(L.slice(0,MAXR).map(e=>e.c.A)); }
   let attached=0;
   for(const {A,kind,n} of cand){ let key=wantedKey(A,kind,n); if(key==='soldier'&&!REAL.ready) key=null; if(key&&key!=='soldier'&&!REAL.rb[key]) key=null;
     if(A.gun&&MODELS.gltf.weapons) upgradeAvatarGun(A);
     if(A.real&&A.real.key!==key) detachReal(A);
-    if(!key){ continue; }
+    // never show the old block figures while the real people are on their way, or for people too far to get a model
+    if(!key){ showProc(A,!(waitingPeople()&&A.wantReal!==false)); continue; }
     const pick=REAL.chosen.has(A)||kind!=='npc';
-    if(!A.real){ if(!pick||attached>=2) continue; attachReal(A,key); attached++; }
+    if(!A.real){ if(!pick||attached>=4){ if(kind==='npc') showProc(A,false); continue; } attachReal(A,key); attached++; }
     const R=A.real, p=A.group.position; const d=Math.hypot(p.x-cam.x,p.z-cam.z);
     const onBike=A.bikeT!==undefined&&GAME.time-A.bikeT<0.25; const seated=!onBike&&(A.seatT!==undefined&&A.seatT>=0&&GAME.time-A.seatT<0.25);
     const odd=A.group.rotation.x!==0&&!A.dead;
@@ -67,14 +73,15 @@ function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady) re
     const shd=GAME.touch?d<12:d<40; if(R.shd!==shd){ R.shd=shd; R.m.traverse(o=>{ if(o.isMesh) o.castShadow=shd; }); }
     const s=A.dead?0:R.spd; let clip, ts=1;
     // speed → idle / stroll / walk / run, with hysteresis and a minimum hold so people don't twitch between clips
-    const BND=[0.28,1.0,2.7]; let c=R.cat; while(c<3&&s>BND[c]+0.12) c++; while(c>0&&s<BND[c-1]-0.12) c--; if(c!==R.cat&&GAME.time-R.catT>(kind==='me'?0.12:0.4)){ R.cat=c; R.catT=GAME.time; }
+    const BND=[0.25,0.85,2.05]; let c=R.cat; while(c<3&&s>BND[c]+0.12) c++; while(c>0&&s<BND[c-1]-0.12) c--; if(c!==R.cat&&GAME.time-R.catT>(kind==='me'?0.12:0.4)){ R.cat=c; R.catT=GAME.time; }
     if(A.forceClip&&(R.act[A.forceClip]||RB_FALL[A.forceClip])){ clip=A.forceClip; ts=A.forceTs||1; }
     else if(sitClip){ clip=sitClip; }
     else if(onBike){ clip='idle'; }
     else if(R.cat===0) clip=RB_IDLE[n]||'idle';
-    else if(R.cat===1){ clip='stroll'; ts=clamp(s/0.95,0.55,1.3); }
-    else if(R.cat===2){ clip=(n==='Kenka'||n==='Jovo')?'drunkwalk':'walk'; ts=clamp(s/1.35,0.7,1.8); }
-    else { clip='run'; ts=clamp(s/3.9,0.75,kind==='me'?1.85:1.5); }
+    else { const SP=(REAL.spd&&REAL.spd[R.g])||{}; // playback rate = ground speed / stride speed of the clip → feet stay planted
+      if(R.cat===1){ clip='stroll'; ts=clamp(s/(SP.stroll||0.7),0.5,1.6); }
+      else if(R.cat===2){ clip=(n==='Kenka'||n==='Jovo')?'drunkwalk':'walk'; ts=clamp(s/(SP[clip]||SP.walk||1.0),0.6,2.0); }
+      else { clip='run'; ts=clamp(s/(SP.run||2.9),0.7,2.3); } }
     rbPlay(R,clip,ts);
     R.m.position.y=A.forceY!==undefined&&A.forceClip?A.forceY:sitClip?(0.99-(REAL.pel[R.g][sitClip]||0.58)*R.sc):onBike?0.04:0;
     if(A.dead){ continue; }
