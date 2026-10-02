@@ -79,7 +79,7 @@ function buildTextures(){
   // stone (plinths, monuments)
   { const S=256; const c=pixelCanvas(S,S,(x,y,o)=>{ const n=tfbm(x/30,y/30,S/30,5,97); const m=hash2(x*3,y*5); const v=150+(n-0.5)*70+(m-0.5)*20; o[0]=v; o[1]=v*0.97; o[2]=v*0.9; }); TEX.stone=mkTex(c); }
   // hedge / thuja
-  { const S=256; const c=pixelCanvas(S,S,(x,y,o)=>{ const n=tfbm(x/12,y/12,S/12,4,99); const m=hash2(x,y); const v=n*0.8+m*0.2; o[0]=28+v*55; o[1]=58+v*75; o[2]=22+v*35; }); TEX.hedge=mkTex(c); }
+  { const S=256; const c=pixelCanvas(S,S,(x,y,o)=>{ const n=tfbm(x/12,y/12,S/12,4,99); const m=hash2(x,y); const v=n*0.8+m*0.2; const l=Math.max(0,Math.min(1,v*1.25-0.05)); o[0]=(95+l*150)*0.92; o[1]=95+l*160; o[2]=(95+l*150)*0.85; }); TEX.hedge=mkTex(c,{srgb:false}); } // luminance only: the vertex colour carries the green
   // leaves alpha
   { const S=256; const c=cvs(S,S), g=c.getContext('2d'); g.clearRect(0,0,S,S);
     for(let i=0;i<2600;i++){ const x=rnd(0,S),y=rnd(0,S),r=rnd(3,7.5); const l=rnd(0.55,1.15); g.fillStyle=`rgb(${(150*l)|0},${(190*l)|0},${(120*l)|0})`; wrapDraw(g,S,S,x,y,r*2,(px,py)=>{ g.beginPath(); g.ellipse(px,py,r,r*0.5,rnd(0,3.14),0,TAU); g.fill(); }); }

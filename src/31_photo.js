@@ -17,7 +17,7 @@ function photoTerrain(){ const hb=photoHouseRaw(); if(!hb) return; const H=[hb.r
 // trees: keep the view from the balcony over the meadow to the church open (photo 1); bushes along the ditch stay
 function photoTrees(){ const A=PHOTO.axis; if(!A) return; const keep=[]; const n=TREES.x.length;
   for(let i=0;i<n;i++){ const dx=TREES.x[i]-A.H[0], dz=TREES.z[i]-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=(-dx*A.uz+dz*A.ux); const near=Math.hypot(dx,dz)<16&&t>-0.02;
-    const corridor=t>0.03&&t<0.93&&Math.abs(d)<38&&!(TREES.t[i]===2&&TREES.h[i]<4); if(!(near||corridor)) keep.push(i); }
+    const corridor=t>0.03&&t<0.93&&Math.abs(d)<38&&!(TREES.t[i]===2&&TREES.h[i]<4); if(!(near||corridor)&&!noHedge(TREES.x[i],TREES.z[i])) keep.push(i); }
   for(const k of Object.keys(TREES)) TREES[k]=keep.map(i=>TREES[k][i]); }
 // the hills around Tuhelj are wooded (photos / Street View): plant broadleaf woods on slopes and hilltops that
 // OpenStreetMap leaves as bare grass — not in the village, fields, meadows, yards or on roads
@@ -43,6 +43,13 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
       const ux=(best[0]-o[0])/bd, uz=(best[1]-o[1])/bd, mv=4.6, rot=0.17, ccx=o[0], ccz=o[1]; const cr=Math.cos(rot), sr=Math.sin(rot);
       for(const r of c.r){ const dx=r[0]-ccx, dz=r[1]-ccz; r[0]=ccx+dx*cr-dz*sr+ux*mv; r[1]=ccz+dx*sr+dz*cr+uz*mv; r[2]+=rot; }
       if(c.dw){ c.dw=[c.dw[0]+ux*mv*0.5,c.dw[1]+uz*mv*0.5]; } } }
+  // Street View (Oct 2026): the house beside the church does not exist — its plot is a car park
+  for(let i=D.bld.length-1;i>=0;i--){ const r=D.bld[i].r[0]; if(D.bld[i].k==='house'&&Math.hypot(r[0]+309.8,r[1]+22)<3){ PHOTO.churchPark=r.slice(); D.bld.splice(i,1); } }
+  // "Kod Ruže" stands inside the pub's walled yard, just behind the café (Street View "38 Tuhelj"); the gate opens to the road from Lovrečan
+  { const a=D.bld.find(q=>q.k==='apt'||/Kod Ru/.test(q.n||'')||(q.k==='house'&&Math.hypot(q.r[0][0]+203.9,q.r[0][1]+76.5)<3)); if(a){ a.k='apt'; a.n='Studio apartman Kod Ruže'; const r0=a.r[0]; const dx=PUBYARD.apt[0]-r0[0], dz=PUBYARD.apt[1]-r0[1]; for(const q of a.r){ q[0]+=dx; q[1]+=dz; } a.dw=PUBYARD.gate.slice(); } }
+  // the bus stop is on the café side of the road, in front of the gravel lot east of the arcade (Street View)
+  { const p=(D.pois||[]).find(q=>q.k==='bus_stop'&&Math.hypot(q.x+213,q.z+30)<8); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+213,q[1]+30)<12)); if(p&&rd){ const n=nearOnPoly(rd.P,p.x,p.z); p.x=n.x+n.tz*4.5; p.z=n.z-n.tx*4.5; } }
+  NOHEDGE.push([-211,-42,10],[PUBYARD.apt[0]-1,PUBYARD.apt[1]+1,15],[-309.8,-22,11]);
   const inWide=(x,z)=>{ const dx=x-A.H[0], dz=z-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=Math.abs(-dx*A.uz+dz*A.ux); return t>0.02&&t<1.08&&d<110; };
   for(const l of LAND){ if(l.t!=='farmland') continue; const c=polyCentroid(l.P); const k=l.P.filter(p=>inWide(p[0],p[1])).length; if(inMeadow(c[0],c[1])||k>=l.P.length*0.4) l.t='meadow'; }
   for(const r of ROADS){ if(r.t!=='unclassified'&&r.t!=='track'&&r.t!=='service') continue; if(r.P.some(p=>Math.hypot(p[0]+434,p[1]+119)<12)||r.P.some(p=>Math.hypot(p[0]-A.H[0],p[1]-A.H[1])<30)){ r.gravel=true; r.w=Math.min(r.w,3.4); } } }
@@ -244,7 +251,7 @@ function photoHedges(cs){ const R=mulberry32(99); const Hd=cs.get('hedge',CENTER
     const nx=-s.tz, nz=s.tx; const side=((cx-s.x)*nx+(cz-s.z)*nz)>=0?1:-1; const off=r.w/2+(r.t==='secondary'||r.t==='primary'?2.4:1.0);
     const span=Math.max(L,W)/2+3; const gapAt=b.dw?((b.dw[0]-s.x)*s.tx+(b.dw[1]-s.z)*s.tz):0;
     for(let t=-span;t<span;t+=1.5){ if(Math.abs(t-gapAt)<2.0) continue; const k=Math.round(s.i+t/1.5); if(k<1||k>=r.S.length-1) continue; const p=r.S[k], tg=r.T[k]; const x=p[0]+(-tg[1])*side*off, z=p[1]+tg[0]*side*off;
-      if(BHASH.hit(x,z,0.6)||nearestRoad(x,z,4,q=>q.rid!==r.rid)&&nearestRoad(x,z,4,q=>q.rid!==r.rid).d<1.2) continue; const y=getHeight(x,z); const f=frame(x,z,Math.atan2(tg[1],tg[0]),y);
+      if(noHedge(x,z)||BHASH.hit(x,z,0.6)||nearestRoad(x,z,4,q=>q.rid!==r.rid)&&nearestRoad(x,z,4,q=>q.rid!==r.rid).d<1.2) continue; const y=getHeight(x,z); const f=frame(x,z,Math.atan2(tg[1],tg[0]),y);
       if(kind==='hedge'){ const h=1.25+R()*0.35; Hd.box(f,-0.8,0.8,0,h,-0.45,0.45,lin(R()<0.5?'#3f6a2c':'#4a7533')); }
       else { G.box(f,-0.76,0.76,0,0.45,-0.12,0.12,lin('#d9d4c8')); for(let q=-3;q<=3;q++) Mt.box(f,q*0.22-0.015,q*0.22+0.015,0.45,1.25,-0.015,0.015,lin('#2c2f33')); Mt.box(f,-0.76,0.76,1.2,1.25,-0.025,0.025,lin('#2c2f33')); }
       addCollider(x,z,Math.atan2(tg[1],tg[0]),1.6,kind==='hedge'?0.9:0.25,y-1,y+1.5); } } }
@@ -253,7 +260,7 @@ function photoHedges(cs){ const R=mulberry32(99); const Hd=cs.get('hedge',CENTER
    Traced along the lowest ground (dynamic programming over the height grid), a shallow channel is cut except
    under roads — those become bridges with the blue railings from photoCentre. */
 function photoStream(){ if(WATER.some(w=>/Pristav/.test(w.n||''))) return; const xs=[], X1=-1260, X2=360, SX=8, Z1=-320, Z2=320, SZ=6; const nz=Math.round((Z2-Z1)/SZ)+1;
-  const BL=[].concat(...D.bld.map(b=>b.r)); const pen=(x,z)=>{ let p=0; for(const r of BL){ const dx=x-r[0], dz=z-r[1]; if(Math.abs(dx)>40||Math.abs(dz)>40) continue; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=Math.abs(dx*c+dz*sn)-r[3]/2, lz=Math.abs(-dx*sn+dz*c)-r[4]/2; const d=Math.hypot(Math.max(lx,0),Math.max(lz,0)); if(d<8) p+=60*(1-d/8); } return p; };
+  const BL=[].concat(...D.bld.map(b=>b.r)).concat(PHOTO.churchPark?[PHOTO.churchPark.map((v,i)=>i===3?v+7:i===4?v+6:v)]:[]); /* keep the creek out of the church car park */ const pen=(x,z)=>{ let p=0; for(const r of BL){ const dx=x-r[0], dz=z-r[1]; if(Math.abs(dx)>40||Math.abs(dz)>40) continue; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=Math.abs(dx*c+dz*sn)-r[3]/2, lz=Math.abs(-dx*sn+dz*c)-r[4]/2; const d=Math.hypot(Math.max(lx,0),Math.max(lz,0)); if(d<8) p+=60*(1-d/8); } return p; };
   let prev=null, back=[]; for(let x=X1;x<=X2;x+=SX){ xs.push(x); const cur=new Float32Array(nz), from=new Int16Array(nz);
     for(let j=0;j<nz;j++){ const z=Z1+j*SZ; const gi=clamp(Math.round((x-X0)/CELL),0,NX-1)+clamp(Math.round((z-Z0)/CELL),0,NZ-1)*NX; const c=getHeight(x,z)+pen(x,z)+ROADMASK[gi]*14; if(!prev){ cur[j]=c+Math.abs(z-CENTER[1])*0.01; from[j]=j; continue; } let bv=1e18,bj=j; for(let k=-3;k<=3;k++){ const jj=j+k; if(jj<0||jj>=nz) continue; const v=prev[jj]+Math.abs(k)*0.6; if(v<bv){ bv=v; bj=jj; } } cur[j]=bv+c; from[j]=bj; }
     back.push(from); prev=cur; }

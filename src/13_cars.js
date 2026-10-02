@@ -145,33 +145,53 @@ function buildCockpit(v){ const g=new THREE.Group(); const T=v.truck; const W=v.
     pane([-hl+0.62,Y+0.2,-W/2+0.14],[-hl+0.62,Y+0.2,W/2-0.14],[-hl+0.25,roofY-0.03,W/2-0.18],[-hl+0.25,roofY-0.03,-W/2+0.18]);
     box(-hl+0.55,-hl+0.7,Y-0.45,Y+0.2,-W/2+0.12,W/2-0.12,seatM); }
   g.add(wb); g.traverse(o=>{ if(o.isMesh){ o.castShadow=false; o.receiveShadow=false; } }); v.exterior=v.group.children.slice(); g.visible=false; v.group.add(g); v.interior=g; v.wheelG=wg; v.handsG=handsG; }
-/* ---- all parked cars (static merged) + drivable ones at key places ---- */
+/* ---- all parked cars (static merged) + drivable ones at key places ----
+   Every parked car can be driven: the merged mesh stays for speed, and when you walk up to one its triangles are
+   collapsed and a real drivable car with the same model and paint takes its place (wakeParked). */
+const PARKED={list:[],mesh:{}}; const EXTRA_PARK=[]; // [x,z,axisAngle,tag] added by the photo-matched centre
+function wakeParked(rec){ if(rec.done) return null; rec.done=true;
+  for(const k in rec.r){ const m=PARKED.mesh[k]; const R=rec.r[k]; if(!m||R[1]<=R[0]) continue; const pa=m.geometry.attributes.position; for(let i=R[0];i<R[1];i++) pa.setXYZ(i,rec.x,-5000,rec.z); pa.needsUpdate=true; }
+  if(rec.col) BHASH.remove(rec.col);
+  const v=makeCarGroup(rec.type,'#'+rec.C.getHexString(THREE.SRGBColorSpace)); placeVehicle(GAME.scene,v,rec.x,rec.z,Math.atan2(-Math.cos(rec.a),-Math.sin(rec.a))); return v; }
+function parkedTick(){ if(PLAYER.driving||PLAYER.riding||!PARKED.list.length) return; const p=PLAYER.pos; for(const r of PARKED.list){ if(r.done) continue; if(Math.abs(r.x-p.x)<5&&Math.abs(r.z-p.z)<5&&Math.hypot(r.x-p.x,r.z-p.z)<4.2) wakeParked(r); } }
+/* GTA-style carjacking: traffic cars and stopped police / ambulance cars become yours, the driver gets out */
+function grabbableCar(x,z,maxd){ let best=null, bd=maxd;
+  for(const T of GTA.traffic){ if(T.wreck||T.burnT>0) continue; const d=Math.hypot(T.st.x-x,T.st.z-z)-T.v.len*0.35; if(d<bd){ bd=d; best={T,list:GTA.traffic}; } }
+  for(const L of [GTA.chasers,GTA.amb]) for(const C of L){ if(C.wreck||C.burnT>0||Math.abs(C.st.v)>1.5) continue; const d=Math.hypot(C.st.x-x,C.st.z-z)-C.v.len*0.35; if(d<bd){ bd=d; best={T:C,list:L}; } }
+  return best; }
+function carjack(g){ const T=g.T, v=T.v; const i=g.list.indexOf(T); if(i>=0) g.list.splice(i,1);
+  if(g.list!==GTA.traffic){ try{ if(typeof lawCarGone==='function') lawCarGone(T); }catch(e){} crime(T.kind==='policija'?2:1); if(T.L) for(const m of T.L) m.visible=false; }
+  const s=T.st; const rx=Math.cos(s.yaw), rz=-Math.sin(s.yaw); let k=0;
+  for(const A of [T.drv,T.pas]){ if(!A) continue; const sd=k?1:-1; const px=s.x+rx*sd*(v.wid/2+1.1), pz=s.z+rz*sd*(v.wid/2+1.1); A.group.position.set(px,getHeight(px,pz),pz); A.seatT=0; for(const l of [A.legL,A.legR,A.armL,A.armR]) if(l) l.rotation.x=0; A.noRevive=true; A.name=A.name==='Vuk'?'Vuk ':A.name; k++; }
+  if(T.drv){ try{ bubble(T.drv,['Hej! Moj auto!','Stoj! Lopov!','Ma daj, čovječe!'][Math.floor(Math.random()*3)]); }catch(e){} }
+  v.st={x:s.x,z:s.z,yaw:s.yaw,v:0,steer:0,y:s.y,pitch:s.pitch||0,roll:s.roll||0,spin:s.spin||0}; v.idx=DRIVE.length; DRIVE.push(v); poseVehicle(v); return v; }
 function buildCars(scene){
   RNG=mulberry32(2468); const M=carMats();
   const spots=[]; const add=(x,z,a,tag)=>{ if(BHASH.hit(x,z,1.2)) return; if(typeof PHOTO!=='undefined'&&PHOTO.axis&&Math.hypot(x-PHOTO.axis.H[0],z-PHOTO.axis.H[1])<24) return; /* the family yard stays empty */ spots.push([x,z,a,tag]); };
   const shop=findB(b=>b.n==='Trgovina PZ Tuhelj'); if(shop){ const fr=frame(shop.rect[0],shop.rect[1],shop.rect[2]); const si=sideInfo(shop.f,shop.rect[3]/2,shop.rect[4]/2); [-5,-2.4,2.4].forEach((t,i)=>{ const p=wallPoint(fr,si,t,4.2); add(p[0],p[2],sideAngle(shop.rect[2],si)+Math.PI/2,i===0?'drive':''); }); }
-  const cafeB=findB(b=>b.k==='cafe'); if(cafeB){ const fr=frame(cafeB.rect[0],cafeB.rect[1],cafeB.rect[2]); const si=sideInfo(cafeB.f,cafeB.rect[3]/2,cafeB.rect[4]/2); [13.6,16.4].forEach((t,i)=>{ const p=wallPoint(fr,si,t,5.2); add(p[0],p[2],sideAngle(cafeB.rect[2],si),i===0?'drive':''); }); }
+  const cafeB=null; /* café cars now stand in the gravel lot by the bus stop (photoPaving) */ if(cafeB){ const fr=frame(cafeB.rect[0],cafeB.rect[1],cafeB.rect[2]); const si=sideInfo(cafeB.f,cafeB.rect[3]/2,cafeB.rect[4]/2); [13.6,16.4].forEach((t,i)=>{ const p=wallPoint(fr,si,t,5.2); add(p[0],p[2],sideAngle(cafeB.rect[2],si),i===0?'drive':''); }); }
   for(const l of LAND){ if(l.t!=='parking') continue; const bb=polyBBox(l.P); let first=true; for(let x=bb[0]+3;x<bb[1]-2;x+=2.7){ for(const z of [bb[2]+3.2,bb[3]-3.2]){ if(RNG()<0.45 && pointInPoly(x,z,l.P)){ add(x,z,Math.PI/2+(RNG()<0.5?0:Math.PI),first?'drive':''); first=false; } } } }
-  for(const [x,z,a,tg] of [[-289,-38,2.6,'drive'],[-333,-24,0.65,''],[-236,-73,1.6,''],[-224,-35,0.3,'']]) add(x,z,a,tg);
+  for(const [x,z,a,tg] of [[-289,-38,2.6,'drive'],[-333,-24,0.65,'']].concat(EXTRA_PARK)) add(x,z,a,tg);
   for(const b of BLD){ if(b.k!=='house' || !b.dw || RNG()>0.34) continue; const fm=b.front.mid; const dx=b.dw[0]-fm[0], dz=b.dw[1]-fm[1]; const L=Math.hypot(dx,dz); if(L<5.5||L>30) continue; const t=clamp(2.8/L,0,0.6); const x=fm[0]+dx*t, z=fm[1]+dz*t; if(!roadClear(x,z,1.3)) continue; add(x,z,Math.atan2(dz,dx),''); }
   // extra drivable car on the road near the start and in Pristava
   for(const [x,z] of [[START.x+10,START.z+3],[-561,112]]){ const n=nearestRoad(x,z,40,s=>s.t==='secondary'||s.t==='tertiary'||s.t==='unclassified'||s.t==='residential'); if(!n) continue; const s=n.s; const off=s.w*0.26; const px=s.x-s.tz*off, pz=s.z+s.tx*off; spots.push([px,pz,Math.atan2(s.tz,s.tx),'drive']); }
-  const G={paint:new GB(),glass:new GB(),dark:new GB(),chrome:new GB(),head:new GB(),tail:new GB()}; const m4=new THREE.Matrix4(), q=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0);
+  const G={paint:new GB(),glass:new GB(),dark:new GB(),chrome:new GB(),head:new GB(),tail:new GB(),qmisc:new GB()}; const m4=new THREE.Matrix4(), q=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0);
   let nd=0;
   for(const [x,z,a,tag] of spots){ const type=wpick([['hatch',38],['sedan',25],['suv',21],['van',10],['sport2',6]]); const col=wpick(PAINTS);
     if(tag==='drive' && nd<8){ const v=makeCarGroup(type,col); placeVehicle(scene,v,x,z,Math.atan2(-Math.cos(a),-Math.sin(a))); nd++; continue; }
     const y=getHeight(x,z); q.setFromAxisAngle(up,-a); m4.compose(new THREE.Vector3(x,y,z),q,new THREE.Vector3(1,1,1)); const C=colJ(lin(col),0.12);
-    { const Q=(typeof appendQCarStatic==='function')?appendQCarStatic(G,type,m4,C):null; if(Q){ addCollider(x,z,a,Q.len,Q.wid,y-1,y+2); continue; } }
+    const rec={x,z,a,type,C,r:{}}; const mark=()=>{ for(const k in G) if(G[k]) rec.r[k]=[G[k].count]; }, done=()=>{ for(const k in G) if(G[k]){ if(!rec.r[k]) rec.r[k]=[0]; rec.r[k][1]=G[k].count; } }; mark(); PARKED.list.push(rec);
+    { const Q=(typeof appendQCarStatic==='function')?appendQCarStatic(G,type,m4,C):null; if(Q){ done(); rec.col=addCollider(x,z,a,Q.len,Q.wid,y-1,y+2); continue; } }
     const Gd=carGeos(CAR_SPECS[type]?type:'sedan');
     gbAppend(G.paint,Gd.body,m4,C); gbAppend(G.paint,Gd.roof,m4,C); gbAppend(G.glass,Gd.glass,m4,WHITE); for(const d of Gd.dark) gbAppend(G.dark,d,m4,WHITE); for(const h of Gd.head) gbAppend(G.head,h,m4,WHITE); for(const t of Gd.tail) gbAppend(G.tail,t,m4,WHITE);
     const S=Gd.S; for(const [wx,sz] of [[S.xf,-1],[S.xf,1],[S.xr,-1],[S.xr,1]]){ const wm=new THREE.Matrix4().makeTranslation(wx,S.r,sz*(S.W/2-0.12)); const mm=m4.clone().multiply(wm); gbAppend(G.dark,Gd.tire,mm,WHITE); gbAppend(G.chrome,Gd.rim,mm,WHITE); }
-    addCollider(x,z,a,S.L,S.W,y-1,y+2); }
-  const mk=(gb,mat)=>{ if(!gb.count) return; const m=new THREE.Mesh(gb.geometry(),mat); m.castShadow=true; m.receiveShadow=true; m.matrixAutoUpdate=false; scene.add(m); };
+    done(); rec.col=addCollider(x,z,a,S.L,S.W,y-1,y+2); }
+  const mk=(gb,mat)=>{ if(!gb.count) return; const m=new THREE.Mesh(gb.geometry(),mat); m.castShadow=true; m.receiveShadow=true; m.matrixAutoUpdate=false; scene.add(m); for(const k in G) if(G[k]===gb) PARKED.mesh[k]=m; };
   mk(G.paint,M.paint); mk(G.glass,M.glass); mk(G.dark,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.85,color:0x161718})); mk(G.chrome,M.chrome); mk(G.head,M.head); mk(G.tail,M.tail); if(G.qmisc) mk(G.qmisc,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.6,metalness:0.25}));
   // fire truck in the fire station yard (settled out of the hedge/props)
   { const n=nearestRoad(START.x+26,START.z+6,60,s=>s.t==='secondary'||s.t==='tertiary'||s.t==='unclassified'||s.t==='residential'); if(n){ const s2=n.s; const off=s2.w*0.26; const px=s2.x-s2.tz*off, pz=s2.z+s2.tx*off; const v=makeFormula(); placeVehicle(scene,v,px,pz,Math.atan2(s2.tz,s2.tx)-Math.PI/2); } }
   spawnBikes(scene);
-  if(LANDMARKS.aptF){ const {F,ang}=LANDMARKS.aptF; const q=F(-3.4,0,6.3), d=F(0,0,6.3); const v=makeCarGroup('troc','#b81d24','#141414'); v.label='T-Roc'; placeVehicle(scene,v,q[0],q[2],faceYaw(d[0]-q[0],d[2]-q[2])); }
+  if(LANDMARKS.aptF){ const {F,ang}=LANDMARKS.aptF; const q=F(-9.6,0,0.6), d=F(-9.6,0,-4); const v=makeCarGroup('troc','#e4e5e3','#686b6f'); /* the grey-and-white T-Roc parked in the pub yard */ v.label='T-Roc'; placeVehicle(scene,v,q[0],q[2],faceYaw(d[0]-q[0],d[2]-q[2])); }
   const fire=findB(b=>b.k==='fire'); if(fire && LANDMARKS.fire){ const Lf=LANDMARKS.fire; const dx=fire.rect[0]-Lf.x, dz=fire.rect[1]-Lf.z; const dl=Math.hypot(dx,dz); const ux=dx/dl, uz=dz/dl; const px=Lf.x+ux*5.5+(-uz)*6.0, pz=Lf.z+uz*5.5+ux*6.0; const yaw=Math.atan2(ux,uz); const v=makeFireTruck(); placeVehicle(scene,v,px,pz,yaw); }
   try{ if(typeof placeTractors==='function') placeTractors(scene); }catch(e){ console.warn('traktori',e); }
   for(const v of DRIVE){ freeSpot(v); poseVehicle(v); }
@@ -196,7 +216,7 @@ function enterAsPassenger(v){ if(!v) return; if(1+riders(v)>=seatsOf(v)){ UI.toa
 function exitRide(){ const v=PLAYER.riding; if(!v) return; if(v.exterior) for(const m of v.exterior) m.visible=true; if(v.interior) v.interior.visible=false; if(GAME.camera.fov!==72){ GAME.camera.fov=72; GAME.camera.updateProjectionMatrix(); } const s=v.st; const rx=Math.cos(s.yaw), rz=-Math.sin(s.yaw); let px=s.x+rx*(v.wid/2+0.9), pz=s.z+rz*(v.wid/2+0.9); if(BHASH.hit(px,pz,0.4)){ px=s.x-rx*(v.wid/2+0.9); pz=s.z-rz*(v.wid/2+0.9); }
   PLAYER.pos.set(px,groundAt(px,pz),pz); PLAYER.vel.set(0,0,0); PLAYER.yaw=s.yaw; PLAYER.riding=null; document.body.classList.remove('driving'); VEG.lastRebuild.set(1e9,0,1e9); }
 function updateRiding(dt){ const v=PLAYER.riding; if(!v) return; const s=v.st; PLAYER.pos.set(s.x,s.y,s.z); CARCAM.t+=dt; if(CARCAM.t>1.4) CARCAM.orbit*=Math.exp(-dt*2.5); const sp=document.getElementById('speedo'); if(sp) sp.textContent=Math.round(Math.abs(s.v||0)*3.6)+' km/h'; }
-function useCarKey(){ if(gtaUse()) return; if(PLAYER.driving){ exitCar(); return; } if(PLAYER.riding){ exitRide(); return; } if(COMBAT.dead) return; const v=nearestVehicle(PLAYER.pos.x,PLAYER.pos.z,3.4,true); if(!v){ if(nearValentina()) openDrinks('valentina'); else if(nearBar()) openDrinks(); else if(nearPoker()) pkOpen(); return; } COMBAT.armed=false; document.body.classList.remove('armed'); if(v.remote) enterAsPassenger(v); else { enterCar(v); if(COMBAT.bac>0.5) setTimeout(()=>UI.toast('Pijan si — bolje ne voziti! 🚫🍺'),900); } }
+function useCarKey(){ if(gtaUse()) return; if(PLAYER.driving){ exitCar(); return; } if(PLAYER.riding){ exitRide(); return; } if(COMBAT.dead) return; let v=nearestVehicle(PLAYER.pos.x,PLAYER.pos.z,3.4,true); if(!v){ const g=grabbableCar(PLAYER.pos.x,PLAYER.pos.z,3.4); if(g) v=carjack(g); } if(!v){ if(nearValentina()) openDrinks('valentina'); else if(nearBar()) openDrinks(); else if(nearPoker()) pkOpen(); return; } COMBAT.armed=false; document.body.classList.remove('armed'); if(v.remote) enterAsPassenger(v); else { enterCar(v); if(COMBAT.bac>0.5) setTimeout(()=>UI.toast('Pijan si — bolje ne voziti! 🚫🍺'),900); } }
 
 function makeFormula(){ const g=new THREE.Group(); const M=(c,m=0.4,r=0.35)=>new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:r}); const red=M(0xc8161d,0.5,0.28), wht=M(0xf4f2ea,0.3,0.4), blk=M(0x151618,0.3,0.6), crb=M(0x2a2c30,0.4,0.5);
   const box=(w,h,d,m,x,y,z)=>{ const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); b.position.set(x,y,z); b.castShadow=true; g.add(b); return b; };

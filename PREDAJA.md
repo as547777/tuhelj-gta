@@ -72,3 +72,16 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - boje fasada iz Mapillary fotografija; bolja stabla
 - skretanje prometa/policije na raskrižjima (graf cesta)
 - unutrašnjost DVD-a i škole
+
+## Runda: centar po Street Viewu (listopad 2026)
+- kuća uz crkvu maknuta → asfaltno parkiralište s linijama (PHOTO.churchPark, 33_centre.js)
+- oko crkve crveni popločani trg (paveArea + paverTex 'red'), kameni rubnjak
+- autobusna stanica na strani brtije, ispred šljunčanog parkirališta istočno od arkade
+- dvorište brtije: bijeli zid s crvenim crijepom i kapijom uz cestu, betonsko dvorište, crna mrežasta ograda,
+  apartman Kod Ruže premješten u dvorište (bijel, drveni balkon na zabatu), drva, sivo-bijeli T-Roc, putokaz Desinić/Zagreb
+- Ultra: vijenci, gornji prozori, viša kuća straga, žuti Ožujsko suncobrani
+- živice više nisu crne (tekstura je sad samo svjetlina), NOHEDGE zone drže stanicu/parkirališta/dvorište čistima
+- SVI parkirani auti se mogu voziti (wakeParked: statični model se zamijeni pravim autom kad priđeš),
+  auti iz prometa i zaustavljena policija/hitna se mogu oteti (carjack)
+- kotač oružja: nove detaljne ikone (WDRAW) — Glock, MP5, pumparica, M4, snajper s optikom, RPG-7
+- učitavanje radi i u pozadinskoj kartici (yieldFrame s timeoutom)

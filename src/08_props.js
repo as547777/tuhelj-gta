@@ -82,7 +82,7 @@ function buildProps(scene,quality){
     // centre along tangent aligned to the house
     const along=(cx-s.x)*s.tx+(cz-s.z)*s.tz; const c0=[ox+s.tx*along, oz+s.tz*along];
     for(let a=-len/2;a<len/2;a+=2){ const a1=Math.min(len/2,a+2); if(a1>gap0 && a<gap1) continue; const p0=[c0[0]+s.tx*a,c0[1]+s.tz*a], p1=[c0[0]+s.tx*a1,c0[1]+s.tz*a1];
-      if(!roadClear(p0[0],p0[1],0.5)||!roadClear(p1[0],p1[1],0.5)||BHASH.hit(p0[0],p0[1],0.4)||BHASH.hit(p1[0],p1[1],0.4)) continue;
+      if(noHedge(p0[0],p0[1])||noHedge(p1[0],p1[1])||!roadClear(p0[0],p0[1],0.5)||!roadClear(p1[0],p1[1],0.5)||BHASH.hit(p0[0],p0[1],0.4)||BHASH.hit(p1[0],p1[1],0.4)) continue;
       const y0=getHeight(...p0), y1=getHeight(...p1);
       if(kind==='hedge'){ const G=T('hedge',p0[0],p0[1]); const hh=rnd(1.3,1.8); const f=frame((p0[0]+p1[0])/2,(p0[1]+p1[1])/2,Math.atan2(s.tz,s.tx),Math.min(y0,y1)-0.2); G.box(f,-(a1-a)/2-0.05,(a1-a)/2+0.05,0,hh+0.2,-0.4,0.4,colJ(lin('#3e6a2e'),0.2),0.8,0x3f^8); }
       else { const H=kind==='bars'?1.25:kind==='picket'?1.05:1.3; const g=fg[kind]; const base=kind==='bars'?0.45:0;

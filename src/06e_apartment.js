@@ -10,15 +10,24 @@ function apartment(cs,scene,b){
   const [cx,cz,a0]=b.rect; const ang=a0-Math.PI/2; const F=frame(cx,cz,ang); const y0=b.hmax+0.12, yb=b.hmin-0.6; b.y0=y0;
   const g=(k)=>cs.get(k,cx,cz); const G=g('wall'), T=g('trim'), Wd=g('wood'), Mt=g('metal'), Gs=g('glass'), Cl=g('cloth'), Hd=g('hedge'), St=g('stonem'), Fl=g('floorT'), Lm=g('lamin'), Tw=g('tileW'), Dv=g('duvet'), Rd=g('roseDecal'), Ch=g('chrome'), Gl=g('glow'), Wt=g('bottle'), BG=g('blackGlass'), Pn=g('pine');
   const H={wall:G,trim:T,glass:g('glassW'),slats:g('slats')};
-  const EXT=lin('#95a1aa'), REV=lin('#b8c0c6'), WOODF=lin('#7a4a24'), BLIND=lin('#484d53'), WHT=lin('#f4f4f1'), e=y0+2.75, pitch=30, rt=e+3.2*Math.tan(pitch*Math.PI/180);
+  const EXT=lin('#eef0ee'), REV=lin('#e2e4e2'), WOODF=lin('#7a4a24'), BLIND=lin('#484d53'), WHT=lin('#f4f4f1'), e=y0+2.75, pitch=40, /* white, steep gable with a wooden balcony facing the gate (Street View "38 Tuhelj") */ rt=e+3.2*Math.tan(pitch*Math.PI/180);
   const win=(m,h,o={})=>rectWindow(H,m,h,Object.assign({wc:EXT,rc:REV,fc:WOODF,cols:2,dep:0.22,fw:0.08,sc:lin('#d9d7d0'),shutter:{k:0.5,col:BLIND},gv:'plain'},o));
   // ---- outer walls with openings ----
   const A=[-6.0,3.2], B=[2.2,3.2], C=[2.2,-3.2], D=[-6.0,-3.2];
   const mF=segMap(F,ang,A,B), mE=segMap(F,ang,B,C), mB=segMap(F,ang,C,D), mW=segMap(F,ang,D,A);
   const hF=[holeRect(1.0,2.2,y0+0.95,y0+2.05),holeRect(4.55,5.45,y0,y0+2.15)], hE=[holeRect(1.0,2.2,y0+0.95,y0+2.05),holeRect(4.3,5.3,y0+1.1,y0+2.0)], hB=[holeRect(6.35,7.25,y0+1.3,y0+2.0)];
   const gab=(m)=>[[0,yb],[m.L,yb],[m.L,e],[m.L/2,rt],[0,e]], rect=(m)=>[[0,yb],[m.L,yb],[m.L,e],[0,e]];
-  facadeSeg(G,mF,rect(mF),hF,EXT); facadeSeg(G,mE,gab(mE),hE,EXT); facadeSeg(G,mB,rect(mB),hB,EXT); facadeSeg(G,mW,gab(mW),[],EXT);
+  facadeSeg(G,mF,rect(mF),hF,EXT); facadeSeg(G,mE,gab(mE),hE,EXT); facadeSeg(G,mB,rect(mB),hB,EXT); const hW=[holeRect(2.55,3.85,y0+0.95,y0+2.05),holeRect(2.65,3.75,e-0.12,e+1.95)]; facadeSeg(G,mW,gab(mW),hW,EXT);
   win(mF,hF[0],{rows:2}); win(mE,hE[0],{rows:2,shutter:{k:0.35,col:BLIND}}); win(mE,hE[1],{shutter:{k:0.6,col:BLIND}}); win(mB,hB[0],{cols:1,shutter:{k:0.7,col:lin('#d9d6cf')}});
+  win(mW,hW[0],{shutter:{k:0.25,col:BLIND}}); win(mW,hW[1],{cols:2,shutter:{k:0.8,col:lin('#3b3e42')},sill:false});
+  { const Tt=mW.T, bw0=1.85, bw1=4.55, by=e-0.2, bd=1.05, BR=lin('#6e4526');
+    Wd.box(Tt,bw0,bw1,by-0.14,by,0,bd,BR,0.8); addFloor(F,ang,-6-bd,-6,bw0-3.2,bw1-3.2,by); // walkable balcony slab
+    for(let s2=bw0+0.1;s2<=bw1-0.05;s2+=0.21) Wd.box(Tt,s2-0.04,s2+0.04,by,by+0.92,bd-0.05,bd-0.02,BR,0.8);
+    for(const sz of [bw0,bw1]) for(let o2=0.12;o2<bd-0.05;o2+=0.21) Wd.box(Tt,sz-0.025,sz+0.025,by,by+0.92,o2-0.04,o2+0.04,BR,0.8);
+    Wd.box(Tt,bw0-0.03,bw1+0.03,by+0.92,by+1.0,bd-0.09,bd+0.01,BR,0.8); for(const sz of [bw0,bw1]) Wd.box(Tt,sz-0.04,sz+0.04,by+0.92,by+1.0,0,bd,BR,0.8);
+    for(const sz of [bw0+0.15,bw1-0.15]) beam(Wd,mW.P(sz,by-0.7,-0.02),mW.P(sz,by-0.14,-bd*0.8),0.05,BR);
+    // small awning over the ground-floor window
+    Mt.quad(Tt(2.35,y0+2.45,0.02),Tt(4.05,y0+2.45,0.02),Tt(4.05,y0+2.2,0.62),Tt(2.35,y0+2.2,0.62),[0,0],[1,0],[1,1],[0,1],lin('#c9cbcc'),mW.W(0,1,0.4)); }
   for(const [m,gaps] of [[mF,[[4.53,5.47]]],[mE,[]],[mB,[]],[mW,[]]]) plinthSeg(g('plinth'),m,yb,y0+0.25,gaps,lin('#8f969c'));
   // entrance: wooden door with glass, open inwards
   { const h=hF[1]; reveal(G,mF,h,0,0.22,REV); frameRing(T,mF,h,0.07,0.02,0.2,WOODF); const hp=F(-1.45,0,3.0); const lf=frame(hp[0],hp[2],ang+Math.atan2(-0.94,0.342),0);

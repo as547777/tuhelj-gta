@@ -2,12 +2,13 @@
 const BHASH={cell:16,map:new Map(),
   add(o){ const r=Math.hypot(o.hl,o.hw)+1; const x0=Math.floor((o.cx-r)/16), x1=Math.floor((o.cx+r)/16), z0=Math.floor((o.cz-r)/16), z1=Math.floor((o.cz+r)/16);
     for(let i=x0;i<=x1;i++) for(let j=z0;j<=z1;j++){ const k=i+'|'+j; let a=this.map.get(k); if(!a){a=[];this.map.set(k,a);} a.push(o); } },
+  remove(o){ for(const a of this.map.values()){ const i=a.indexOf(o); if(i>=0) a.splice(i,1); } },
   near(x,z){ return this.map.get(Math.floor(x/16)+'|'+Math.floor(z/16))||[]; },
   hit(x,z,r=0){ for(const o of this.near(x,z)){ const dx=x-o.cx, dz=z-o.cz; const lx=dx*o.c+dz*o.s, lz=-dx*o.s+dz*o.c; if(Math.abs(lx)<o.hl+r && Math.abs(lz)<o.hw+r) return o; } return null; },
   collide(p,r,y){ for(const o of this.near(p.x,p.z)){ if(y!==undefined && (y>o.y1+0.3 || y<o.y0-2)) continue; const dx=p.x-o.cx, dz=p.z-o.cz; let lx=dx*o.c+dz*o.s, lz=-dx*o.s+dz*o.c; const px=o.hl+r-Math.abs(lx), pz=o.hw+r-Math.abs(lz);
       if(px>0 && pz>0){ if(px<pz) lx+=Math.sign(lx||1)*px; else lz+=Math.sign(lz||1)*pz; p.x=o.cx+lx*o.c-lz*o.s; p.z=o.cz+lx*o.s+lz*o.c; } } }
 };
-function addCollider(cx,cz,ang,L,W,y0=-1e4,y1=1e4){ BHASH.add({cx,cz,c:Math.cos(ang),s:Math.sin(ang),hl:L/2,hw:W/2,y0,y1}); }
+function addCollider(cx,cz,ang,L,W,y0=-1e4,y1=1e4){ const o={cx,cz,c:Math.cos(ang),s:Math.sin(ang),hl:L/2,hw:W/2,y0,y1}; BHASH.add(o); return o; }
 const BLD=[]; // runtime building records
 const WALLCOLS=[['#f2f0ea',22],['#eee5d3',16],['#ecdcb6',13],['#efd98c',9],['#e3c47c',5],['#e8b9a2',8],['#ecc8a2',8],['#d8d7d0',5],['#f4efe4',5],['#dcc4a2',6]];
 const ROOFCOLS=[['#b95a36',34],['#9b4731',24],['#613b2d',17],['#7a4632',9],['#c8703f',12],['#8a3a2a',6]];

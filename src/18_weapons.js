@@ -95,9 +95,48 @@ const WPATH={ // side-view silhouettes in a 120x50 box (muzzle to the right)
   rifle:[[2,22],[24,16],[52,16],[56,13],[116,13],[116,17],[70,17],[68,22],[56,22],[50,34],[42,34],[44,24],[26,24],[6,32]],
   sniper:[[2,24],[22,18],[44,18],[46,10],[76,10],[76,18],[118,18],[118,22],[70,22],[64,30],[56,30],[52,24],[30,26],[8,32]],
   rpg:[[2,16],[12,20],[80,20],[86,12],[104,16],[118,22],[104,28],[86,32],[80,24],[62,24],[60,36],[54,36],[54,24],[40,24],[38,34],[32,34],[32,24],[12,24],[2,30]]};
-function weaponIcon(k){ FX.icons=FX.icons||{}; if(FX.icons[k]) return FX.icons[k]; const c=cvs(240,100), g=c.getContext('2d'); g.scale(2,2); const P=WPATH[k]||WPATH.fist; if(k==='fist'){ g.font='64px "Segoe UI Emoji","Apple Color Emoji",sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('✊',60,27); return FX.icons[k]=c.toDataURL(); }
-  g.beginPath(); P.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])); g.closePath(); g.lineJoin='round'; g.lineWidth=3; g.strokeStyle='#111'; g.stroke(); g.fillStyle='#f4f4f4'; g.fill();
-  if(k==='sniper'){ g.fillStyle='#bbb'; g.fillRect(50,12,22,4); } if(k==='rpg'){ g.fillStyle='#bbb'; g.fillRect(88,18,12,6); } return FX.icons[k]=c.toDataURL(); }
+// GTA V-style wheel art: white weapon side views with grey machining detail, drawn on a 120x50 grid (muzzle right)
+const WDRAW={
+  pistol(d){ d.rr(29,11.5,69,9.5,1.6); d.poly([[33,21],[93,21],[93,24.5],[66,24.5],[64,27],[56,27],[54,24.5],[33,24.5]]); d.poly([[36,24],[53,24],[52.5,29],[50.5,44],[49,45.5],[37,45.5],[35,43.5],[36.5,29]]);
+    d.ring([[54,24.5],[66,24.5],[66,26],[63,32.5],[55,32.5],[53.5,27]],[[56,25.6],[64,25.6],[61.6,30.8],[56.4,30.8]]); d.rr(94,9.6,2.2,2.4,0.4); d.rr(31,9.8,3,2.2,0.4); d.rr(97.5,14,1.2,3,0.3);
+    d.det(()=>{ for(let x=33;x<45;x+=1.6) d.ln(x,12.6,x,20); d.ln(30,17.3,97,17.3,0.35); for(let y=30;y<44;y+=2.2) d.ln(37.5,y,50.5,y-0.4,0.45); d.rc(80,13.5,9,2.6); d.dot(59,29.5,0.9); }); },
+  smg(d){ d.rr(29,12.5,63,9.5,2.2); d.rr(92,14.5,12,6,1); d.rr(104,15.8,8,3,0.8); d.poly([[96,14.5],[100,9.5],[103,9.5],[103,14.5]]); d.rr(32,9.6,22,3.4,0.8);
+    d.poly([[7,11.5],[11,11.5],[11,29.5],[7,29.5]]); d.rr(9,13,22,2.2,0.8); d.rr(9,22,22,2.2,0.8);
+    d.poly([[52,21.5],[63,21.5],[61,37],[58.5,39.5],[52.5,39.5],[51.5,36]]); d.poly([[69,21.5],[78,21.5],[80.5,30],[84.5,41],[77.5,43],[73,32],[69.5,24]]);
+    d.ring([[62,21.5],[69,21.5],[69,24],[67,29.5],[62.5,29.5]],[[63,22.8],[67.8,22.8],[66.4,28],[63.4,28]]); d.rr(80,21.5,12,5.5,1.4);
+    d.det(()=>{ for(let x=82;x<91;x+=1.8) d.ln(x,22.6,x,26); d.ln(30,17.5,91,17.5,0.35); d.rc(40,14,10,3); for(let y=25;y<38;y+=2.2) d.ln(53,y,61.5,y,0.4); d.dot(46,17.5,1.1); }); },
+  shotgun(d){ d.rr(47,12.6,71,3.6,1.2); d.rr(50,17,54,3.4,1.4); d.rr(66,15.6,25,7.6,2); d.rr(30,11.5,27,11,2);
+    d.poly([[31,13],[24,13.5],[3,18],[2,21],[3.5,32.5],[8,33],[24,24.5],[33,24],[36,30],[40,30],[38,22.5]]);
+    d.ring([[40,22.5],[50,22.5],[50,24],[47.5,29.5],[41.5,29.5]],[[41.5,23.6],[48.6,23.6],[46.8,28],[42.4,28]]); d.rr(115,10.8,1.6,2,0.4);
+    d.det(()=>{ for(let x=68;x<90;x+=2.1) d.ln(x,16.6,x,22.4,0.55); d.ln(48,14.4,117,14.4,0.3); d.rc(36,14.5,15,4.5); d.ln(4,22,26,19.5,0.4); d.dot(47,17,0.8); }); },
+  rifle(d){ d.rr(4,14.5,4.2,13.5,1); d.poly([[7,16],[22,15.5],[25,13.5],[30,13.5],[30,22.5],[22,22.5],[8,26.5]]); d.rr(22,16.2,10,3.2,1);
+    d.rr(29,12.2,34,10.6,1.4); d.rr(31,9.3,31,2.9,0.4); d.rr(63,12.6,29,9.8,2.4); d.poly([[88,12.6],[89.5,6.8],[91.5,6.8],[93,12.6]]);
+    d.rr(92,15.6,20,2.8,0.6); d.rr(111,14.3,7.5,5.4,0.9); d.poly([[48,22.6],[57.5,22.6],[60.5,32],[63.5,41],[55.5,43],[52.5,33]]);
+    d.poly([[34,22.5],[43,22.5],[41.5,37],[39,39],[34,39],[33,36]]); d.ring([[42.5,22.6],[48.5,22.6],[48.5,24.4],[47,29],[43.2,29]],[[43.6,23.6],[47.4,23.6],[46.4,27.6],[43.8,27.6]]);
+    d.det(()=>{ for(let x=65;x<90;x+=3.2) d.rc(x,14.6,1.8,5.6); for(let x=32;x<62;x+=1.5) d.ln(x,9.6,x,11.9,0.35); d.ln(30,17.6,62,17.6,0.35); d.dot(39,15.5,1.1); for(let y=26;y<40;y+=2.6) d.ln(51.5,y,59.5,y-0.6,0.45); d.ln(112,15.2,112,18.8,0.4); }); },
+  sniper(d){ d.poly([[3,17.5],[30,15.5],[38,13.5],[42,13.5],[42,22.5],[36,23],[33,28],[27,28],[24,23.5],[7,26],[4,31.5],[2,30]]);
+    d.ring([[24,23.5],[33,23],[33,28],[24,28]],[[26,24.6],[31.4,24.6],[31.4,26.8],[26,26.8]]); d.rr(41,13,34,8.6,1.6); d.rr(74,15.3,45,2.7,0.7); d.rr(114,14.6,5.5,4,0.6);
+    d.rr(46,5.6,34,4.6,2.2); d.poly([[42,4.4],[48,5.6],[48,10.2],[42,11.4]]); d.poly([[78,5.6],[84,4],[84,11.8],[78,10.2]]); d.rr(56,3.8,5,2,0.5); d.rr(52,10,3,3.2,0.4); d.rr(70,10,3,3.2,0.4);
+    d.rr(55,21.4,8,5.6,0.8); d.ring([[45,21.6],[52,21.6],[51,27],[46,27]],[[46.4,22.6],[50.6,22.6],[49.8,25.8],[47,25.8]]); d.poly([[64,13.4],[67,9.6],[69,9.6],[68,13.4]]);
+    d.det(()=>{ d.ln(47,7.9,79,7.9,0.4); d.ln(42,17.3,74,17.3,0.35); for(let x=6;x<22;x+=2.4) d.ln(x,19,x+1,24,0.35); d.rc(58,22.4,3,3.4); }); },
+  rpg(d){ d.poly([[1.5,13.5],[11,17.5],[11,23.5],[1.5,27.5]]); d.rr(10,17.6,82,5.4,1.2); d.rr(27,16.4,38,7.8,1.6);
+    d.poly([[90,17.4],[97,13],[106,13.2],[113,16],[119,20.3],[113,24.6],[106,27.4],[97,27.6],[90,23.2]]); d.rr(84,18.4,7,4,0.6);
+    d.poly([[38,23],[45,23],[44,34],[42,36],[38,36],[37,34]]); d.poly([[56,23],[63,23],[62,34],[60,36],[56,36],[55,34]]); d.ring([[45,23],[55,23],[54,28],[46,28]],[[46.4,24],[53.6,24],[52.8,26.8],[47.2,26.8]]);
+    d.rr(46,11.4,10,5,0.8); d.rr(56,12.6,3,2.6,0.4); d.rr(14,15.8,2.4,1.8,0.3);
+    d.det(()=>{ for(let x=29;x<64;x+=2.6) d.ln(x,17.2,x,23.4,0.45); d.ln(97,20.3,118,20.3,0.4); d.ln(104,13.6,104,27,0.45); d.ln(10,20.3,26,20.3,0.35); d.rc(48,12.6,6,2.6); }); }};
+function weaponIcon(k){ FX.icons=FX.icons||{}; if(FX.icons[k]) return FX.icons[k]; const SC=4, c=cvs(120*SC,50*SC), g=c.getContext('2d');
+  if(k==='fist'||!WDRAW[k]){ g.font=(48*SC)+'px "Segoe UI Emoji","Apple Color Emoji",sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('✊',60*SC,26*SC); return FX.icons[k]=c.toDataURL(); }
+  const sil=cvs(c.width,c.height), s=sil.getContext('2d'); s.scale(SC,SC); s.fillStyle='#f4f4f2'; s.lineJoin='round';
+  const det=[]; const d={ poly(P){ s.beginPath(); P.forEach((p,i)=>i?s.lineTo(p[0],p[1]):s.moveTo(p[0],p[1])); s.closePath(); s.fill(); },
+    rr(x,y,w,h,r){ s.beginPath(); s.roundRect(x,y,w,h,r); s.fill(); },
+    ring(O,I){ s.beginPath(); O.forEach((p,i)=>i?s.lineTo(p[0],p[1]):s.moveTo(p[0],p[1])); s.closePath(); I.slice().reverse().forEach((p,i)=>i?s.lineTo(p[0],p[1]):s.moveTo(p[0],p[1])); s.closePath(); s.fill('evenodd'); },
+    det(fn){ det.push(fn); }, ln(x0,y0,x1,y1,w=0.5){ s.lineWidth=w; s.beginPath(); s.moveTo(x0,y0); s.lineTo(x1,y1); s.stroke(); }, rc(x,y,w,h){ s.fillRect(x,y,w,h); }, dot(x,y,r){ s.beginPath(); s.arc(x,y,r,0,TAU); s.fill(); } };
+  WDRAW[k](d);
+  // machining lines and cut-outs in mid grey, only on the metal (source-atop)
+  s.globalCompositeOperation='source-atop'; s.strokeStyle='#8f9296'; s.fillStyle='#a7aaae'; for(const fn of det) fn(); 
+  const sh=s.createLinearGradient(0,0,0,50); sh.addColorStop(0,'rgba(255,255,255,0.0)'); sh.addColorStop(0.55,'rgba(0,0,0,0.0)'); sh.addColorStop(1,'rgba(0,0,0,0.22)'); s.fillStyle=sh; s.fillRect(0,0,120,50); s.globalCompositeOperation='source-over';
+  g.shadowColor='rgba(0,0,0,0.85)'; g.shadowBlur=3*SC; g.shadowOffsetY=0.6*SC; g.drawImage(sil,0,0); g.shadowColor='transparent'; g.drawImage(sil,0,0);
+  return FX.icons[k]=c.toDataURL(); }
 const WHEEL={open:false,hold:false,sel:0,mx:0,my:0,hideT:0};
 function wheelSlots(){ return [-1].concat(owned()); }
 function wheelCss(){ if(document.getElementById('wwcss')) return; const st=document.createElement('style'); st.id='wwcss'; st.textContent=`#wwheel{position:fixed;left:50%;top:50%;width:min(460px,88vmin);height:min(460px,88vmin);transform:translate(-50%,-50%) scale(.92);z-index:42;pointer-events:none;opacity:0;transition:opacity .18s,transform .18s}#wwheel.on{opacity:1;transform:translate(-50%,-50%) scale(1)}#wwheel svg{width:100%;height:100%;overflow:visible}#wwheel .seg{fill:rgba(36,38,40,.78);stroke:rgba(255,255,255,.18);stroke-width:1.5}#wwheel .seg.on{fill:rgba(120,126,132,.85)}#wwheel .arc{fill:none;stroke:#4a8dff;stroke-width:7}#wwheel .am{font:700 15px Manrope,system-ui,sans-serif;fill:#fff;text-anchor:middle;paint-order:stroke;stroke:#000;stroke-width:3px}#wwheel .nm{font:800 20px Anton,Impact,sans-serif;fill:#fff;text-anchor:middle;letter-spacing:.02em}#wwheel .sub{font:600 13px Manrope,system-ui,sans-serif;fill:rgba(255,255,255,.75);text-anchor:middle}#wwheel .inner{fill:rgba(18,20,22,.45);stroke:rgba(255,255,255,.25)}`; document.head.appendChild(st); }

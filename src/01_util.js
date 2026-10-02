@@ -28,7 +28,8 @@ function polyBBox(P){ let a=1e9,b=-1e9,c=1e9,d=-1e9; for(const p of P){ if(p[0]<
 function segDist(px,pz,ax,az,bx,bz){ const dx=bx-ax, dz=bz-az; const L2=dx*dx+dz*dz; let t=L2>0?((px-ax)*dx+(pz-az)*dz)/L2:0; t=clamp(t,0,1); const qx=ax+dx*t, qz=az+dz*t; return Math.hypot(px-qx,pz-qz); }
 function col(hex){ return new THREE.Color(hex); }
 function colJ(c, amt){ const hsl={}; c.getHSL(hsl); const o=new THREE.Color(); o.setHSL(hsl.h+(RNG()-0.5)*amt*0.1, clamp(hsl.s+(RNG()-0.5)*amt*0.3,0,1), clamp(hsl.l+(RNG()-0.5)*amt*0.25,0,1)); return o; }
-const yieldFrame = ()=>new Promise(r=>requestAnimationFrame(()=>r()));
+const NOHEDGE=[]; function noHedge(x,z){ for(const c of NOHEDGE) if(Math.hypot(x-c[0],z-c[1])<c[2]) return true; return false; } // keep-clear circles (bus stop, parkings, pub yard)
+const yieldFrame = ()=>new Promise(r=>{ let d=false; const go=()=>{ if(!d){ d=true; r(); } }; requestAnimationFrame(go); setTimeout(go,60); }); // timeout too: keeps loading in a background tab
 
 /* Geometry builder (non-indexed, flat normals, auto winding) */
 class GB {

@@ -77,7 +77,7 @@ function centreBuilding(cs,scene,b){
   if(shop||st==='cafe'){
     // custom facade: ground floor openings from list
     const [cx,cz,ang,L,W]=b.rect; const f=frame(cx,cz,ang); const hl=L/2, hw=W/2; const y0=b.hmax+0.15, yb=b.hmin-0.6; b.y0=y0;
-    const e=y0+(st==='cafe'?3.4:3.6)+(shop?0.9:0); const roof=s.roofType;
+    const ultraB=b.n==='Trgovina PZ Tuhelj'; const e=y0+(st==='cafe'?3.4:3.6)+(shop?0.9:0)+(ultraB?1.0:0); const roof=s.roofType;
     emitWalls(cs,f,ang,hl,hw,yb,e,roof,s.pitch,s.wall,'wall'); emitPlinth(cs,f,ang,hl,hw,yb,y0+0.5,s.plinth); emitRoof(cs,f,ang,hl,hw,e,roof,s.pitch,0.7,0.5,s.roof,s.sof);
     const Wn=cs.get('win',cx,cz), T=cs.get('trim',cx,cz); const fsi=sideInfo(b.f,hl,hw);
     if(st==='cafe'){ const n=Math.floor(fsi.len/2.1); for(let i=0;i<n;i++){ const t=-fsi.e+fsi.len*(i+0.5)/n; decal(Wn,f,ang,fsi,t,y0-0.02+(i===2?0:0.3),i===2?'door_glass':'arched',0.05,i===2?1:1.0); }
@@ -91,6 +91,7 @@ function centreBuilding(cs,scene,b){
       const ultra=b.n==='Trgovina PZ Tuhelj'; const nm=ultra?'ULTRA':b.n.toUpperCase(); const sp2=wallPoint(f,fsi,0,0.06); signMesh(scene,signTex([nm],ultra?{w:1024,h:128,bg:'#f6f3ee',fg:'#d8262e',border:'#d8262e',bw:6,size:84,weight:900}:{w:1024,h:128,bg:'#2e6b3a',fg:'#ffffff',border:null,size:62}),Math.min(6.5,fsi.len*0.7),0.8,sp2[0],y0+3.15,sp2[2],sideAngle(ang,fsi));
       // attic windows
       for(const sk of [0,1,2,3]){ const si=sideInfo(sk,hl,hw); if(sk===b.f) continue; const n2=Math.max(1,Math.floor((si.len-1)/3.2)); for(let i=0;i<n2;i++){ const t=-si.e+si.len*(i+0.5)/n2; decal(Wn,f,ang,si,t,y0+0.9,'roller_brown0'); } }
+      if(ultraB) ultraExtras(cs,scene,b,f,ang,hl,hw,y0,e,fsi);
       if(st==='shopPink'){ const sk=(b.f<2?2:0); const si=sideInfo(sk,hl,hw); const pp=wallPoint(f,si,0,0.06); signMesh(scene,posterTex(),Math.min(7,si.len*0.8),2.6,pp[0],y0+1.9,pp[2],sideAngle(ang,si)); }
     }
     b.top=e; return;
@@ -98,6 +99,21 @@ function centreBuilding(cs,scene,b){
   emitHouse(cs,b,{style:s,floors,attic:st==='parish'?false:undefined});
   if(st==='parish'){ LANDMARKS.parish={x:b.rect[0],z:b.rect[1]}; }
 }
+// Ultra (Street View): cornice over the shop band, small upper windows under the eaves, the taller tan house behind, Ožujsko umbrellas on the square
+function ultraExtras(cs,scene,b,f,ang,hl,hw,y0,e,fsi){ const [cx,cz]=b.rect; const Wn=cs.get('win',cx,cz), T=cs.get('trim',cx,cz), Mt=cs.get('metal',cx,cz), Cl=cs.get('cloth',cx,cz); const CR=lin('#f4eee2');
+  for(const sk of [0,1,2,3]){ const si=sideInfo(sk,hl,hw); const L=si.len/2+0.08;
+    const mm=(t,o)=>wallPoint(f,si,t,o); const q0=mm(-L,0), q1=mm(L,0); let ax=Math.atan2(q1[2]-q0[2],q1[0]-q0[0]); { const N=worldN(ang,si.n); if(-Math.sin(ax)*N[0]+Math.cos(ax)*N[2]<0) ax+=Math.PI; } const cf=frame((q0[0]+q1[0])/2,(q0[2]+q1[2])/2,ax,0);
+    T.box(cf,-L,L,y0+3.42,y0+3.62,-0.02,0.16,CR); T.box(cf,-L,L,y0+3.62,y0+3.7,-0.02,0.1,CR); T.box(cf,-L,L,e-0.32,e-0.12,-0.02,0.12,CR); }
+  { const n=Math.max(3,Math.floor(fsi.len/3.6)); for(let i=0;i<n;i++){ const t=-fsi.e+fsi.len*(i+0.5)/n; decal(Wn,f,ang,fsi,t,y0+3.85,'roller_brown0',0.05,0.8); } }
+  // taller tan house joined at the back
+  { const bk=fsi.n[0]!==0?(fsi.n[0]>0?1:0):(fsi.n[1]>0?3:2); const bi=sideInfo(bk,hl,hw); const c=wallPoint(f,bi,bi.e*0.25,2.2); const L2=bi.len*0.55, W2=7.0; const ba=bk<2?ang+Math.PI/2:ang; const bf=frame(c[0],c[2],ba); const yb=b.hmin-0.6, e2=e+1.4;
+    emitWalls(cs,bf,ba,L2/2,W2/2,yb,e2,'gable',38,lin('#d8c09a'),'wall'); emitRoof(cs,bf,ba,L2/2,W2/2,e2,'gable',38,0.5,0.4,lin('#5b3a2b'),lin('#4a3022'));
+    for(const sd of [-1,1]){ for(let k=-1;k<=1;k++){ const wp=bf(k*L2/3.4,0,sd*(W2/2+0.05)); decal(Wn,frame(wp[0],wp[2],ba+(sd<0?Math.PI:0)),ba+(sd<0?Math.PI:0),{n:[0,1],r:[1,0],d:0,e:1,len:2},0,e2-1.9,'roller_brown0',0.02,0.85); } }
+    addCollider(c[0],c[2],ba,L2,W2,yb,e2+3); }
+  // yellow Ožujsko umbrellas with tables on the square in front (Mapillary 2929753964012017)
+  for(const t of [-fsi.e*0.62,-fsi.e*0.22]){ const p=wallPoint(f,fsi,t,3.4); const y=getHeight(p[0],p[2]); const uf=frame(p[0],p[2],0,y); Mt.cyl(uf,0.03,0.03,0,2.35,8,lin('#d9d9d4'),1,false);
+    lathe(Cl,uf,[[0,2.75],[1.35,2.3],[1.38,2.22],[0,2.24]],10,lin('#f0c227')); Mt.cyl(uf,0.42,0.42,0.72,0.75,14,lin('#e8e6df')); Mt.cyl(uf,0.04,0.06,0,0.73,6,lin('#555'),1,false); addCollider(p[0],p[2],0,0.8,0.8,y-1,y+0.9);
+    for(const a of [0.4,2.0,3.6,5.2]){ const q=uf(Math.cos(a)*0.75,0,Math.sin(a)*0.75); const chf=frame(q[0],q[2],-a,y); Mt.box(chf,-0.2,0.2,0.44,0.48,-0.2,0.2,lin('#e8e6df')); Mt.box(chf,0.17,0.21,0.44,0.86,-0.2,0.2,lin('#e8e6df')); } } }
 function posterTex(){ const c=cvs(1024,384), g=c.getContext('2d'); const gr=g.createLinearGradient(0,0,1024,384); gr.addColorStop(0,'#f6d34a'); gr.addColorStop(1,'#f39a2b'); g.fillStyle=gr; g.fillRect(0,0,1024,384);
   for(let i=0;i<26;i++){ g.fillStyle=pick(['#d62828','#3a9d23','#f77f00','#7b2cbf','#e63946','#90be6d']); g.beginPath(); g.arc(560+rnd(0,440),rnd(60,340),rnd(22,46),0,TAU); g.fill(); }
   g.fillStyle='#ffffff'; g.font='800 78px Manrope, Arial'; g.fillText('Svježe',40,150); g.fillText('svaki dan',40,245); g.font='600 34px Manrope, Arial'; g.fillText('voće · povrće · kruh',44,320); return mkTex(c,{repeat:false}); }
