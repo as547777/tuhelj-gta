@@ -1,34 +1,36 @@
 # Tuhelj GTA 🏡🚗
 
-3D igra otvorenog svijeta u pregledniku: selo **Tuhelj** u Hrvatskom zagorju, napravljeno prema OpenStreetMap karti. Ima vožnju, misije, policiju, vatrogasce, poker u brtiji, trgovine u koje se može ući i multiplayer s prijateljima.
+An open-world 3D game in the browser, set in the village of **Tuhelj** in Hrvatsko zagorje, Croatia, built from real OpenStreetMap data. It has driving, missions, police, firefighters, poker at the local pub, shops you can walk into, and multiplayer with friends.
 
-## Igraj
-- **Online:** Netlify (projekt `tuhelj-gtav`), a ako uključiš GitHub Pages, igra će biti i na `https://TVOJE-IME.github.io/tuhelj-gta/`.
-- **Na računalu:** otvori `docs/index.html` dvoklikom (Chrome ili Edge).
-- **Na mobitelu:** otvori online adresu; igra se sama prilagodi dodiru.
+> 🚧 Work in progress, new features are being added regularly.
 
-Osnovne tipke: **E** — radnja (uđi u auto, trgovinu, kupi, izađi), **V** — pogled iz auta, **P** — mobitel (postavke, izgled lika, karta).
+## Play
+- **Online:** on Netlify (project `tuhelj-gtav`), and with GitHub Pages enabled at `https://YOUR-USERNAME.github.io/tuhelj-gta/`.
+- **On a computer:** double-click `docs/index.html` (Chrome or Edge).
+- **On a phone:** open the online address; the game adapts to touch controls automatically.
 
-## Kako dalje uređivati
-- Kod igre je u `src/`: svaki modul je zasebna `.js` datoteka, a opis svih modula je u `PREDAJA.md`.
-- Gradnja za Netlify i GitHub Pages: `python3 build_netlify.py` → `dist/tuhelj-3d/` i `dist/tuhelj-3d.zip` (za Netlify) te `docs/` (za GitHub Pages).
-- Brza testna verzija: `python3 build.py test/index.html`. Uz HTML se pravi i mapa `models/`.
-- 3D modeli (GLB) su u `assets/`, a alati za pretvaranje novih likova u `tools/model_pipeline/`.
-- Statične datoteke weba (three.js, MQTT, PeerJS, ikone, upute) su u `web/`.
+Basic controls: **E** to interact (enter a car or shop, buy, exit), **V** to switch the in-car camera, **P** to open the phone (settings, character look, map).
 
-## Struktura
-| mapa | sadržaj |
+## Development
+- The game code is in `src/`: each module is a separate `.js` file, and all modules are described in `PREDAJA.md`.
+- Build for Netlify and GitHub Pages: `python3 build_netlify.py` → `dist/tuhelj-3d/` and `dist/tuhelj-3d.zip` (for Netlify) and `docs/` (for GitHub Pages).
+- Quick test build: `python3 build.py test/index.html`. A `models/` folder is created next to the HTML.
+- 3D models (GLB) are in `assets/`, and tools for converting new characters are in `tools/model_pipeline/`.
+- Static web files (three.js, MQTT, PeerJS, icons, instructions) are in `web/`.
+
+## Project structure
+| folder | contents |
 |---|---|
-| `src/` | moduli igre (teren, ceste, zgrade, auti, ljudi, misije, interijeri…) |
-| `assets/` | likovi (Rocketbox), animacije, auti, traktor, puške + `LICENSES/` |
-| `tools/model_pipeline/` | pretvorba FBX → GLB, smanjivanje tekstura, verzija za mobitel |
-| `web/` | statične datoteke koje idu uz igru |
-| `docs/` | gotova igra (za GitHub Pages) |
-| `data.json` | podaci karte (OpenStreetMap) |
+| `src/` | game modules (terrain, roads, buildings, cars, people, missions, interiors…) |
+| `assets/` | characters (Rocketbox), animations, cars, tractor, weapons + `LICENSES/` |
+| `tools/model_pipeline/` | FBX → GLB conversion, texture downscaling, mobile version |
+| `web/` | static files shipped with the game |
+| `docs/` | the built game (for GitHub Pages) |
+| `data.json` | map data (OpenStreetMap) |
 
-## Zasluge i licence
-- Karta: © OpenStreetMap contributors (ODbL); referentne slike: Mapillary (CC BY-SA 4.0)
-- Ljudi i mocap animacije: Microsoft Rocketbox (MIT) — `assets/LICENSES/Rocketbox_MIT_LICENSE.md`
-- Auti i puške: Quaternius (CC0); traktor: Kenney Car Kit (CC0)
-- three.js (MIT), MQTT.js (MIT), PeerJS (MIT) — licence u `web/`
-- Lik "realistični vojnik": Soldier.glb iz primjera three.js (lik i animacije: Adobe Mixamo)
+## Credits and licenses
+- Map: © OpenStreetMap contributors (ODbL); reference images: Mapillary (CC BY-SA 4.0)
+- People and mocap animations: Microsoft Rocketbox (MIT), see `assets/LICENSES/Rocketbox_MIT_LICENSE.md`
+- Cars and weapons: Quaternius (CC0); tractor: Kenney Car Kit (CC0)
+- three.js (MIT), MQTT.js (MIT), PeerJS (MIT), licenses in `web/`
+- "Realistic soldier" character: Soldier.glb from the three.js examples (character and animations: Adobe Mixamo)
