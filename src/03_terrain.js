@@ -15,7 +15,7 @@ function flattenSites(){
       const ix0=Math.max(0,Math.floor((r[0]-ext-X0)/CELL)), ix1=Math.min(NX-1,Math.ceil((r[0]+ext-X0)/CELL)), iz0=Math.max(0,Math.floor((r[1]-ext-Z0)/CELL)), iz1=Math.min(NZ-1,Math.ceil((r[1]+ext-Z0)/CELL));
       for(let iz=iz0;iz<=iz1;iz++) for(let ix=ix0;ix<=ix1;ix++){ const x=X0+ix*CELL-r[0], z=Z0+iz*CELL-r[1]; const lx=Math.abs(x*c+z*sn)-hl, lz=Math.abs(-x*sn+z*c)-hw; const d=Math.hypot(Math.max(lx,0),Math.max(lz,0));
         const w=d<=IN?1:d>=OUT?0:1-smooth(IN,OUT,d); if(w<=0) continue; const i=iz*NX+ix; acc[i]+=w*target; ws[i]+=w; if(w>wm[i]) wm[i]=w; } } }
-  for(let i=0;i<NX*NZ;i++){ if(ws[i]>0){ const t=acc[i]/ws[i]; HEI[i]=HEI[i]+(t-HEI[i])*wm[i]; } }
+  for(let i=0;i<NX*NZ;i++){ if(ws[i]>0){ const t=acc[i]/ws[i]; HEI[i]=HEI[i]+(t-HEI[i])*wm[i]*(1-(typeof ROADMASK!=='undefined'?ROADMASK[i]:0)); } }
 }
 function hAt(ix,iz){ if(ix<0)ix=0; else if(ix>NX-1)ix=NX-1; if(iz<0)iz=0; else if(iz>NZ-1)iz=NZ-1; return HEI[iz*NX+ix]; }
 function getHeight(x,z){

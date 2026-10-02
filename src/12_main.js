@@ -24,7 +24,7 @@ async function main(){
   const scene=new THREE.Scene(); GAME.scene=scene; const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.15,7000); GAME.camera=camera;
   await step(0.03,'Učitavam teren…'); decodeHeights();
   { const cb=D.bld.find(b=>b.k==='cafe'); if(cb&&cb.r.length===1){ const r=cb.r[0]; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=7.0, lz=-5.1; cb.r.push([r[0]+c*lx-sn*lz, r[1]+sn*lx+c*lz, r[2], 7.4, 2.6, r[5]]); } }
-  flattenSites();
+  gradeRoads(); flattenSites();
   await step(0.08,'Izrađujem teksture…'); buildTextures(); buildWindowAtlas();
   await step(0.16,'Crtam polja i livade…'); paintGround(GAME.ios?3072:(q>=2?4096:3072));
   await step(0.26,'Postavljam kuće…'); prepBuildings();
@@ -57,13 +57,15 @@ async function main(){
   teleport(START.x,START.z,START.look[0],START.look[1]);
   // warm up shaders
   renderer.compile(scene,camera);
-  UI.progress(1,'Spremno'); $('go').disabled=false; $('go').textContent='Kreni u šetnju'; $('start').classList.add('ready');
+  UI.progress(1,'Spremno'); $('go').disabled=false; $('go').textContent=goLabel(); $('start').classList.add('ready'); try{ lookInit(); }catch(e){ console.warn(e); }
   let last=performance.now(), fr=0;
-  GAME.frame=(t)=>{ const dt=Math.min(0.05,(t-last)/1000); last=t; GAME.time+=dt; fr++;
+  GAME.frame=(t)=>{ const dt=Math.max(0,Math.min(0.05,(t-last)/1000)); last=Math.max(last,t); GAME.time+=dt; fr++;
+    // a page loaded in a hidden tab/pane starts with a 0x0 window -> aspect NaN and a black screen; fix it as soon as the window has a size
+    if(innerHeight>0 && !(Math.abs(camera.aspect-innerWidth/innerHeight)<1e-3)) onResize();
     if(GAME.started){ if(!GAME.paused){ if(PLAYER.heli) heliTick(dt); else if(PLAYER.driving) updateDriving(dt); else if(PLAYER.riding) updateRiding(dt); else updatePlayer(dt); } if(PLAYER.heli) heliCamera(camera,dt); else if(PLAYER.driving||PLAYER.riding) carCamera(camera,dt); else if(PKC.sit) pkCamera(camera); else applyCamera(camera);
       if(fr%6===0){ const inCar=PLAYER.driving||PLAYER.riding; const nv=(!inCar&&!GAME.paused)?nearestVehicle(PLAYER.pos.x,PLAYER.pos.z,3.4,true):null; GAME.nearCar=nv; const cb=document.getElementById('carbtn'); if(cb){ cb.classList.toggle('on',!!nv); const sp=cb.querySelector('span'); if(sp) sp.textContent=nv&&nv.remote?'Sjedni':'Vozi'; } const pr=document.getElementById('prompt'); if(pr){ const gg=giverNear(); const txt=GTA.dlg?'E — dalje':PLAYER.heli?'E — izađi iz helikoptera (na tlu)':gg?'E — misija: '+gg.title:nearHeli()?'E — uđi u helikopter':intPrompt()?'E — '+intPrompt():(!PLAYER.driving&&nearPt(HOME_POS(),4))?(GTA.home?'E — odmori se kod kuće':'E — kupi stan Kod Ruže (800 €)'):PLAYER.driving?'E — izađi iz auta · V — pogled iz auta':PLAYER.riding?'E — izađi (suvozač) · V — pogled':(nv?(nv.remote?'E — sjedni kao suvozač':(nv.truck?'E — uđi u vatrogasno vozilo':nv.bike?'E — sjedni na bicikl':nv.label?'E — uđi u '+nv.label:'E — uđi u auto')):(nearValentina()?'E — naruči kod Valentine':nearBar()?'E — naruči piće na šanku':(nearPoker()?'E — sjedni za poker':(LANDMARKS.churchDoor&&Math.hypot(PLAYER.pos.x-LANDMARKS.churchDoor.x,PLAYER.pos.z-LANDMARKS.churchDoor.z)<7?'Crkva je otvorena — samo uđi ⛪':'')))); if(pr.dataset.t!==txt){ pr.dataset.t=txt; pr.innerHTML=promptHTML(txt); } pr.classList.toggle('on',!!txt); } }
-      netTick(dt); occupantTick(); npcTick(dt); lifeTick(dt); gtaTick(dt); gta2Tick(dt); owTick(dt); modelsTick(); combatTick(dt); weaponTick(dt); pokerTick(dt); try{ intTick(dt); }catch(e){ console.warn(e); } humansTick(dt); if(COMBAT.hold&&COMBAT.armed) fireGun(); }
-    else { const a=GAME.time*0.05; const c=[-300,-2]; camera.position.set(c[0]+Math.cos(a)*95,getHeight(c[0]+Math.cos(a)*95,c[1]+Math.sin(a)*95)+24,c[1]+Math.sin(a)*95); camera.lookAt(c[0],getHeight(c[0],c[1])+9,c[1]); }
+      netTick(dt); occupantTick(); npcTick(dt); lifeTick(dt); gtaTick(dt); gta2Tick(dt); owTick(dt); modelsTick(); combatTick(dt); weaponTick(dt); tpsTick(dt); pokerTick(dt); try{ intTick(dt); }catch(e){ console.warn(e); } try{ lawTick(dt); }catch(e){ console.warn('law',e); } try{ homeTick(dt); storyTick(dt); }catch(e){ console.warn('story',e); } humansTick(dt); tpsLate(); try{ lawLate(); }catch(e){ console.warn('lawLate',e); } if(COMBAT.hold&&COMBAT.armed) fireGun(); }
+    else { startCam(camera,dt); lookTick(dt); }
     const cp=GAME.started?PLAYER.pos:camera.position; VEG.uniforms.uPlayer.value.set(cp.x,cp.y,cp.z); VEG.uniforms.uTime.value=GAME.time; SKY.uni.uTime.value=GAME.time;
     if(Math.hypot(cp.x-VEG.lastRebuild.x,cp.z-VEG.lastRebuild.z)>((PLAYER.driving||PLAYER.riding)?38:14)) rebuildNearTrees(cp.x,cp.z);
     if(fr%2===0||!GAME.started){ updateSun(new THREE.Vector3(cp.x,getHeight(cp.x,cp.z),cp.z)); renderer.shadowMap.needsUpdate=true; } SKY.mesh.position.copy(camera.position);

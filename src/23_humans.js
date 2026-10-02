@@ -2,6 +2,7 @@
    Mještani: Microsoft Rocketbox avatari + Rocketbox mocap animacije (MIT) — hodanje, šetnja, trčanje, stajanje,
    sjedenje za stolom/na stolici, pijenje, razgovor, mahanje, pijano hodanje. Igrač "vojnik": Soldier.glb (three.js/Mixamo).
    Proceduralni lik (makeAvatar) ostaje ispod kao rezerva: za daleke ljude, bicikliste i dok se modeli učitavaju. */
+const EXTRA_PEOPLE=[]; // police officers, paramedics, story characters: avatars with A.rbKey set
 const REAL={ready:false,gltf:null,variants:[],list:[],rb:{},rbReady:false,clips:{m:{},f:{}},pel:{m:{},f:{}},sortT:0,chosen:new Set(),n:0};
 const RB_M=['Male_Adult_02','Male_Adult_05','Male_Adult_06','Male_Adult_08','Male_Adult_13','Male_Adult_16','Male_Adult_20','Delivery_Male_01','Gardener_Male_01','Male_Adult_03'];
 const RB_F=['Female_Adult_01','Female_Adult_02','Female_Adult_04','Female_Adult_07','Female_Adult_13','Female_Adult_17'];
@@ -42,7 +43,7 @@ function wantedKey(A,kind,n){ if(kind==='me'){ if(!OW.skinSet&&!(OW.skin|0)){ co
 function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady) return;
   const cand=[]; const push=(A,kind,n)=>{ if(A&&A.group) cand.push({A,kind,n}); };
   for(const R of NET.remotes.values()) if(R.av){ R.av._sk=R.sk|0; push(R.av,'remote',R.name); } if(ME_AV) push(ME_AV,'me',NET.name);
-  for(const N of NPCS) push(N.A,'npc',N.d.n); for(const V of LIFE.villagers) push(V.A,'npc',V.n); if(typeof INT_PEOPLE!=='undefined') for(const A of INT_PEOPLE) push(A,'npc',A.name); if(typeof SHOPIN!=='undefined'&&SHOPIN.cashier&&!(typeof INT_PEOPLE!=='undefined'&&INT_PEOPLE.includes(SHOPIN.cashier))) push(SHOPIN.cashier,'npc',SHOPIN.cashier.name); for(const Q of GTA.peds) push(Q.A,'npc',Q.A.name);
+  for(const N of NPCS) push(N.A,'npc',N.d.n); for(const V of LIFE.villagers) push(V.A,'npc',V.n); if(typeof INT_PEOPLE!=='undefined') for(const A of INT_PEOPLE) push(A,'npc',A.name); if(typeof SHOPIN!=='undefined'&&SHOPIN.cashier&&!(typeof INT_PEOPLE!=='undefined'&&INT_PEOPLE.includes(SHOPIN.cashier))) push(SHOPIN.cashier,'npc',SHOPIN.cashier.name); for(const Q of GTA.peds) push(Q.A,'npc',Q.A.name); for(const A of EXTRA_PEOPLE) push(A,'npc',A.name);
   if(typeof PK3!=='undefined'&&PK3&&PK3.npc) for(const [n,A] of PK3.npc){ A.pk=true; push(A,'npc',n); }
   const cam=GAME.camera.position; const MAXR=GAME.touch?10:26, RMAX=GAME.touch?60:105;
   const FR=REAL.fr||(REAL.fr=new THREE.Frustum()), PM=REAL.pm||(REAL.pm=new THREE.Matrix4()), SPH=REAL.sph||(REAL.sph=new THREE.Sphere(new THREE.Vector3(),1.5)); GAME.camera.updateMatrixWorld(); PM.multiplyMatrices(GAME.camera.projectionMatrix,GAME.camera.matrixWorldInverse); FR.setFromProjectionMatrix(PM);
@@ -67,14 +68,15 @@ function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady) re
     const s=A.dead?0:R.spd; let clip, ts=1;
     // speed → idle / stroll / walk / run, with hysteresis and a minimum hold so people don't twitch between clips
     const BND=[0.28,1.0,2.7]; let c=R.cat; while(c<3&&s>BND[c]+0.12) c++; while(c>0&&s<BND[c-1]-0.12) c--; if(c!==R.cat&&GAME.time-R.catT>0.4){ R.cat=c; R.catT=GAME.time; }
-    if(sitClip){ clip=sitClip; }
+    if(A.forceClip&&(R.act[A.forceClip]||RB_FALL[A.forceClip])){ clip=A.forceClip; ts=A.forceTs||1; }
+    else if(sitClip){ clip=sitClip; }
     else if(onBike){ clip='idle'; }
     else if(R.cat===0) clip=RB_IDLE[n]||'idle';
     else if(R.cat===1){ clip='stroll'; ts=clamp(s/0.95,0.55,1.3); }
     else if(R.cat===2){ clip=(n==='Kenka'||n==='Jovo')?'drunkwalk':'walk'; ts=clamp(s/1.35,0.7,1.8); }
     else { clip='run'; ts=clamp(s/3.9,0.75,1.5); }
     rbPlay(R,clip,ts);
-    R.m.position.y=sitClip?(0.99-(REAL.pel[R.g][sitClip]||0.58)*R.sc):onBike?0.04:0;
+    R.m.position.y=A.forceY!==undefined&&A.forceClip?A.forceY:sitClip?(0.99-(REAL.pel[R.g][sitClip]||0.58)*R.sc):onBike?0.04:0;
     if(A.dead){ continue; }
     R.acc+=dt; const step=onBike?0:GAME.touch?(d<12?1/40:d<30?1/15:1/8):(d<25?0:d<55?1/20:1/10); if(R.acc>=step){ R.mixer.update(R.acc); R.acc=0; if(onBike) bikePose(R,A.bikePh||0); } } }
 /* cycling: realistic riders keep the idle clip and get legs/arms/spine posed per frame (pedalling from the wheel phase) */

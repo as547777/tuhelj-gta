@@ -41,6 +41,18 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - Animacije: histereza + minimalno 0,4 s po animaciji (nema trzanja), nema T-poze pri pojavljivanju, likovi izvan kadra se ne animiraju; `humansTick` se zove zadnji u petlji (poker više ne prikazuje dvostruka tijela).
 - Mobitel: `assets/people_m` (pojednostavljeni likovi ~4,9k trokuta, teksture 256 px, bez normal mapa, 3,5 MB), najviše 10 realističnih do 60 m, sjene samo do 12 m, rjeđe animacije.
 
+## GTA nadogradnja (listopad 2026)
+- **26_tps.js — treće lice**: kamera iza desnog ramena (V mijenja treće/prvo lice), sudari kamere sa zidovima (niske ograde se ignoriraju), igračev lik (`ME_AV`) je vidljiv i drži oružje u rukama. `holdGun(A,wi,dir,gun)` postavlja pušku na rame / pištolj u ispružene ruke preko IK-a ruku (`armIK`, kosti Bip01_*), isti kod koriste policajci i Vukovi. Snajper s nišanom prelazi u prvo lice.
+- **18_weapons.js — oružje**: dodani Pištolj (4) i Sačmarica (5, 9 sačmi); indeksi 0-3 nepromijenjeni zbog multiplayera. Kotačić miša / 1-6 / GTA traka oružja (`showWeaponWheel`). `ARMORY` = posjedovana oružja (pištolj, puška, SMG od početka; sačmarica, snajper, bazuka kroz priču, `armUnlock`). Prave rakete (`rocketMesh`: tijelo, krilca, plamen, gust trag dima), eksplozije s vatrenom kuglom, svjetlom, udarnim valom, krhotinama i opeklinom na tlu. Meci i rakete oštećuju aute (`damageVehicle`) — auto gori pa eksplodira i ostaje crna olupina (`WRECKS`). Jedno dijeljeno svjetlo `FX.light` (dodavanje svjetala bi rekompajliralo sve shadere).
+- **27_law.js — policija i hitna koje se vide**: svaki policijski auto vozi dvojicu policajaca (Police_Male_01). U potjeri auto stane, policajci izađu i trče za tobom: 1 zvjezdica → uhićenje, od 2 → pucaju (pogodak ovisi o udaljenosti i brzini). Pobjegneš li autom, vrate se u auto. Hitna dovozi dva bolničara koji kleknu kraj žrtve, rade masažu srca s kutijom prve pomoći i ožive je. Graf cesta + A* (`roadRoute`, `routeTo`): policija, banda i hitna voze po cestama. Crni Vukovi pješice (`spawnThug`) za misije.
+- **28_home.js — stan Kod Ruže**: ormar (odjeća na tvom liku, kamera s prednje strane), krevet (spavanje do jutra/popodne/večeri, sprema igru), tuš (trijeznost), Zagorje TV (vijesti prate priču), „Uredi stan” — namještaj koji ostaje (localStorage `tuhelj_decor`). `gMenu()` je opći izbornik.
+- **29_story.js — priča „Povratak u Tuhelj”**: 7 poglavlja (★ na karti i iznad lika), `STORY.ch` u localStorage `tuhelj_story`. Sporedne misije (!) ostaju. Filmske trake tijekom razgovora, putnik Kenka vidljiv u autu, natuknica sljedećeg poglavlja u HUD-u.
+- **30_look.js + build.py — početni ekran**: GTA naslov, filmski kadrovi sela, savjeti, napredak po poglavljima, „Nova igra”. **Tvoje slike**: stavi .jpg/.png/.webp u mapu `photos/` — vrte se na početnom ekranu, a prva visi uokvirena u stanu.
+- **Ceste** (`gradeRoads` u 04_roads.js): uzdužni profil se izgladi i ograniči nagib, teren se usiječe/nasipa, ceste su ravne poprijeko; `ROADMASK` sprječava da placevi kuća iskrive cestu.
+- **09b_post.js**: bloom (sunce, eksplozije, svjetla noću) i GTA V gradiranje boja (mirnija zelena, topla svjetla, hladne sjene).
+- Popravak: igra otvorena u skrivenoj kartici imala je crni ekran (aspect NaN) — sad se samo popravi.
+- `build.py` čita/piše UTF-8 (radi na Windowsima bez `PYTHONUTF8`), `--dev` dodaje 99_dev.js (`?dev` u adresi: `devStart()`, `CAM()`, `SNAP()`).
+
 ## Otvoreno
 - vatrogasni kamion i hitna su još proceduralni (nema dobrog besplatnog realističnog modela); bazuka proceduralna
 - puške u rukama igrača s realističnim izgledom (vezati na kost Bip01_R_Hand)

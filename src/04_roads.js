@@ -20,6 +20,36 @@ function nearestRoad(x,z,maxd=20,filter){ let best=null, bd=maxd; const r=Math.c
   for(let i=-r;i<=r;i++) for(let j=-r;j<=r;j++){ const a=RIDX.map.get((cx+i)+'|'+(cz+j)); if(!a) continue; for(const s of a){ if(filter && !filter(s)) continue; const d=Math.hypot(s.x-x,s.z-z)-s.w/2; if(d<bd){ bd=d; best=s; } } }
   return best? {s:best,d:bd}:null; }
 function roadClear(x,z,margin){ const n=nearestRoad(x,z,margin+8); return !n || n.d>margin; }
+// Road grading: the 6 m height grid makes roads climb every bump and lean sideways. Like real roads,
+// smooth each road's long profile, limit its grade, then cut/fill the terrain so the road is level across.
+// Runs after flattenSites() and before anything else reads getHeight(), so buildings, props and cars all sit on the graded ground.
+function gradeRoads(){
+  const acc=new Float32Array(NX*NZ), ws=new Float32Array(NX*NZ), wm=new Float32Array(NX*NZ);
+  const step=1.5;
+  for(const r of ROADS){ if(r.t==='path'||r.b) continue;
+    const main=r.t==='primary'||r.t==='secondary'||r.t==='tertiary';
+    const track=r.t==='track';
+    const S=resample(smoothCorners(r.P,8,2),step); if(S.length<3) continue;
+    const H0=S.map(p=>getHeight(p[0],p[1]));
+    // low-pass the long profile (two box passes ≈ gaussian)
+    const win=main?11:track?6:8; let H=H0.slice();
+    for(let pass=0;pass<2;pass++){ const o=H.slice(); for(let i=0;i<H.length;i++){ let s=0,n=0; for(let k=-win;k<=win;k++){ const j=i+k; if(j<0||j>=H.length) continue; s+=o[j]; n++; } H[i]=s/n; } }
+    // keep the ends on the original ground so junctions meet, never cut/fill more than a few metres
+    const maxCut=main?4.5:3.5;
+    for(let i=0;i<H.length;i++){ const e=Math.min(1,Math.min(i,H.length-1-i)/6); H[i]=H0[i]+(H[i]-H0[i])*e; H[i]=clamp(H[i],H0[i]-maxCut,H0[i]+maxCut); }
+    // grade limit (forward + backward pass)
+    const g=(main?0.11:track?0.2:0.15)*step;
+    for(let i=1;i<H.length;i++) H[i]=clamp(H[i],H[i-1]-g,H[i-1]+g);
+    for(let i=H.length-2;i>=0;i--) H[i]=clamp(H[i],H[i+1]-g,H[i+1]+g);
+    const hw=r.w/2, IN=hw+(track?2.5:4.5), OUT=hw+(track?9:15), pri=main?3:track?0.6:1.5;
+    for(let i=0;i<S.length;i++){ const x=S[i][0], z=S[i][1];
+      const ix0=Math.max(0,Math.floor((x-OUT-X0)/CELL)), ix1=Math.min(NX-1,Math.ceil((x+OUT-X0)/CELL)), iz0=Math.max(0,Math.floor((z-OUT-Z0)/CELL)), iz1=Math.min(NZ-1,Math.ceil((z+OUT-Z0)/CELL));
+      for(let iz=iz0;iz<=iz1;iz++) for(let ix=ix0;ix<=ix1;ix++){ const d=Math.hypot(X0+ix*CELL-x,Z0+iz*CELL-z); if(d>=OUT) continue;
+        const w=d<=IN?1:1-smooth(IN,OUT,d); const k=iz*NX+ix; const kw=pri*Math.exp(-(d*d)/(2*36)); acc[k]+=kw*H[i]; ws[k]+=kw; if(w>wm[k]) wm[k]=w;
+        const c=d<=hw+3?1:1-smooth(hw+3,hw+8,d); if(c>ROADMASK[k]) ROADMASK[k]=c; } } }
+  for(let k=0;k<NX*NZ;k++){ if(ws[k]>0) HEI[k]+=(acc[k]/ws[k]-HEI[k])*wm[k]; }
+}
+const ROADMASK=new Float32Array(NX*NZ); // 1 on/next to a graded road; flattenSites leaves those nodes alone
 const ROADMESH={};
 function buildRoads(scene){
   const matMain=new THREE.MeshStandardMaterial({map:TEX.asphalt,roughness:0.88,metalness:0,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});

@@ -1,0 +1,7 @@
+Ovdje stavi svoje slike Tuhlja (.jpg, .png ili .webp).
+
+- vrte se na početnom ekranu igre (polako zumiranje, izmjena svakih 7 s)
+- prva slika (po abecedi) visi uokvirena u stanu Kod Ruže kad kupiš "Uokvirenu sliku Tuhlja"
+
+Najbolje su vodoravne slike, oko 1600-2000 px širine (manje datoteke = brže učitavanje).
+Nakon dodavanja pokreni: python build_netlify.py

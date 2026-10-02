@@ -1,8 +1,9 @@
 import os
 import json, glob, os, sys
 ROOT=os.path.dirname(os.path.abspath(__file__))
-js='\n'.join(open(f).read() for f in sorted(glob.glob(ROOT+'/src/*.js')))
-data=json.load(open(ROOT+'/data.json'))
+DEV='--dev' in sys.argv; sys.argv=[a for a in sys.argv if a!='--dev']
+js='\n'.join(open(f,encoding='utf-8').read() for f in sorted(glob.glob(ROOT+'/src/*.js')) if DEV or not f.endswith('99_dev.js'))
+data=json.load(open(ROOT+'/data.json',encoding='utf-8'))
 djs=json.dumps(data,separators=(',',':')).replace('</','<\\/')
 THREE_URL='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js'
 HTML='''<!DOCTYPE html>
@@ -15,9 +16,9 @@ HTML='''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1311">
 %%MANIFEST%%
-<title>Tuhelj — šetnja kroz selo</title>
+<title>Tuhelj — Povratak u Zagorje</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
  --bg:#0f1311;--panel:rgba(22,24,21,.58);--panel-strong:rgba(20,22,19,.82);--line:rgba(255,255,255,.14);--ink:#f5f1e8;--muted:rgba(245,241,232,.66);--accent:#d8653a;--accent-ink:#fff8f2;--chip:rgba(255,255,255,.1);
@@ -289,31 +290,48 @@ body.touch .keys{display:none} body.touch .touchhelp{display:block} body.touch #
 @media (max-width:760px){#start{align-items:flex-end;padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(22px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,rgba(8,10,8,.85) 0%,rgba(8,10,8,.55) 55%,rgba(8,10,8,.1) 100%)} .keys{display:none} #mini{width:118px;height:118px} #place{font-size:30px} #tbtns{top:calc(146px + env(safe-area-inset-top,0px))} #map{flex-direction:column} #mapside{width:100%;max-height:34%} #hint{display:none}}
 @media (max-height:520px){#tbtns{top:calc(16px + env(safe-area-inset-top,0px))!important;right:calc(196px + env(safe-area-inset-right,0px))}}
 @media (max-height:520px) and (max-width:760px){#tbtns{right:calc(146px + env(safe-area-inset-right,0px))}}
+/* start screen: GTA-style title over a cinematic fly-through (or your photos from photos/) */
+#start{background:none}
+#start::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,rgba(6,7,6,.86) 0%,rgba(6,7,6,.55) 34%,rgba(6,7,6,0) 62%),linear-gradient(0deg,rgba(6,7,6,.7),rgba(6,7,6,0) 40%)}
+@media (max-width:760px){#start::before{background:linear-gradient(0deg,rgba(6,7,6,.9) 0%,rgba(6,7,6,.6) 55%,rgba(6,7,6,.1) 100%)}}
+#slides{position:absolute;inset:0;z-index:-2;overflow:hidden;background:#0b0d0b;display:none}#slides.on{display:block}
+#slides img{position:absolute;inset:-4%;width:108%;height:108%;object-fit:cover;opacity:0;transition:opacity 1.6s ease;animation:kb 14s ease-in-out infinite alternate}#slides img.on{opacity:1}
+@keyframes kb{from{transform:scale(1) translate(0,0)}to{transform:scale(1.08) translate(-2%,-1%)}}
+#shotfade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s;z-index:-1}#shotfade.on{opacity:1}
+.logo{font-family:Anton,Impact,"Arial Narrow",sans-serif;font-weight:400;margin:.1em 0 .12em;line-height:.86}
+.logo span{display:block;font-size:clamp(78px,13vw,150px);letter-spacing:.01em;color:#fff;-webkit-text-stroke:3px #0a0a0a;paint-order:stroke fill;text-shadow:0 6px 0 rgba(0,0,0,.55),0 0 40px rgba(0,0,0,.35)}
+.logo small{display:inline-block;font-family:var(--sans);font-weight:800;font-size:13px;letter-spacing:.32em;text-transform:uppercase;background:#d8653a;color:#fff;padding:7px 12px 6px;margin-top:10px;transform:skew(-8deg)}
+#chap{display:flex;gap:5px;margin:0 0 16px;align-items:center;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase}#chap i{width:22px;height:6px;border-radius:3px;background:var(--chip);display:block}#chap i.d{background:#ff8a2a}#chap b{margin-left:8px;color:var(--ink)}
+.gorow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ghost{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--ink);font-weight:700;font-size:14px;padding:14px 20px;border-radius:999px;cursor:pointer}
+#tip{position:absolute;right:28px;bottom:calc(30px + env(safe-area-inset-bottom,0px));max-width:min(360px,40vw);font-size:13px;line-height:1.5;color:rgba(255,255,255,.85);text-shadow:0 1px 3px #000;border-left:3px solid #d8653a;padding:2px 0 2px 12px;transition:opacity .4s}
+#tip b{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#f2c9a8;margin-bottom:2px}
+@media (max-height:860px){.logo span{font-size:clamp(60px,9vw,96px)}.lede{font-size:14px;margin-bottom:14px}#start .keys{display:none}#chap{margin-bottom:10px}}
+@media (max-height:620px){.lede{display:none}.logo small{margin-top:4px}}
+#start{overflow-y:auto}
+@media (max-width:760px){#tip{display:none}.logo span{font-size:64px;-webkit-text-stroke:2px #0a0a0a}.lede{font-size:14px}}
 </style>
 </head>
 <body>
 <div id="view"></div>
-<div id="start"><div class="card">
+<div id="start"><div id="slides"></div><div id="shotfade"></div><div class="card">
  <div class="eyebrow">Hrvatsko zagorje · Krapinsko-zagorska županija</div>
- <h1>Tuhelj<em>.</em></h1>
- <p class="lede">Prošeći se središtem sela — uđi u crkvu Uznesenja Blažene Djevice Marije, svrati do Kafića Putniku i vatrogasnog doma, pa nastavi poljima prema Pristavi.</p>
+ <h1 class="logo"><span>TUHELJ</span><small>Povratak u Zagorje</small></h1>
+ <p class="lede">Deset godina u Njemačkoj, a sad si opet doma. Baka Ruža ti je ostavila stan, Kenka je dužan Crnim Vukovima, a netko u općini im drži leđa. Sedam poglavlja, cijelo selo, policija za petama — i brtija koja nikad ne spava.</p>
+ <div id="chap"></div>
  <div class="prog"><div id="bar"></div></div><div id="ltxt">Pripremam…</div>
  <div class="namerow"><input id="pname" maxlength="16" placeholder="Tvoje ime (vide ga drugi igrači)" autocomplete="off" spellcheck="false"></div>
- <button id="go" disabled>Učitavam…</button>
- <div class="touchhelp">Okreni mobitel vodoravno — igra se otvara preko cijelog zaslona. Lijevi krug dolje — hodanje · povuci prstom po ekranu — pogled · čovječuljak desno — trčanje (dodir uključi/isključi) · gumb Karta — premještanje po selu</div>
+ <div class="gorow"><button id="go" disabled>Učitavam…</button><button id="newgame" class="ghost" type="button">Nova igra</button></div>
+ <div class="touchhelp">Okreni mobitel vodoravno — igra se otvara preko cijelog zaslona. Lijevi krug dolje — hodanje · povuci prstom po ekranu — pogled · čovječuljak desno — trčanje · gumb Oružje — mijenja oružje · gumb Karta — premještanje po selu</div>
  <div class="keys">
-  <span><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></span><span>hodanje (ili strelice)</span>
-  <span><kbd>Miš</kbd></span><span>pogled oko sebe</span>
-  <span><kbd>Shift</kbd></span><span>trčanje · <kbd>Space</kbd> skok</span>
-  <span><kbd>M</kbd></span><span>karta — klikni bilo gdje za premještanje</span>
-  <span><kbd>E</kbd></span><span>auto (uđi / izađi) · šank · <kbd>V</kbd> pogled iz auta</span>
-  <span><kbd>1</kbd>–<kbd>4</kbd></span><span>puška, SMG, snajper, bazuka · <kbd>Q</kbd> spremi · lijevi klik puca, desni nišani · <kbd>R</kbd> punjenje</span>
-  <span><kbd>E</kbd></span><span>u kafiću: šank i poker stol</span>
-  <span><kbd>P</kbd></span><span>mobitel (poruke, misije, inventar) · <kbd>I</kbd> inventar · <kbd>F3</kbd> debug</span>
-  <span><kbd>G</kbd></span><span>u vatrogasnom kamionu: voda (ili lijevi klik) — gasi požare 🔥</span>
-  <span><kbd>F</kbd></span><span>letenje iznad sela · <kbd>Esc</kbd> izbornik</span>
+  <span><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></span><span>hodanje · <kbd>Shift</kbd> trčanje · <kbd>Space</kbd> skok</span>
+  <span><kbd>Miš</kbd></span><span>pogled · <kbd>V</kbd> treće / prvo lice (u autu: kamera)</span>
+  <span><kbd>E</kbd></span><span>razgovor, misija, auto, vrata, ormar, šank</span>
+  <span><kbd>Kotačić</kbd></span><span>mijenja oružje (ili <kbd>1</kbd>–<kbd>6</kbd>) · <kbd>Q</kbd> spremi · <kbd>R</kbd> punjenje</span>
+  <span><kbd>Klik</kbd></span><span>lijevi puca · desni nišani</span>
+  <span><kbd>M</kbd></span><span>karta · <kbd>P</kbd> mobitel · <kbd>Esc</kbd> izbornik</span>
  </div>
-</div></div>
+</div><div id="tip"></div></div>
 <div id="hud"><div id="loc"><div id="place">Tuhelj</div><div id="road"></div><div id="alt"></div><div id="online"></div></div><div id="speedo">0 km/h</div><div id="hudpanel"><div class="av">🙂</div><div class="bars"><div class="lbl">HEALTH <b id="hpval">100</b></div><div class="bar"><i id="hphud"></i></div><div class="lbl s">STAMINA</div><div class="bar s"><i id="sthud"></i></div><div class="cash">💶 CASH <b id="cashval">€0</b></div></div></div>
 <div id="wbox"><span>WANTED</span><b id="wstars">☆☆☆☆☆</b><em id="copstate"></em></div>
 <div id="objcard"><div class="ex">!</div><div><div class="t"></div><div class="d"></div></div></div>
@@ -344,6 +362,7 @@ body.touch .keys{display:none} body.touch .touchhelp{display:block} body.touch #
 <script src="%%THREE%%"></script>
 <script id="gltfx">%%GLTFX%%</script>
 <script id="tuhelj-data" type="application/json">%%DATA%%</script>
+<script>window.TUHELJ_PHOTOS=%%PHOTOS%%;</script>
 <script>
 %%JS%%
 </script>
@@ -357,8 +376,11 @@ _h=hashlib.md5()
 for _d in PACKS.values():
     for _f in sorted(glob.glob(os.path.join(ROOT,_d,'*.glb'))): _h.update(open(_f,'rb').read())
 PACK_V=_h.hexdigest()[:10]
-GLTFX='window.TUHELJ_PACK_V="'+PACK_V+'";\n'+open(os.path.join(ROOT,'gltf_classic.js')).read()+'\n'+open(os.path.join(ROOT,'meshopt_classic.js')).read()+'\n'+'\nconst SOLDIER_B64="'+open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'soldier.b64')).read().strip()+'";\n'
-html=HTML.replace('%%THREE%%',THREE_URL).replace('%%GLTFX%%',GLTFX,1).replace('%%DATA%%',djs,1).replace('%%MANIFEST%%',MAN,1)
+GLTFX='window.TUHELJ_PACK_V="'+PACK_V+'";\n'+open(os.path.join(ROOT,'gltf_classic.js'),encoding='utf-8').read()+'\n'+open(os.path.join(ROOT,'meshopt_classic.js'),encoding='utf-8').read()+'\n'+'\nconst SOLDIER_B64="'+open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'soldier.b64'),encoding='utf-8').read().strip()+'";\n'
+# your own photos of Tuhelj: drop .jpg/.png/.webp files into photos/ — they play on the start screen and hang on the wall at home
+PHOTO_SRC=sorted(f for f in glob.glob(os.path.join(ROOT,'photos','*')) if f.lower().endswith(('.jpg','.jpeg','.png','.webp')))
+PHOTOS=['photos/'+os.path.basename(f) for f in PHOTO_SRC]
+html=HTML.replace('%%THREE%%',THREE_URL).replace('%%GLTFX%%',GLTFX,1).replace('%%DATA%%',djs,1).replace('%%MANIFEST%%',MAN,1).replace('%%PHOTOS%%',json.dumps(PHOTOS),1)
 # touch buttons wiring appended
 extra='''
 document.addEventListener('DOMContentLoaded',()=>{});
@@ -375,16 +397,20 @@ document.addEventListener('DOMContentLoaded',()=>{});
 '''
 html=html.replace('%%JS%%',js+extra,1)
 out=sys.argv[1] if len(sys.argv)>1 else '/mnt/user-data/outputs/tuhelj.html'
-os.makedirs(os.path.dirname(out),exist_ok=True)
-open(out,'w').write(html)
+os.makedirs(os.path.dirname(out) or '.',exist_ok=True)
+open(out,'w',encoding='utf-8').write(html)
+import shutil
+if PHOTO_SRC:
+    PD=os.path.join(os.path.dirname(out),'photos'); os.makedirs(PD,exist_ok=True)
+    for f in PHOTO_SRC: shutil.copy2(f,os.path.join(PD,os.path.basename(f)))
+    print('photos/',len(PHOTO_SRC),'slika')
 # 3D model packs (people/anims/vehicles/weapons) as plain scripts in models/ next to the html (works on Netlify and via file://)
 MD=os.path.join(os.path.dirname(out),'models'); os.makedirs(MD,exist_ok=True); tot=0
 for name,d in PACKS.items():
     files={os.path.basename(f)[:-4]:base64.b64encode(open(f,'rb').read()).decode() for f in sorted(glob.glob(os.path.join(ROOT,d,'*.glb')))}
     if not files: continue
     js='TUHELJ_PACK('+json.dumps(name)+',{"files":'+json.dumps(files,separators=(',',':'))+'});\n'
-    open(os.path.join(MD,name+'.js'),'w').write(js); tot+=len(js)
-import shutil
+    open(os.path.join(MD,name+'.js'),'w',encoding='utf-8').write(js); tot+=len(js)
 if os.path.isdir(os.path.join(ROOT,'assets','LICENSES')): shutil.copytree(os.path.join(ROOT,'assets','LICENSES'),os.path.join(MD,'LICENSES'),dirs_exist_ok=True)
 print('models/', len(PACKS),'paketa', round(tot/1e6,2),'MB (v='+PACK_V+')')
 print(out, round(len(html.encode())/1e6,2),'MB')

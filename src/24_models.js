@@ -84,11 +84,12 @@ function placeTractors(scene){ const near=(b)=>Math.hypot(b.rect[0]-START.x,b.re
     for(const [u,w] of [[L/2+3.4,0],[-L/2-3.4,0],[0,W/2+3.4],[0,-W/2-3.4]]){ const x=cx+c*u-s*w, z=cz+s*u+c*w; if(tryAt(x,z,-a)) break; } } }
 
 /* ---------- puške (Quaternius Animated FPS Guns, CC0) ---------- */
-const GUNFIT={Rifle:[0,-0.03,0],P90:[0,-0.012,0],SniperRifle:[0,-0.04,0]};
+const GUNFIT={Rifle:[0,-0.03,0],P90:[0,-0.012,0],SniperRifle:[0,-0.04,0],Pistol:[0,-0.02,0],Shotgun:[0,-0.03,0]};
 function upgradeGuns(){ const W=MODELS.gltf.weapons; if(!W||typeof RIFLE==='undefined'||!RIFLE) return false; if(!WMODELS&&typeof buildWeaponModels==='function') buildWeaponModels(); if(!WMODELS) return false;
-  [['Rifle',0],['P90',1],['SniperRifle',2]].forEach(([k,i])=>{ const G=W[k], grp=WMODELS[i]; if(!G||!grp||grp.userData.glb) return; const fl=grp.userData.flash;
+  [['Rifle',0],['P90',1],['SniperRifle',2],['Pistol',4],['Shotgun',5]].forEach(([k,i])=>{ const G=W[k], grp=WMODELS[i]; if(!G||!grp||grp.userData.glb) return; const fl=grp.userData.flash;
     for(const c of grp.children) if(c!==fl&&c.isMesh) c.visible=false;
-    const m=G.scene.clone(true); m.traverse(o=>{ if(o.isMesh){ o.renderOrder=10; o.frustumCulled=false; o.castShadow=false; } });
+    let m=G.scene.clone(true); if(k==='Pistol'){ const w=new THREE.Group(); m.rotation.y=-Math.PI/2; w.add(m); m=w; }
+    m.traverse(o=>{ if(o.isMesh){ o.renderOrder=10; o.frustumCulled=false; o.castShadow=false; if(typeof gunMaterial==='function'&&o.material&&!o.material.userData.gunfix) o.material=gunMaterial(o.material); } });
     const b=new THREE.Box3().setFromObject(m); const f=GUNFIT[k]||[0,0,0]; const fz=fl?fl.position.z:-0.6; m.position.set(f[0],f[1],fz-b.min.z+0.015+f[2]); grp.add(m); grp.userData.glb=m; });
   return true; }
 function upgradeAvatarGun(A){ const W=MODELS.gltf.weapons; if(!W||!W.Rifle||!A||!A.gun||A.gun.userData.glb) return; for(const c of A.gun.children) if(c.isMesh) c.visible=false; const m=W.Rifle.scene.clone(true); m.position.set(0,-0.5,-0.2); m.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); A.gun.add(m); A.gun.userData.glb=m; }

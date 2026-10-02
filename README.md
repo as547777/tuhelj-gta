@@ -11,7 +11,9 @@ An open-world 3D game in the browser, set in the village of **Tuhelj** in Hrvats
 - **On a computer:** double-click `docs/index.html` (Chrome or Edge).
 - **On a phone:** open the online address; the game adapts to touch controls automatically.
 
-Basic controls: **E** to interact (enter a car or shop, buy, exit), **V** to switch the in-car camera, **P** to open the phone (settings, character look, map).
+Basic controls: **WASD** + mouse (third-person camera, **V** switches to first person), **E** to interact (talk, start a mission, enter a car or building, wardrobe), **mouse wheel** or **1–6** to switch weapons, left click to shoot, right click to aim, **M** map, **P** phone.
+
+The story *Povratak u Tuhelj* has 7 chapters: follow the orange ★ on the map. Your flat Kod Ruže has a wardrobe, a bed that saves the game, and furniture you can buy. Put your own photos of Tuhelj in `photos/` and they play on the start screen and hang on the wall at home.
 
 ## Development
 - The game code is in `src/`: each module is a separate `.js` file, and all modules are described in `PREDAJA.md`.

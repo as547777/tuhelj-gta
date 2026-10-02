@@ -63,7 +63,7 @@ function panicTick(dt){ if(OW.panic>0) OW.panic-=dt; for(const Q of GTA.peds){ c
 const COP={state:'PATROL',last:null,seenT:0,searchT:0,alertT:0};
 function copSees(C){ const dx=PLAYER.pos.x-C.st.x, dz=PLAYER.pos.z-C.st.z, d=Math.hypot(dx,dz); if(d>75) return false; for(let t=0.1;t<1;t+=0.1){ const x=C.st.x+dx*t, z=C.st.z+dz*t; const hb=BHASH.hit(x,z,0); if(hb&&hb.hl>1.5&&hb.hw>1.5) return false; } return true; }
 function crimeEvent(x,z,stars){ GTA.wanted=Math.min(5,Math.max(GTA.wanted,0)+stars); GTA.wantT=0; COP.last=[x,z]; COP.state=COP.state==='CHASE'?'CHASE':'ALERT'; COP.alertT=0; OW.panic=12; }
-function policeTick(dt){ const cops=GTA.chasers.filter(c=>c.kind==='policija'); const want=GTA.wanted;
+function policeTick(dt){ const cops=GTA.chasers.filter(c=>c.kind==='policija'&&!c.wreck&&!(c.burnT>0)); const want=GTA.wanted;
   if(want>0){ const need=Math.min(4,want); while(cops.length<need){ const C=makeAI('policija'); const a=Math.random()*TAU; let x=(COP.last||[PLAYER.pos.x,PLAYER.pos.z])[0]+Math.cos(a)*170, z=(COP.last||[PLAYER.pos.x,PLAYER.pos.z])[1]+Math.sin(a)*170; const n=nearestRoad(x,z,90); if(n){ x=n.s.x; z=n.s.z; } C.st.x=x; C.st.z=z; C.st.yaw=0; GTA.chasers.push(C); cops.push(C); } }
   const seen=cops.some(copSees); if(seen){ COP.last=[PLAYER.pos.x,PLAYER.pos.z]; COP.seenT=0; if(want>0) COP.state='CHASE'; } else COP.seenT+=dt;
   if(want>0){ if(COP.state==='ALERT'){ COP.alertT+=dt; if(COP.alertT>1.5) COP.state='INVESTIGATE'; } if(COP.state==='CHASE'&&!seen&&COP.seenT>3) { COP.state='SEARCH'; COP.searchT=0; } if(COP.state==='SEARCH'){ COP.searchT+=dt; if(COP.searchT>25){ GTA.wanted=Math.max(0,GTA.wanted-1); COP.searchT=0; if(!GTA.wanted) COP.state='RETURN'; } } }
