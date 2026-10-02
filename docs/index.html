@@ -8179,7 +8179,7 @@ async function main(){
   const scene=new THREE.Scene(); GAME.scene=scene; const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.15,7000); GAME.camera=camera;
   await step(0.03,'Učitavam teren…'); decodeHeights();
   { const cb=D.bld.find(b=>b.k==='cafe'); if(cb&&cb.r.length===1){ const r=cb.r[0]; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=7.0, lz=-5.1; cb.r.push([r[0]+c*lx-sn*lz, r[1]+sn*lx+c*lz, r[2], 7.4, 2.6, r[5]]); } }
-  photoTerrain(); photoLand(); gradeRoads(); flattenSites();
+  photoTerrain(); photoLand(); gradeRoads(); try{ photoStream(); }catch(e){ console.warn('potok',e); } flattenSites();
   await step(0.08,'Izrađujem teksture…'); buildTextures(); photoTextures(); buildWindowAtlas();
   await step(0.16,'Crtam polja i livade…'); paintGround(GAME.ios?3072:(q>=2?4096:3072));
   await step(0.26,'Postavljam kuće…'); prepBuildings();
@@ -10240,6 +10240,15 @@ function photoHillWoods(){ const MW=LAND.filter(l=>l.t==='meadow').map(l=>({P:l.
 function photoLand(){ const A=PHOTO.axis; if(!A) return;
   // photo 1: right below the balcony there is only a low red-tiled outbuilding, not a two-storey house
   for(let i=D.bld.length-1;i>=0;i--){ const r=D.bld[i].r[0]; if(D.bld[i].k==='house'&&Math.hypot(r[0]+437,r[1]+131)<4) D.bld.splice(i,1); } /* not there in reality: the yard is paved */ const inMeadow=(x,z)=>{ const dx=x-A.H[0], dz=z-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=Math.abs(-dx*A.uz+dz*A.ux); return t>0.05&&t<1.0&&d<85; };
+  // the street from the bus stop to the family house has no houses on its meadow side (Street View "41 Tuhelj"):
+  // drop OSM houses between that lane and the meadow
+  { const lane=ROADS.find(r=>r.t==='unclassified'&&r.P.some(p=>Math.hypot(p[0]+434,p[1]+119)<12)); if(lane){ const laneZ=(x)=>{ let best=null,bd=1e9; for(let i=0;i<lane.P.length-1;i++){ const a=lane.P[i], b=lane.P[i+1]; if((x-a[0])*(x-b[0])<=0){ const t=(x-a[0])/((b[0]-a[0])||1e-6); return a[1]+(b[1]-a[1])*t; } const d=Math.min(Math.abs(x-a[0]),Math.abs(x-b[0])); if(d<bd){ bd=d; best=Math.abs(x-a[0])<Math.abs(x-b[0])?a[1]:b[1]; } } return best; };
+      for(let i=D.bld.length-1;i>=0;i--){ const q=D.bld[i]; if(q.n) continue; const r0=q.r[0]; if(r0[0]<-445||r0[0]>-280) continue; const lz=laneZ(r0[0]); if(lz===null) continue; if(r0[1]>lz+4&&r0[1]<lz+70) D.bld.splice(i,1); } } }
+  // Kafić Putniku sits on the bend: move it up to the road and turn it to follow the curve (Mapillary 924510798093512)
+  { const c=D.bld.find(q=>q.k==='cafe'); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+232,p[1]+36)<15)); if(c&&rd){ const o=c.r[0]; let best=null,bd=1e9; for(const p of rd.P){ const d=Math.hypot(p[0]-o[0],p[1]-o[1]); if(d<bd){ bd=d; best=p; } }
+      const ux=(best[0]-o[0])/bd, uz=(best[1]-o[1])/bd, mv=4.6, rot=0.17, ccx=o[0], ccz=o[1]; const cr=Math.cos(rot), sr=Math.sin(rot);
+      for(const r of c.r){ const dx=r[0]-ccx, dz=r[1]-ccz; r[0]=ccx+dx*cr-dz*sr+ux*mv; r[1]=ccz+dx*sr+dz*cr+uz*mv; r[2]+=rot; }
+      if(c.dw){ c.dw=[c.dw[0]+ux*mv*0.5,c.dw[1]+uz*mv*0.5]; } } }
   const inWide=(x,z)=>{ const dx=x-A.H[0], dz=z-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=Math.abs(-dx*A.uz+dz*A.ux); return t>0.02&&t<1.08&&d<110; };
   for(const l of LAND){ if(l.t!=='farmland') continue; const c=polyCentroid(l.P); const k=l.P.filter(p=>inWide(p[0],p[1])).length; if(inMeadow(c[0],c[1])||k>=l.P.length*0.4) l.t='meadow'; }
   for(const r of ROADS){ if(r.t!=='unclassified'&&r.t!=='track'&&r.t!=='service') continue; if(r.P.some(p=>Math.hypot(p[0]+434,p[1]+119)<12)||r.P.some(p=>Math.hypot(p[0]-A.H[0],p[1]-A.H[1])<30)){ r.gravel=true; r.w=Math.min(r.w,3.4); } } }
@@ -10445,6 +10454,21 @@ function photoHedges(cs){ const R=mulberry32(99); const Hd=cs.get('hedge',CENTER
       if(kind==='hedge'){ const h=1.25+R()*0.35; Hd.box(f,-0.8,0.8,0,h,-0.45,0.45,lin(R()<0.5?'#3f6a2c':'#4a7533')); }
       else { G.box(f,-0.76,0.76,0,0.45,-0.12,0.12,lin('#d9d4c8')); for(let q=-3;q<=3;q++) Mt.box(f,q*0.22-0.015,q*0.22+0.015,0.45,1.25,-0.015,0.015,lin('#2c2f33')); Mt.box(f,-0.76,0.76,1.2,1.25,-0.025,0.025,lin('#2c2f33')); }
       addCollider(x,z,Math.atan2(tg[1],tg[0]),1.6,kind==='hedge'?0.9:0.25,y-1,y+1.5); } } }
+
+/* ---- Pristavčica: the creek from Pristava down the valley floor through Tuhelj (missing in the map data).
+   Traced along the lowest ground (dynamic programming over the height grid), a shallow channel is cut except
+   under roads — those become bridges with the blue railings from photoCentre. */
+function photoStream(){ if(WATER.some(w=>/Pristav/.test(w.n||''))) return; const xs=[], X1=-1260, X2=360, SX=8, Z1=-320, Z2=320, SZ=6; const nz=Math.round((Z2-Z1)/SZ)+1;
+  const BL=[].concat(...D.bld.map(b=>b.r)); const pen=(x,z)=>{ let p=0; for(const r of BL){ const dx=x-r[0], dz=z-r[1]; if(Math.abs(dx)>40||Math.abs(dz)>40) continue; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=Math.abs(dx*c+dz*sn)-r[3]/2, lz=Math.abs(-dx*sn+dz*c)-r[4]/2; const d=Math.hypot(Math.max(lx,0),Math.max(lz,0)); if(d<8) p+=60*(1-d/8); } return p; };
+  let prev=null, back=[]; for(let x=X1;x<=X2;x+=SX){ xs.push(x); const cur=new Float32Array(nz), from=new Int16Array(nz);
+    for(let j=0;j<nz;j++){ const z=Z1+j*SZ; const gi=clamp(Math.round((x-X0)/CELL),0,NX-1)+clamp(Math.round((z-Z0)/CELL),0,NZ-1)*NX; const c=getHeight(x,z)+pen(x,z)+ROADMASK[gi]*14; if(!prev){ cur[j]=c+Math.abs(z-CENTER[1])*0.01; from[j]=j; continue; } let bv=1e18,bj=j; for(let k=-3;k<=3;k++){ const jj=j+k; if(jj<0||jj>=nz) continue; const v=prev[jj]+Math.abs(k)*0.6; if(v<bv){ bv=v; bj=jj; } } cur[j]=bv+c; from[j]=bj; }
+    back.push(from); prev=cur; }
+  let j=0; for(let k=1;k<nz;k++) if(prev[k]<prev[j]) j=k; const zs=new Array(xs.length); for(let i=xs.length-1;i>=0;i--){ zs[i]=Z1+j*SZ; j=back[i][j]; }
+  let P=xs.map((x,i)=>[x,zs[i]]); for(let pass=0;pass<3;pass++) P=P.map((p,i)=>{ let sx=0,sz=0,n=0; for(let k=-2;k<=2;k++){ const q=P[Math.max(0,Math.min(P.length-1,i+k))]; sx+=q[0]; sz+=q[1]; n++; } return [sx/n,sz/n]; });
+  // cut the channel (not under roads)
+  for(const p of P){ const ix0=Math.max(0,Math.floor((p[0]-6-X0)/CELL)), ix1=Math.min(NX-1,Math.ceil((p[0]+6-X0)/CELL)), iz0=Math.max(0,Math.floor((p[1]-6-Z0)/CELL)), iz1=Math.min(NZ-1,Math.ceil((p[1]+6-Z0)/CELL));
+    for(let iz=iz0;iz<=iz1;iz++) for(let ix=ix0;ix<=ix1;ix++){ const d=Math.hypot(X0+ix*CELL-p[0],Z0+iz*CELL-p[1]); if(d>6) continue; const k=iz*NX+ix; const dep=1.1*(1-smooth(1.5,6,d))*(1-ROADMASK[k]); if(dep>0) HEI[k]-=dep*0.5; } }
+  WATER.push({n:'Pristavčica',P}); PHOTO.stream=P; return P; }
 
 /* ===================== voices: subtitles that play by themselves, people who talk, drivers in cars =====================
    Dialogue runs like GTA subtitles (E / click only skips). Villagers greet you and react to guns and police,

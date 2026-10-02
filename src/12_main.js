@@ -24,7 +24,7 @@ async function main(){
   const scene=new THREE.Scene(); GAME.scene=scene; const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.15,7000); GAME.camera=camera;
   await step(0.03,'Učitavam teren…'); decodeHeights();
   { const cb=D.bld.find(b=>b.k==='cafe'); if(cb&&cb.r.length===1){ const r=cb.r[0]; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=7.0, lz=-5.1; cb.r.push([r[0]+c*lx-sn*lz, r[1]+sn*lx+c*lz, r[2], 7.4, 2.6, r[5]]); } }
-  photoTerrain(); photoLand(); gradeRoads(); flattenSites();
+  photoTerrain(); photoLand(); gradeRoads(); try{ photoStream(); }catch(e){ console.warn('potok',e); } flattenSites();
   await step(0.08,'Izrađujem teksture…'); buildTextures(); photoTextures(); buildWindowAtlas();
   await step(0.16,'Crtam polja i livade…'); paintGround(GAME.ios?3072:(q>=2?4096:3072));
   await step(0.26,'Postavljam kuće…'); prepBuildings();
