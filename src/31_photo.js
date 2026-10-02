@@ -19,6 +19,17 @@ function photoTrees(){ const A=PHOTO.axis; if(!A) return; const keep=[]; const n
   for(let i=0;i<n;i++){ const dx=TREES.x[i]-A.H[0], dz=TREES.z[i]-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=(-dx*A.uz+dz*A.ux); const near=Math.hypot(dx,dz)<16&&t>-0.02;
     const corridor=t>0.03&&t<0.93&&Math.abs(d)<38&&!(TREES.t[i]===2&&TREES.h[i]<4); if(!(near||corridor)) keep.push(i); }
   for(const k of Object.keys(TREES)) TREES[k]=keep.map(i=>TREES[k][i]); }
+// the hills around Tuhelj are wooded (photos / Street View): plant broadleaf woods on slopes and hilltops that
+// OpenStreetMap leaves as bare grass — not in the village, fields, meadows, yards or on roads
+function photoHillWoods(){ const MW=LAND.filter(l=>l.t==='meadow').map(l=>({P:l.P,bb:polyBBox(l.P)})); const R=mulberry32(4711); const rr=(a,b)=>a+(b-a)*R(); const S=9; let n=0;
+  for(let x=CENTER[0]-1100;x<CENTER[0]+1100;x+=S) for(let z=CENTER[1]-900;z<CENTER[1]+900;z+=S){ const px=x+rr(-4,4), pz=z+rr(-4,4);
+    if(px<X0+20||px>X0+GW-20||pz<Z0+20||pz>Z0+GH-20) continue; const h=getHeight(px,pz); const nrm=terrainNormal(px,pz); const sl=Math.sqrt(1-nrm[1]*nrm[1])/Math.max(0.2,nrm[1]);
+    const patch=fbm2(px/140,pz/140,3,21); const want=(sl>0.32)||(h>196&&sl>0.12)||(h>215); if(!want||patch<0.36) continue;
+    const m=mixAt(px,pz); if(m[1]>0.08||m[2]>0.4) continue; if(inFarmland(px,pz)) continue; if(MW.some(l=>px>l.bb[0]&&px<l.bb[1]&&pz>l.bb[2]&&pz<l.bb[3]&&pointInPoly(px,pz,l.P))) continue;
+    if(BHASH.hit(px,pz,14)||!roadClear(px,pz,7)) continue; if(PHOTO.axis&&Math.hypot(px-PHOTO.axis.H[0],pz-PHOTO.axis.H[1])<30) continue;
+    const con=fbm2(px/90,pz/90,2,33)>0.68; const hh=(con?rr(16,26):rr(12,21))*(0.85+0.3*patch); addTree(px,pz,hh,hh*(con?0.32:rr(0.8,1.1)),con?tcol(CONIF,0.2):tcol(BROAD,0.35),con?1:0); n++;
+    if(R()<0.25) addTree(px+rr(-3,3),pz+rr(-3,3),rr(2,4.5),rr(2.5,4.5),tcol(BROAD,0.3),2); }
+  TREES.n=TREES.x.length; return n; }
 // 2) land use + the gravel lane
 function photoLand(){ const A=PHOTO.axis; if(!A) return;
   // photo 1: right below the balcony there is only a low red-tiled outbuilding, not a two-storey house
@@ -187,9 +198,28 @@ function photoCentre(cs,scene){ const Mt=cs.get('metal',CENTER[0],CENTER[1]), G=
     addCollider(...(()=>{ const q=f(0,0,side*0.9); return [q[0],q[2]]; })(),a,4.2,0.2,y-1,y+2.6);
     // yellow BUS lettering + kerb line on the road
     const ry=getHeight(s.x,s.z)+0.11; const m=new THREE.Mesh(new THREE.PlaneGeometry(3.2,1.6),busM); m.rotation.x=-Math.PI/2; m.rotation.z=-a+(side>0?-Math.PI/2:Math.PI/2); const q=[s.x+nx*side*(s.w/2-0.9),s.z+nz*side*(s.w/2-0.9)]; m.position.set(q[0],ry,q[1]); scene.add(m);
-    // outdoor gym next to the first stop (photo: green bars on gravel behind the shelter)
-    if(si===0){ for(let k=0;k<4;k++){ const gx=x+nx*side*(5+k%2*3)+s.tx*(k*2.6-3), gz=z+nz*side*(5+k%2*3)+s.tz*(k*2.6-3); if(BHASH.hit(gx,gz,1)) continue; const gy=getHeight(gx,gz); const gf=frame(gx,gz,a,gy);
-        G.box(gf,-1.3,1.3,-0.05,0.04,-0.9,0.9,lin('#d9d3c6')); for(const px of [-1.0,1.0]) Mt.box(gf,px-0.06,px+0.06,0,2.3,-0.06,0.06,GRN); Mt.box(gf,-1.0,1.0,2.2,2.3,-0.05,0.05,GRN); if(k%2) Mt.box(gf,-0.8,0.8,1.0,1.06,-0.4,0.4,GRN); addCollider(gx,gz,a,2.2,0.3,gy-1,gy+2.3); } }
+    // blue bus-stop sign on a pole
+    { const q=f(-2.6,0,side*-0.6); const sf=frame(q[0],q[2],a,y); Mt.cyl(sf,0.035,0.035,0,2.6,8,AL,1,false); Mt.box(sf,-0.32,0.32,2.2,2.62,-0.02,0.02,lin('#1f4fa8')); Mt.box(sf,-0.26,0.26,2.28,2.54,-0.025,0.025,lin('#f4f4f2')); }
+    if(si===0){ // Street View "41 Tuhelj": fenced gravel workout park behind the shelter, benches, green steel equipment
+      const gc=[x+nx*side*9+s.tx*6, z+nz*side*9+s.tz*6]; const gy=getHeight(gc[0],gc[1]); const gf=frame(gc[0],gc[1],a,gy); const GW2=8, GD=5;
+      G.box(gf,-GW2,GW2,-0.05,0.06,-GD,GD,lin('#d9d3c6')); addFloor(gf,a,-GW2,GW2,-GD,GD,gy+0.06);
+      for(let k=-GW2;k<=GW2+0.01;k+=2){ for(const zz of [-GD,GD]) Mt.box(gf,k-0.03,k+0.03,0,0.9,zz-0.03,zz+0.03,GRN); } for(let k=-GD;k<=GD+0.01;k+=2){ for(const xx of [-GW2,GW2]) Mt.box(gf,xx-0.03,xx+0.03,0,0.9,k-0.03,k+0.03,GRN); }
+      for(const zz of [-GD,GD]) Mt.box(gf,-GW2,GW2,0.85,0.9,zz-0.02,zz+0.02,GRN); for(const xx of [-GW2,GW2]) Mt.box(gf,xx-0.02,xx+0.02,0.85,0.9,-GD,GD,GRN);
+      const eq=[[-5.5,-2.5,'pull'],[-2,-2.5,'bars'],[1.5,-2.5,'pull'],[5,-2.5,'step'],[-4,2.2,'bench'],[0,2.2,'bars'],[4.5,2.2,'pull']];
+      for(const [ex,ez,k] of eq){ const ef=frame(...(()=>{ const p=gf(ex,0,ez); return [p[0],p[2]]; })(),a,gy+0.06);
+        if(k==='pull'){ for(const px of [-0.9,0.9]) Mt.box(ef,px-0.06,px+0.06,0,2.4,-0.06,0.06,GRN); Mt.box(ef,-0.9,0.9,2.25,2.31,-0.03,0.03,lin('#c9ced2')); }
+        if(k==='bars'){ for(const pz of [-0.3,0.3]){ for(const px of [-0.9,0.9]) Mt.box(ef,px-0.05,px+0.05,0,1.1,pz-0.05,pz+0.05,GRN); Mt.box(ef,-0.95,0.95,1.05,1.1,pz-0.03,pz+0.03,lin('#c9ced2')); } }
+        if(k==='step'){ Mt.box(ef,-0.6,0.6,0,0.4,-0.3,0.3,GRN); Mt.box(ef,-0.05,0.05,0,1.2,-0.05,0.05,GRN); }
+        if(k==='bench'){ Wd.box(ef,-0.9,0.9,0.42,0.47,-0.2,0.2,lin('#7a5032')); Wd.box(ef,-0.9,0.9,0.55,0.85,0.18,0.22,lin('#7a5032')); for(const px of [-0.75,0.75]) Mt.box(ef,px-0.03,px+0.03,0,0.45,-0.18,0.18,lin('#333')); }
+        addCollider(...(()=>{ const p=gf(ex,0,ez); return [p[0],p[2]]; })(),a,1.9,0.7,gy-1,gy+2.4); }
+      Wd.box(frame(...(()=>{ const p=gf(-GW2-1.4,0,0); return [p[0],p[2]]; })(),a,gy),-0.9,0.9,0.42,0.47,-0.2,0.2,lin('#6d4a2e'));
+      // wire fence on wooden posts along the meadow side of the road, ~70 m south from the stop
+      const r=s.road; if(r&&r.S){ const i0=s.i; for(let k=i0+8;k<Math.min(r.S.length,i0+56);k+=2){ const p=r.S[k], tg=r.T[k]; const fx=p[0]+(-tg[1])*side*(r.w/2+2.2), fz=p[1]+tg[0]*side*(r.w/2+2.2); if(BHASH.hit(fx,fz,1)) continue; const fy=getHeight(fx,fz); const ff=frame(fx,fz,Math.atan2(tg[1],tg[0]),fy);
+          Wd.box(ff,-0.05,0.05,0,1.25,-0.05,0.05,lin('#8a6a4a')); for(const wy of [0.55,1.05]) Mt.box(ff,-1.5,1.5,wy,wy+0.012,-0.006,0.006,lin('#9a9a96')); } }
+      // convex traffic mirror at the curve
+      { const q=[s.x+(-s.tz)*-side*(s.w/2+1.2)+s.tx*-10, s.z+s.tx*-side*(s.w/2+1.2)+s.tz*-10]; const qy=getHeight(q[0],q[1]); const mf=frame(q[0],q[1],a+Math.PI/2,qy); Mt.cyl(mf,0.04,0.04,0,2.8,8,lin('#9aa0a4'),1,false);
+        const mir=new THREE.Mesh(new THREE.CircleGeometry(0.42,24),new THREE.MeshStandardMaterial({color:0xd8e4ee,metalness:0.95,roughness:0.08})); mir.position.set(q[0],qy+2.85,q[1]); mir.rotation.y=-a; scene.add(mir);
+        const rim=new THREE.Mesh(new THREE.RingGeometry(0.42,0.5,24),new THREE.MeshBasicMaterial({color:0xd8262e,side:THREE.DoubleSide})); rim.position.copy(mir.position); rim.rotation.y=-a; scene.add(rim); } }
     PHOTO.stops=(PHOTO.stops||[]).concat([[x,z]]); });
   // blue railings where centre roads cross the Horvatska creek
   for(const w of WATER){ for(let i=0;i<w.P.length-1;i++){ const a0=w.P[i], a1=w.P[i+1];
@@ -197,3 +227,15 @@ function photoCentre(cs,scene){ const Mt=cs.get('metal',CENTER[0],CENTER[1]), G=
         const d1x=a1[0]-a0[0], d1z=a1[1]-a0[1], d2x=b1[0]-b0[0], d2z=b1[1]-b0[1]; const den=d1x*d2z-d1z*d2x; if(Math.abs(den)<1e-6) continue; const t=((b0[0]-a0[0])*d2z-(b0[1]-a0[1])*d2x)/den, u=((b0[0]-a0[0])*d1z-(b0[1]-a0[1])*d1x)/den; if(t<0||t>1||u<0||u>1) continue;
         for(const sd of [1,-1]){ for(let k=Math.max(0,j-5);k<Math.min(r.S.length-1,j+6);k++){ const p=r.S[k], tg=r.T[k]; const nx=-tg[1]*sd, nz=tg[0]*sd; const x=p[0]+nx*(r.w/2+0.35), z=p[1]+nz*(r.w/2+0.35); const y=getHeight(p[0],p[1])+0.08; const ff=frame(x,z,Math.atan2(tg[1],tg[0]),y);
             Mt.box(ff,-0.04,0.04,0,1.05,-0.04,0.04,BLUE); Mt.box(ff,-0.78,0.78,0.98,1.05,-0.035,0.035,BLUE); Mt.box(ff,-0.78,0.78,0.12,0.17,-0.03,0.03,BLUE); for(let q=-3;q<=3;q++) Mt.box(ff,q*0.22-0.012,q*0.22+0.012,0.15,1.0,-0.012,0.012,BLUE); addCollider(x,z,Math.atan2(tg[1],tg[0]),1.6,0.15,y-1,y+1.1); } } } } } } }
+/* ---- hedges and garden fences between houses and the road (Mapillary / Street View: almost every plot has one) ---- */
+function photoHedges(cs){ const R=mulberry32(99); const Hd=cs.get('hedge',CENTER[0],CENTER[1]), Mt=cs.get('metal',CENTER[0],CENTER[1]), G=cs.get('wall',CENTER[0],CENTER[1]);
+  for(const b of BLD){ if(b.k!=='house'||!b.rect||b.st==='photo') continue; const [cx,cz,ang,L,W]=b.rect; if(Math.hypot(cx-CENTER[0],cz-CENTER[1])>700) continue;
+    const n=nearestRoad(cx,cz,22,s=>s.t!=='path'&&s.t!=='track'); if(!n) continue; const s=n.s, r=s.road; if(!r||!r.S) continue; const u=R();
+    const kind=u<0.6?'hedge':u<0.85?'fence':null; if(!kind) continue;
+    const nx=-s.tz, nz=s.tx; const side=((cx-s.x)*nx+(cz-s.z)*nz)>=0?1:-1; const off=r.w/2+(r.t==='secondary'||r.t==='primary'?2.4:1.0);
+    const span=Math.max(L,W)/2+3; const gapAt=b.dw?((b.dw[0]-s.x)*s.tx+(b.dw[1]-s.z)*s.tz):0;
+    for(let t=-span;t<span;t+=1.5){ if(Math.abs(t-gapAt)<2.0) continue; const k=Math.round(s.i+t/1.5); if(k<1||k>=r.S.length-1) continue; const p=r.S[k], tg=r.T[k]; const x=p[0]+(-tg[1])*side*off, z=p[1]+tg[0]*side*off;
+      if(BHASH.hit(x,z,0.6)||nearestRoad(x,z,4,q=>q.rid!==r.rid)&&nearestRoad(x,z,4,q=>q.rid!==r.rid).d<1.2) continue; const y=getHeight(x,z); const f=frame(x,z,Math.atan2(tg[1],tg[0]),y);
+      if(kind==='hedge'){ const h=1.25+R()*0.35; Hd.box(f,-0.8,0.8,0,h,-0.45,0.45,lin(R()<0.5?'#3f6a2c':'#4a7533')); }
+      else { G.box(f,-0.76,0.76,0,0.45,-0.12,0.12,lin('#d9d4c8')); for(let q=-3;q<=3;q++) Mt.box(f,q*0.22-0.015,q*0.22+0.015,0.45,1.25,-0.015,0.015,lin('#2c2f33')); Mt.box(f,-0.76,0.76,1.2,1.25,-0.025,0.025,lin('#2c2f33')); }
+      addCollider(x,z,Math.atan2(tg[1],tg[0]),1.6,kind==='hedge'?0.9:0.25,y-1,y+1.5); } } }
