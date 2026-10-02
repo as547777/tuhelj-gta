@@ -49,7 +49,7 @@ function creekMask(){ const [x0,x1,z0,z1]=CREEK.bb, PX=0.5; const W=Math.ceil((x
   const path=()=>{ g.beginPath(); CREEK.S.forEach((p,i)=>{ const u=(p[0]-x0)/PX, v=(p[1]-z0)/PX; i?g.lineTo(u,v):g.moveTo(u,v); }); };
   g.strokeStyle='rgb(255,0,0)'; g.lineWidth=2*1.75/PX; path(); g.stroke(); g.globalCompositeOperation='lighter'; g.strokeStyle='rgb(0,255,0)'; g.lineWidth=2*(CREEK.Wc-0.3)/PX; path(); g.stroke(); g.globalCompositeOperation='source-over';
   const t=new THREE.CanvasTexture(c); t.flipY=false; t.minFilter=THREE.LinearFilter; t.magFilter=THREE.LinearFilter; t.generateMipmaps=false; t.colorSpace=THREE.NoColorSpace; CREEK.tex=t; CREEK.texB=new THREE.Vector4(x0,z0,x1-x0,z1-z0); }
-function creekTreeFilter(){ if(!CREEK.on) return; creekRiparian(); const keep=[]; const n=TREES.x.length; for(let i=0;i<n;i++){ if(creekDist(TREES.x[i],TREES.z[i])>CREEK.Wc+0.9) keep.push(i); } for(const k of Object.keys(TREES)){ if(Array.isArray(TREES[k])||ArrayBuffer.isView(TREES[k])) TREES[k]=keep.map(i=>TREES[k][i]); } TREES.n=keep.length; }
+function creekTreeFilter(){ if(!CREEK.on) return; creekRiparian(); const keep=[]; const n=TREES.x.length; for(let i=0;i<n;i++){ const x=TREES.x[i], z=TREES.z[i]; if(creekDist(x,z)<=CREEK.Wc+0.9) continue; if(bigHit(x,z,Math.min(4,(TREES.w[i]||3)*0.42))) continue; /* no crown through a house, garage or wall */ keep.push(i); } for(const k of Object.keys(TREES)){ if(Array.isArray(TREES[k])||ArrayBuffer.isView(TREES[k])) TREES[k]=keep.map(i=>TREES[k][i]); } TREES.n=keep.length; }
 // meshes: fine channel ground, flowing water, bridges with the blue railings
 function creekMeshes(scene){ if(!CREEK.on) return; const S=CREEK.S, N=CREEK.N, T=CREEK.T, Wc=CREEK.Wc;
   const ks=[-3.5,-3.1,-2.75,-2.45,-2.15,-1.85,-1.55,-1.25,-0.95,-0.7,-0.45,-0.2,0,0.2,0.45,0.7,0.95,1.25,1.55,1.85,2.15,2.45,2.75,3.1,3.5]; const nk=ks.length;
@@ -88,3 +88,5 @@ function creekTick(dt){ if(CREEK.wtex){ CREEK.wtex.offset.y-=dt*0.32; } }
 function creekRiparian(){ const S=CREEK.S, R=mulberry32(4242); const col=[0x5f8a3c,0x6f9646,0x557f38,0x7a9a4a];
   for(let i=6;i<CREEK.N-6;i+=7){ const p=S[i]; if(p[0]>-560&&p[0]<-180) continue; /* the village stretch stays open (photos) */ const a=S[i-2], b=S[i+2]; const tx=b[0]-a[0], tz=b[1]-a[1], l=Math.hypot(tx,tz)||1; const nx=-tz/l, nz=tx/l;
     for(const sd of [-1,1]){ if(R()<0.35) continue; const o=CREEK.Wc+1.2+R()*2.5; const x=p[0]+nx*sd*o+(R()-0.5)*3, z=p[1]+nz*sd*o+(R()-0.5)*3; if(BHASH.hit(x,z,2)||!roadClear(x,z,2)) continue; const h=7+R()*7; addTree(x,z,h,h*(0.5+R()*0.25),colJ(new THREE.Color(col[(R()*4)|0]),0.2),R()<0.25?2:0); } } TREES.n=TREES.x.length; }
+
+function bigHit(x,z,r){ for(const o of BHASH.near(x,z)){ if(Math.max(o.hl,o.hw)<1.6) continue; const dx=x-o.cx, dz=z-o.cz; const lx=dx*o.c+dz*o.s, lz=-dx*o.s+dz*o.c; if(Math.abs(lx)<o.hl+r&&Math.abs(lz)<o.hw+r) return true; } return false; }

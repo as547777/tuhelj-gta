@@ -117,3 +117,5 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - škola: stara zgrada uz zapadnu stranu igrališta, krila na sjeveru, dvorana na istoku — sve oko igrališta
 - brtija: pročelje i arkada uz glavnu cestu (cafeFit težine), zid dvorišta sam prati sporednu cestu
 - krošnje: blago "svjetlo kroz lišće" (TREEFILL), noću slabi; garaža = otvorena drvena nadstrešnica
+- zid dvorišta brtije: stražnji zid brtije produžen ravno do pločnika (PUBYARD.corner), pa zid uz cestu — čisti pravi kut
+- drveće: daleke krošnje imaju deblo (nema lebdećih lopti); stabla čija krošnja ulazi u zgradu/garažu se uklanjaju (bigHit)

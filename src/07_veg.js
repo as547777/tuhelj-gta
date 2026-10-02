@@ -57,6 +57,7 @@ function treeTemplates(){
     for(const [x,y,z,s] of blobs){ const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion(),new THREE.Vector3(s,s*0.92,s)); parts.push({g:blobGeo(1,Math.floor(r()*1000)),m,sphereN:true,center,uvs:2.2,shade:shadeY(0.5,1.1,0.3,0.9)}); }
     T.broadCrown=mergeGeos(parts);
     const far=[{g:blobGeo(0,11),m:new THREE.Matrix4().compose(new THREE.Vector3(0,0.6,0),new THREE.Quaternion(),new THREE.Vector3(0.31,0.29,0.31)),sphereN:true,center,shade:shadeY(0.6,1.05,0.3,0.88)}];
+    { const tr=new THREE.CylinderGeometry(0.016,0.026,0.42,5,1,true); tr.translate(0,0.21,0); far.push({g:tr,m:new THREE.Matrix4(),shade:()=>0.32}); } /* far trees keep a trunk: no floating balls */
     T.broadFar=mergeGeos(far);
     const trunk=new THREE.CylinderGeometry(0.013,0.024,0.5,6,1,true); trunk.translate(0,0.25,0); const br1=new THREE.CylinderGeometry(0.005,0.01,0.2,4,1,true); br1.rotateZ(0.7); br1.translate(0.06,0.5,0); const br2=br1.clone(); br2.rotateY(2.2);
     T.broadTrunk=mergeGeos([{g:trunk,m:new THREE.Matrix4(),shade:()=>1},{g:br1,m:new THREE.Matrix4(),shade:()=>1},{g:br2,m:new THREE.Matrix4(),shade:()=>1}]); }
@@ -64,7 +65,7 @@ function treeTemplates(){
   { const parts=[]; const center=new THREE.Vector3(0,0.55,0); const tiers=[[0.14,0.42,0.19],[0.34,0.36,0.16],[0.52,0.3,0.13],[0.68,0.24,0.1],[0.82,0.18,0.065]];
     for(const [y,h,r] of tiers){ const c=new THREE.ConeGeometry(1,1,9,1,true); c.translate(0,0.5,0); const m=new THREE.Matrix4().compose(new THREE.Vector3(0,y,0),new THREE.Quaternion(),new THREE.Vector3(r,h,r)); parts.push({g:c,m,uvs:3,shade:shadeY(0.5,1.05,0.1,0.95)}); }
     T.conCrown=mergeGeos(parts);
-    const c=new THREE.ConeGeometry(0.19,0.9,7,1,false); c.translate(0,0.55,0); T.conFar=mergeGeos([{g:c,m:new THREE.Matrix4(),shade:shadeY(0.55,1.0,0.1,1.0)}]);
+    const c=new THREE.ConeGeometry(0.19,0.9,7,1,false); c.translate(0,0.55,0); { const tr=new THREE.CylinderGeometry(0.012,0.02,0.16,5,1,true); tr.translate(0,0.08,0); T.conFar=mergeGeos([{g:c,m:new THREE.Matrix4(),shade:shadeY(0.55,1.0,0.1,1.0)},{g:tr,m:new THREE.Matrix4(),shade:()=>0.32}]); }
     const trunk=new THREE.CylinderGeometry(0.008,0.02,0.4,5,1,true); trunk.translate(0,0.2,0); T.conTrunk=mergeGeos([{g:trunk,m:new THREE.Matrix4(),shade:()=>1}]); }
   // bush (unit height)
   { const parts=[]; const center=new THREE.Vector3(0,0.45,0); const r=mulberry32(9); for(const [x,y,z,s] of [[0,0.45,0,0.42],[0.25,0.35,0.1,0.3],[-0.22,0.38,-0.12,0.32],[0.05,0.62,-0.15,0.28]]){ const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion(),new THREE.Vector3(s,s*0.85,s)); parts.push({g:blobGeo(1,Math.floor(r()*1000)),m,sphereN:true,center,uvs:1.5,shade:shadeY(0.5,1.05,0.05,0.9)}); }

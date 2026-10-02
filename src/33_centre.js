@@ -75,7 +75,9 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
   // the yard is laid out in the café's own frame: the road wall continues the gable plane (it stands on the pavement, photo)
   const L2=(x,z)=>{ const p=f(x,0,z); return [p[0],p[2]]; }; const RPs=smoothCorners(rd.P,8,2); const off=rd.w/2+2.05; const onWall=(q)=>{ const n=nearOnPoly(RPs,q[0],q[1]); const dx=q[0]-n.x, dz=q[1]-n.z, l=Math.hypot(dx,dz)||1; return [n.x+dx/l*off,n.z+dz/l*off]; };
   // the road wall stands on the back of the pavement (photo): it follows the road, the house corner joins it
-  const WNc=L2(-10.5,-5.25), R0=onWall(WNc), R1=onWall(L2(-10.5,-21)), NE=L2(11.2,-21), BEc=L2(10.6,-6.0);
+  const WNc=L2(-10.5,-5.25), R1=onWall(L2(-10.5,-21)), NE=L2(11.2,-21), BEc=L2(10.6,-6.0); let R0=onWall(WNc);
+  // run the road wall straight on until it meets the pub's gable, so it joins the house flush (no dog-leg)
+  { const toL=(q)=>{ const dx=q[0]-cx, dz=q[1]-cz, c=Math.cos(ang), s2=Math.sin(ang); return [dx*c+dz*s2,-dx*s2+dz*c]; }; const a=toL(R1), b=toL(R0); if(Math.abs(b[1]-a[1])>1e-3){ const t=(-5.25-a[1])/(b[1]-a[1]); const lx=a[0]+(b[0]-a[0])*t; if(t>0.2&&t<3&&lx<-10.4){ R0=[R1[0]+(R0[0]-R1[0])*t,R1[1]+(R0[1]-R1[1])*t]; PUBYARD.corner=true; } } /* the pub's back wall line carried straight out to the pavement: a clean right-angled corner */ }
   const yard=[WNc,R0,R1,NE,BEc,L2(3.6,-6.0),L2(3.6,-5.25)]; paveArea(scene,[L2(-10.4,4.4),L2(-10.4,-20.5),L2(-17,-20.5),L2(-17,4.4)],'concrete',{tile:5}); /* pavement right up to the gable (photo) */ paveArea(scene,yard,'concrete',{tile:6,roads:false});
   NOHEDGE.push([(R0[0]+NE[0])/2,(R0[1]+NE[1])/2,16]);
   const G=cs.get('wall',cx,cz), Tl=cs.get('roof',cx,cz), Mt=cs.get('metal',cx,cz), Wd=cs.get('wood',cx,cz); const WALL=lin('#f1f1ee'), CAP=lin('#a9452c'), GRN=lin('#2b2f2c');
