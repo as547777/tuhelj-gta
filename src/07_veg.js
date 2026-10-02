@@ -130,7 +130,7 @@ function buildCorn(scene){
       const hits=[]; for(let i=0;i<P.length;i++){ const a=P[i], b=P[(i+1)%P.length]; const av=a[0]*v[0]+a[1]*v[1]-s, bv=b[0]*v[0]+b[1]*v[1]-s; if((av>0)!==(bv>0)){ const t=av/(av-bv); const x=a[0]+(b[0]-a[0])*t, z=a[1]+(b[1]-a[1])*t; hits.push(x*u[0]+z*u[1]); } }
       hits.sort((p,q)=>p-q);
       for(let k=0;k+1<hits.length;k+=2){ const t0=hits[k]+0.8, t1=hits[k+1]-0.8; for(let t=t0;t<t1;t+=3.5){ const te=Math.min(t1,t+3.5); const x0=u[0]*t+v[0]*s, z0=u[1]*t+v[1]*s, x1=u[0]*te+v[0]*s, z1=u[1]*te+v[1]*s; const h=rnd(1.9,2.4);
-          if(!roadClear((x0+x1)/2,(z0+z1)/2,1.5)) continue; const y0=getHeight(x0,z0)-0.05, y1=getHeight(x1,z1)-0.05;
+          if(!roadClear((x0+x1)/2,(z0+z1)/2,1.5)) continue; if(typeof creekDist==='function'&&(creekDist(x0,z0)<CREEK.Wc+3.5||creekDist(x1,z1)<CREEK.Wc+3.5)) continue; const y0=getHeight(x0,z0)-0.05, y1=getHeight(x1,z1)-0.05;
           gb.quad([x0,y0,z0],[x1,y1,z1],[x1,y1+h,z1],[x0,y0+h,z0],[t/2,0],[te/2,0],[te/2,1],[t/2,1],col,[v[0],0,v[1]]); } } } }
   const mat=new THREE.MeshStandardMaterial({map:cornTexture(),alphaTest:0.4,side:THREE.DoubleSide,roughness:0.9});
   const m=new THREE.Mesh(gb.geometry(),mat); m.castShadow=true; m.receiveShadow=true; m.matrixAutoUpdate=false; scene.add(m);

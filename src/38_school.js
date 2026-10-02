@@ -3,13 +3,13 @@
    roofs, the big sports hall with the white-panelled gable, the fenced court (red-orange posts, nets, concrete
    tribune). The access road runs DOWN to the car park and the kindergarten (white, flat roof, green fence), which sit
    on a lower level than the school, not up the hill. */
-const SCH={old:[-234,-252,0,13,21],wing:[-210,-258,0,30,12],wing2:[-206,-246,0,22,8],hall:[-175,-254,0,30,22],court:[-198,-224,38,20],kinder:[-116,-146,0.05,30,11]};
+const SCH={old:[-234,-252,0,13,21],wing:[-210,-258,0,30,12],wing2:[-206,-246,0,22,8],hall:[-163,-240,Math.PI/2,32,22],court:[-198,-224,38,20],kinder:[-116,-146,0.05,30,11]};
 const SCH_LV={top:173.9,court:173.7,low:170.8};
 function schoolTerrain(){ const sb=D.bld.find(b=>b.k==='school'); if(sb){ sb.r=[SCH.old,SCH.wing,SCH.wing2,SCH.hall].map(r=>[r[0],r[1],r[2],Math.max(r[3],r[4]),Math.min(r[3],r[4]),15].map((v,i)=>i===2&&r[4]>r[3]?r[2]+Math.PI/2:v)); sb.st='school2'; }
   if(!D.bld.some(b=>b.st==='kinder')) D.bld.push({k:'house',st:'kinder',n:'Dječji vrtić',lv:1,f:2,r:[[SCH.kinder[0],SCH.kinder[1],SCH.kinder[2],SCH.kinder[3],SCH.kinder[4],15]]});
   NOHEDGE.push([-120,-165,48],[-200,-240,40]);
   for(const l of LAND){ if(l.t==='pitch'){ const c=polyCentroid(l.P); if(Math.hypot(c[0]+195,c[1]+225)<30) l.t='schoolpitch'; } }
-  const Z=[{x0:-243,x1:-152,z0:-282,z1:-238,h:SCH_LV.top,bl:16},{x0:-221,x1:-174,z0:-238,z1:-206,h:SCH_LV.court,bl:10},{x0:-160,x1:-72,z0:-206,z1:-126,h:SCH_LV.low,bl:46}];
+  const Z=[{x0:-243,x1:-148,z0:-282,z1:-238,h:SCH_LV.top,bl:16},{x0:-178,x1:-148,z0:-260,z1:-218,h:SCH_LV.top,bl:12},{x0:-221,x1:-174,z0:-238,z1:-206,h:SCH_LV.court,bl:10},{x0:-160,x1:-72,z0:-206,z1:-126,h:SCH_LV.low,bl:46}];
   for(let iz=0;iz<NZ;iz++) for(let ix=0;ix<NX;ix++){ const x=X0+ix*CELL, z=Z0+iz*CELL; if(x<-300||x>0||z<-340||z>-70) continue; const k=iz*NX+ix; let h=HEI[k];
     for(const q of Z){ const dx=Math.max(q.x0-x,0,x-q.x1), dz=Math.max(q.z0-z,0,z-q.z1); const d=Math.hypot(dx,dz); const w=1-smooth(0,q.bl,d); if(w>0) h+=(q.h-h)*w; } HEI[k]=h; } }
 function schoolFacade(cs,b,r,o){ const [cx,cz,ang,L,W]=r; const f=frame(cx,cz,ang); const hl=L/2, hw=W/2; const y0=o.y0, yb=SCH_LV.low-2; const e=y0+o.h;
@@ -18,7 +18,7 @@ function schoolFacade(cs,b,r,o){ const [cx,cz,ang,L,W]=r; const f=frame(cx,cz,an
   localCollider(f,ang,-hl,hl,-hw,hw,yb-1,e+4); return {f,hl,hw,e}; }
 school=function(cs,scene,b){ const y0=SCH_LV.top+0.15; b.y0=y0; const T=cs.get('trim',-210,-250), Mt=cs.get('metal',-210,-250), G=cs.get('wall',-210,-250);
   // old school on the road: cream, pink plinth, hip roof, cornices
-  { const r=SCH.old; const o=schoolFacade(cs,b,[r[0],r[1],r[2]+Math.PI/2,r[4],r[3]],{y0,h:8.6,roof:'hip',pitch:33,wall:lin('#ece4cf'),plinth:lin('#c9a39a'),plH:1.25,roofC:lin('#6e4535'),win:'old4',rows:[1.45,5.0],step:3.4,ws:1.05});
+  { const r=SCH.old; const o=schoolFacade(cs,b,[r[0],r[1],r[2]+Math.PI/2,r[4],r[3]],{y0,h:8.6,roof:'hip',pitch:33,wall:lin('#ece4cf'),plinth:lin('#c9a39a'),plH:1.25,roofC:lin('#8f5a42'),win:'old4',rows:[1.45,5.0],step:3.4,ws:1.05});
     const {f,hl,hw}=o; T.box(f,-hl-0.08,hl+0.08,y0+4.2,y0+4.45,-hw-0.08,hw+0.08,lin('#f4efe2')); T.box(f,-hl-0.12,hl+0.12,y0+8.35,y0+8.6,-hw-0.12,hw+0.12,lin('#f4efe2'));
     const side=sideInfo(2,hl,hw); const dp=wallPoint(f,side,0,0.06); decal(cs.get('win',r[0],r[1]),f,r[2]+Math.PI/2,side,0,y0-0.02,'door_glass',0.08,1.1);
     // flags on the corner and two wall lanterns
@@ -28,10 +28,13 @@ school=function(cs,scene,b){ const y0=SCH_LV.top+0.15; b.y0=y0; const T=cs.get('
     LANDMARKS.school={x:dp[0]-14,z:dp[2],look:[r[0],r[1]]}; }
   // white modern wings with low red roofs and long window bands
   for(const key of ['wing','wing2']){ const r=SCH[key]; const two=key==='wing'; schoolFacade(cs,b,r,{y0,h:two?7.4:3.8,roof:'gable',pitch:14,wall:lin('#f1f0eb'),plinth:lin('#d6d3cc'),roofC:lin('#b2463b'),sof:lin('#f1f0eb'),win:'school',rows:two?[0.9,4.4]:[0.9],step:2.6,ov:0.9}); }
+  // salmon-orange stair block at the east end of the main wing, ribbon of orange window frames (photo C)
+  { const r=SCH.wing; const f=frame(r[0],r[1],r[2]); const hl=r[3]/2; G.box(f,hl-4.2,hl+0.6,SCH_LV.low-2,y0+8.3,-r[4]/2-0.6,r[4]/2+0.2,lin('#e5a07c'),1.2); localCollider(f,r[2],hl-4.2,hl+0.6,-r[4]/2-0.6,r[4]/2+0.2,y0-2,y0+9);
+    for(const yy of [1.0,4.5]) T.box(f,-hl+1,hl-4.5,y0+yy-0.12,y0+yy-0.02,r[4]/2+0.01,r[4]/2+0.06,lin('#e08a5a')); }
   // sports hall: salmon walls, grey band with clerestory windows, white panels on the west gable
   { const r=SCH.hall; const o=schoolFacade(cs,b,r,{y0,h:9.2,roof:'gable',pitch:9,wall:lin('#ebc6ab'),plinth:lin('#d6d3cc'),roofC:lin('#8f4337'),win:'school',rows:[6.6],step:3.0,ov:0.7}); const {f,hl,hw,e}=o;
     for(const sz of [-1,1]) T.box(f,-hl-0.05,hl+0.05,e-1.9,e,sz*hw-0.06,sz*hw+0.06,lin('#9ea4a7'));
-    for(let k=0;k<5;k++) T.box(f,-hl-0.07,-hl-0.02,y0+0.6+k*1.55,y0+2.0+k*1.55,-hw*0.55,hw*0.55,lin('#f5f5f2')); }
+    for(let k=0;k<5;k++) T.box(f,hl+0.02,hl+0.07,y0+0.6+k*1.55,y0+2.0+k*1.55,-hw*0.6,hw*0.6,lin('#f5f5f2')); for(let k=0;k<4;k++) T.box(f,hl+0.02,hl+0.08,y0+0.6+k*1.55+1.4,y0+0.6+k*1.55+1.55,-hw*0.6,hw*0.6,lin('#d8d9d6')); }
   // the court: grey asphalt, white lines, handball goals, basketball hoops, red-orange posts with nets, concrete tribune
   { const [cx,cz,L,W]=SCH.court; const P=[[cx-L/2,cz-W/2],[cx+L/2,cz-W/2],[cx+L/2,cz+W/2],[cx-L/2,cz+W/2]]; paveArea(scene,P,'concrete',{tile:9,roads:true});
     const LM=new THREE.MeshStandardMaterial({color:0xeeeeea,roughness:0.7,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-8}); const hx=L/2-1, hz=W/2-1;
@@ -48,7 +51,8 @@ school=function(cs,scene,b){ const y0=SCH_LV.top+0.15; b.y0=y0; const T=cs.get('
       const m=new THREE.Mesh(new THREE.PlaneGeometry(dl,H-0.2),netM.clone()); m.material.map=netM.map.clone(); m.material.map.repeat.set(dl/1.2,(H-0.2)/1.2); m.material.map.needsUpdate=true; m.position.set((a[0]+b2[0])/2,getHeight((a[0]+b2[0])/2,(a[1]+b2[1])/2)+H/2,(a[1]+b2[1])/2); m.rotation.y=-an; scene.add(m);
       const mid=[(a[0]+b2[0])/2,(a[1]+b2[1])/2]; addCollider(mid[0],mid[1],an,dl,0.15,y-1,y+H); }
     // tribune: concrete steps along the north side, toward the school
-    { const St=cs.get('curb',cx,cz); for(let k=0;k<4;k++){ const z1=cz-ez-1.2-k*0.8; St.box(frame(cx-6,0,0,0),-9,9,y-0.3,y+0.42*(k+1),z1-0.8,z1,lin('#c9c6be'),0.8); } addFloor(frame(cx-6,0,0,0),0,-9,9,cz-ez-1.2-3.2,cz-ez-1.2,y+0.42); } }
+    // tribune: concrete steps on the west side of the court, toward the old school (photo)
+    { const St=cs.get('curb',cx,cz); for(let k=0;k<4;k++){ const x1=cx-ex-1.0-k*0.8; St.box(frame(0,cz,0,0),x1-0.8,x1,y-0.3,y+0.42*(k+1),-W*0.4,W*0.4,lin('#c9c6be'),0.8); localCollider(frame(0,cz,0,0),0,x1-0.8,x1,-W*0.4,W*0.4,y-1,y+0.42*(k+1)-0.45); addFloor(frame(0,cz,0,0),0,x1-0.8,x1,-W*0.4,W*0.4,y+0.42*(k+1)); } } }
   // the access road down to the car park: car park on the lower level with grass islands, trees and P signs
   { const P=[[-156,-197],[-88,-192],[-86,-152],[-154,-156]]; paveArea(scene,P,'asphalt',{tile:4,roads:true}); const K=cs.get('curb',-120,-175), Hd=cs.get('hedge',-120,-175), Wd=cs.get('wood',-120,-175);
     for(const [ix,iz,il] of [[-138,-176,22],[-108,-174,20]]){ const y=getHeight(ix,iz); const f=frame(ix,iz,0.05,y); K.box(f,-il/2,il/2,-0.2,0.16,-1.4,1.4,lin('#cfccc4'),0.7); Hd.box(f,-il/2+0.15,il/2-0.15,0.1,0.18,-1.25,1.25,lin('#6d8f45'),0.7); localCollider(f,0.05,-il/2,il/2,-1.4,1.4,y-1,y+0.3);

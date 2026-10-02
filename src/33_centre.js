@@ -23,12 +23,15 @@ const PAVE={};
 function paveMat(kind){ if(!PAVE[kind]) PAVE[kind]=new THREE.MeshStandardMaterial({map:paverTex(kind),roughness:kind==='asphalt'?0.88:0.93,metalness:0,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4}); return PAVE[kind]; }
 function onRoadOrWalk(x,z){ const n=nearestRoad(x,z,14); if(!n) return false; const big=n.s.t==='secondary'||n.s.t==='primary'||n.s.t==='tertiary'; return n.d<(big?1.9:0.25); }
 // ground-hugging surface over a polygon (world coords); the grid is aligned to `ang` so straight edges stay straight
-function paveArea(scene,P,kind,o={}){ const ang=o.ang||0, st=o.step||0.5, tile=o.tile||3, lift=o.lift||0.045; const c=Math.cos(ang), s=Math.sin(ang);
-  const L=P.map(p=>[p[0]*c+p[1]*s, -p[0]*s+p[1]*c]); let u0=1e9,u1=-1e9,v0=1e9,v1=-1e9; for(const q of L){ u0=Math.min(u0,q[0]); u1=Math.max(u1,q[0]); v0=Math.min(v0,q[1]); v1=Math.max(v1,q[1]); }
-  const W=(u,v)=>[u*c-v*s, u*s+v*c]; const nu=Math.ceil((u1-u0)/st), nv=Math.ceil((v1-v0)/st); const pos=[], uv=[], idx=[]; const vid=new Map();
-  const vert=(i,j)=>{ const k=i*(nv+1)+j; let id=vid.get(k); if(id!==undefined) return id; const u=Math.min(u1,u0+i*st), v=Math.min(v1,v0+j*st); const w=W(u,v); pos.push(w[0],getHeight(w[0],w[1])+lift,w[1]); uv.push(w[0]/tile,-w[1]/tile); id=pos.length/3-1; vid.set(k,id); return id; };
-  for(let i=0;i<nu;i++) for(let j=0;j<nv;j++){ const w=W(u0+(i+0.5)*st,v0+(j+0.5)*st); if(!pointInPoly(w[0],w[1],P)) continue; if(!o.roads&&onRoadOrWalk(w[0],w[1])) continue; if(o.skip&&o.skip(w[0],w[1])) continue;
-    const a=vert(i,j), b=vert(i+1,j), cc=vert(i+1,j+1), d=vert(i,j+1); idx.push(a,d,cc,a,cc,b); }
+function paveArea(scene,P,kind,o={}){ const st=o.step||0.9, tile=o.tile||3, lift=o.lift||0.045;
+  // exact edges: triangulate the outline, subdivide each triangle, drop the bits that fall on roads / skip()
+  const V2=P.map(p=>new THREE.Vector2(p[0],p[1])); const tris=THREE.ShapeUtils.triangulateShape(V2,[]); const pos=[], uv=[], idx=[]; const vid=new Map();
+  const vert=(x,z)=>{ const k=Math.round(x*200)+'|'+Math.round(z*200); let id=vid.get(k); if(id!==undefined) return id; pos.push(x,getHeight(x,z)+lift,z); uv.push(x/tile,-z/tile); id=pos.length/3-1; vid.set(k,id); return id; };
+  for(const t of tris){ const A=P[t[0]], B=P[t[1]], C=P[t[2]]; const L=Math.max(Math.hypot(B[0]-A[0],B[1]-A[1]),Math.hypot(C[0]-B[0],C[1]-B[1]),Math.hypot(A[0]-C[0],A[1]-C[1])); const n=Math.max(1,Math.ceil(L/st));
+    const at=(i,j)=>{ const u=i/n, v=j/n; return [A[0]+(B[0]-A[0])*u+(C[0]-A[0])*v, A[1]+(B[1]-A[1])*u+(C[1]-A[1])*v]; };
+    const tri=(p,q,r)=>{ const cx=(p[0]+q[0]+r[0])/3, cz=(p[1]+q[1]+r[1])/3; if(!o.roads&&onRoadOrWalk(cx,cz)) return; if(o.skip&&o.skip(cx,cz)) return; const a=vert(p[0],p[1]), b=vert(q[0],q[1]), c=vert(r[0],r[1]);
+      const ux=q[0]-p[0], uz=q[1]-p[1], vx=r[0]-p[0], vz=r[1]-p[1]; if(ux*vz-uz*vx>0) idx.push(a,c,b); else idx.push(a,b,c); };
+    for(let i=0;i<n;i++) for(let j=0;j<n-i;j++){ tri(at(i,j),at(i+1,j),at(i,j+1)); if(i+j<n-1) tri(at(i+1,j),at(i+1,j+1),at(i,j+1)); } }
   if(!idx.length) return null; const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); geo.setIndex(idx); geo.computeVertexNormals();
   const m=new THREE.Mesh(geo,o.mat||paveMat(kind)); m.receiveShadow=true; m.matrixAutoUpdate=false; m.updateMatrix(); scene.add(m); return m; }
 function nearWater(x,z,r){ for(const w of WATER){ for(let i=0;i<w.P.length-1;i++){ const a=w.P[i], b=w.P[i+1]; if(Math.abs(a[0]-x)>40&&Math.abs(b[0]-x)>40) continue; const n=nearOnPoly([a,b],x,z); if(n.d<r) return true; } } return false; }
@@ -55,8 +58,8 @@ function photoPaving(cs,scene){
       const P=[[-8.3,-4.9],[2.6,-4.9],[2.6,-15.5],[-7.6,-15.5]].map(q=>{ const p=f(q[0],0,q[1]); return [p[0],p[2]]; }); paveArea(scene,P,'gravel',{ang:a,tile:5});
       for(const x of [-4.8,-1.9]){ const q=f(x,0,-11.5); EXTRA_PARK.push([q[0],q[2],a+Math.PI/2,'']); } } }
   // 4) the square with the column in front of Ultra is asphalt, not grass (Street View / Mapillary)
-  { const T=[[-250,-54],[-263,-31],[-239,-38]]; const c=[(T[0][0]+T[1][0]+T[2][0])/3,(T[0][1]+T[1][1]+T[2][1])/3]; const P=T.map(p=>{ const dx=p[0]-c[0], dz=p[1]-c[1], l=Math.hypot(dx,dz); return [p[0]+dx/l*3,p[1]+dz/l*3]; });
-    paveArea(scene,P,'asphalt',{tile:4,skip:(x,z)=>Math.hypot(x+252.5,z+42.5)<2.6}); NOHEDGE.push([c[0],c[1],10]); }
+  { const T=[[-250,-54],[-263,-31],[-239,-38]]; const c=[(T[0][0]+T[1][0]+T[2][0])/3,(T[0][1]+T[1][1]+T[2][1])/3]; const P=T.map(p=>{ const dx=p[0]-c[0], dz=p[1]-c[1], l=Math.hypot(dx,dz); return [p[0]+dx/l*3.5,p[1]+dz/l*3.5]; });
+    paveArea(scene,P,'asphalt',{tile:4,roads:true,step:0.5,skip:(x,z)=>Math.hypot(x+252.5,z+42.5)<2.6||BHASH.hit(x,z,0.2)}); NOHEDGE.push([c[0],c[1],10]); }
   // 4) the pub yard (concrete), walls, gate, fence, firewood, signpost
   photoPubYard(cs,scene); }
 
@@ -70,8 +73,10 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
   const [cx,cz,ang]=cafeB.rect; const f=frame(cx,cz,ang); const WN=f(-10.5,0,-5.25), BE=f(3.6,0,-6.0), WS=f(-10.5,0,4.25);
   const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+250,q[1]+83)<6)); if(!rd) return;
   // the yard is laid out in the café's own frame: the road wall continues the gable plane (it stands on the pavement, photo)
-  const L2=(x,z)=>{ const p=f(x,0,z); return [p[0],p[2]]; }; const R0=L2(-10.5,-5.25), R1=L2(-10.5,-20.5), NE=L2(11.2,-20.5), BEc=L2(10.6,-6.0);
-  const yard=[R0,R1,NE,BEc,L2(3.6,-6.0),L2(3.6,-5.25)]; paveArea(scene,[L2(-10.4,4.4),L2(-10.4,-20.5),L2(-17,-20.5),L2(-17,4.4)],'concrete',{tile:5}); /* pavement right up to the gable (photo) */ paveArea(scene,yard,'concrete',{tile:6,roads:false});
+  const L2=(x,z)=>{ const p=f(x,0,z); return [p[0],p[2]]; }; const RPs=smoothCorners(rd.P,8,2); const off=rd.w/2+2.05; const onWall=(q)=>{ const n=nearOnPoly(RPs,q[0],q[1]); const dx=q[0]-n.x, dz=q[1]-n.z, l=Math.hypot(dx,dz)||1; return [n.x+dx/l*off,n.z+dz/l*off]; };
+  // the road wall stands on the back of the pavement (photo): it follows the road, the house corner joins it
+  const WNc=L2(-10.5,-5.25), R0=onWall(WNc), R1=onWall(L2(-10.5,-21)), NE=L2(11.2,-21), BEc=L2(10.6,-6.0);
+  const yard=[WNc,R0,R1,NE,BEc,L2(3.6,-6.0),L2(3.6,-5.25)]; paveArea(scene,[L2(-10.4,4.4),L2(-10.4,-20.5),L2(-17,-20.5),L2(-17,4.4)],'concrete',{tile:5}); /* pavement right up to the gable (photo) */ paveArea(scene,yard,'concrete',{tile:6,roads:false});
   NOHEDGE.push([(R0[0]+NE[0])/2,(R0[1]+NE[1])/2,16]);
   const G=cs.get('wall',cx,cz), Tl=cs.get('roof',cx,cz), Mt=cs.get('metal',cx,cz), Wd=cs.get('wood',cx,cz); const WALL=lin('#f1f1ee'), CAP=lin('#a9452c'), GRN=lin('#2b2f2c');
   const wall=(a,b,h,gaps=[])=>{ const dx=b[0]-a[0], dz=b[1]-a[1], L=Math.hypot(dx,dz); const an=Math.atan2(dz,dx); const n=Math.ceil(L/1.5);
@@ -81,8 +86,8 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
     for(let k=0;k<n;k++){ const t0=k*L/n, t1=(k+1)*L/n; const mx=a[0]+dx*(t0+t1)/2/L, mz=a[1]+dz*(t0+t1)/2/L; const y=getHeight(mx,mz); const ff=frame(mx,mz,an,y); const hl=(t1-t0)/2;
       Mt.box(ff,-hl,-hl+0.06,0,h,-0.03,0.03,GRN); Mt.box(ff,-hl,hl,h-0.04,h,-0.02,0.02,GRN); Mt.box(ff,-hl,hl,0.05,0.09,-0.02,0.02,GRN); for(let x=-hl+0.1;x<hl;x+=0.1) Mt.box(ff,x-0.006,x+0.006,0.07,h-0.02,-0.006,0.006,GRN); for(let yy=0.25;yy<h;yy+=0.2) Mt.box(ff,-hl,hl,yy-0.006,yy+0.006,-0.008,0.008,GRN); addCollider(mx,mz,an,t1-t0,0.15,y-1,y+h); } };
   // white wall from the house corner to the pavement, then along the road with the gate
-  const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[4.3,8.1];
-  wall(R0,R1,1.75,[gt]); fence(R1,NE,1.6); fence(NE,BEc,1.6);
+  const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[LR*0.33,LR*0.33+3.8];
+  if(Math.hypot(R0[0]-WNc[0],R0[1]-WNc[1])>0.4) wall(WNc,R0,1.75); wall(R0,R1,1.75,[gt]); fence(R1,NE,1.6); fence(NE,BEc,1.6);
   pubBackAnnex(cs,scene,cafeB,f);
   // gate: white pillars with red caps, one wing slid open (photo)
   { const an=Math.atan2(R1[1]-R0[1],R1[0]-R0[0]); for(const t of gt){ const x=R0[0]+(R1[0]-R0[0])*t/LR, z=R0[1]+(R1[1]-R0[1])*t/LR; const y=getHeight(x,z); const pf=frame(x,z,an,y); G.box(pf,-0.2,0.2,-0.5,1.95,-0.2,0.2,WALL); Tl.box(pf,-0.24,0.24,1.95,2.05,-0.24,0.24,CAP); addCollider(x,z,an,0.4,0.4,y-1,y+2); }
@@ -93,7 +98,7 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
     const p=F(-7.1,0,-0.6); const y=getHeight(p[0],p[2]); const box=new THREE.Mesh(new THREE.BoxGeometry(0.85,1.3,5.6),lm); box.position.set(p[0],y+0.62,p[2]); box.rotation.y=-(aa-Math.PI/2); box.castShadow=true; box.receiveShadow=true; scene.add(box); addCollider(p[0],p[2],aa-Math.PI/2,0.9,5.7,y-1,y+1.3);
     const Cl=cs.get('cloth',ax,az), Hd=cs.get('hedge',ax,az); for(const zz of [-2.4,0.2,1.9]){ const q=F(-7.1,0,zz); const pf=frame(q[0],q[2],0,y+1.27); lathe(Cl,pf,[[0.16,0],[0.24,0.22],[0,0.22]],12,lin('#a85c34')); for(let k=0;k<6;k++) lathe(Hd,frame(q[0]+rnd(-0.15,0.15),q[2]+rnd(-0.15,0.15),0,y+1.48),[[0.08,0],[0.06,0.12],[0,0.14]],6,lin(k%2?'#d8344a':'#4f7d34')); }
     // blue bin by the wall and a tall potted yucca by the house door (photo)
-    { const q=L2(-11.35,-15.2); const bf=frame(q[0],q[1],ang,getHeight(q[0],q[1])); Mt.box(bf,-0.3,0.3,0,1.0,-0.35,0.35,lin('#1f6fd0')); Mt.box(bf,-0.33,0.33,1.0,1.06,-0.38,0.38,lin('#1a5fb5')); } }
+    { const q0=onWall(L2(-10.5,-15.6)); const n0=nearOnPoly(RPs,q0[0],q0[1]); const q=[q0[0]+(n0.x-q0[0])*0.25,q0[1]+(n0.z-q0[1])*0.25]; const bf=frame(q[0],q[1],ang,getHeight(q[0],q[1])); Mt.box(bf,-0.3,0.3,0,1.0,-0.35,0.35,lin('#1f6fd0')); Mt.box(bf,-0.33,0.33,1.0,1.06,-0.38,0.38,lin('#1a5fb5')); } }
   // Desinić / Zagreb signpost on the corner of the house (Street View "38 Tuhelj")
   { const n=nearOnPoly(rd.P,WS[0],WS[2]); const dx=WS[0]-n.x, dz=WS[2]-n.z, dl=Math.hypot(dx,dz)||1; const sx=n.x+dx/dl*4.7, sz=n.z+dz/dl*4.7; const y=getHeight(sx,sz);
     const look=Math.atan2(PUBYARD.gate[0]-6-sx,PUBYARD.gate[1]-6-sz); const pf=frame(sx,sz,0,y); Mt.cyl(pf,0.04,0.04,0,3.2,8,lin('#9ba0a4'),1,false); addCollider(sx,sz,0,0.15,0.15,y-1,y+3);

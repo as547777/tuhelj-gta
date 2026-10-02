@@ -72,6 +72,7 @@ function centreBuilding(cs,scene,b){
   if(st==='yellow'){ s.wall=lin('#efd68a'); s.roof=lin('#9d4a33'); s.roofType='gable'; s.pitch=36; s.win='roller_brown'; s.balcony=false; }
   if(st==='whiteGarage'){ s.wall=lin('#f4f2ec'); s.roof=lin('#a94c33'); s.roofType='gable'; s.pitch=36; s.garage=true; s.win='roller_white'; }
   if(st==='salmon'){ s.wall=lin('#e9b89e'); s.roofType='gable'; }
+  if(st==='salmonPlaza'){ s.wall=lin('#d4826e'); s.roof=lin('#8d4b36'); s.roofType='hip'; s.pitch=27; s.balcony=true; s.garage=false; s.win='roller_white'; }
   const shop=(st==='shopPink'||st==='shopCream');
   const floors=(st==='cafe'||shop||st==='parish')?1:(b.lv||2);
   if(shop||st==='cafe'){

@@ -8,8 +8,9 @@ const CREEK={on:false,T:2.25,Bh:0.5,Dp:1.35,Wc:2.85,cell:8,cross:[]};
 const CREEK_FIX=[[-530,-52],[-500,-67],[-465,-79],[-430,-90],[-395,-100],[-360,-110],[-330,-116],[-300,-119],[-275,-119.5],[-262,-118.6],[-250,-117.7],[-243.2,-118.3],[-239.8,-121],[-239.1,-126],[-236.6,-130.2],[-231,-131.8],[-220,-132.5],[-205,-134],[-190,-137]];
 function creekDP(xa,xb,za,zb,penF){ const SX=6, SZ=3; const zc=(za!==null?za:zb), Z1=zc-180, Z2=zc+180, nz=Math.round((Z2-Z1)/SZ)+1;
   const BL=[].concat(...D.bld.map(b=>b.r)); const pen=(x,z)=>{ let p=0; for(const r of BL){ const dx=x-r[0], dz=z-r[1]; if(Math.abs(dx)>30||Math.abs(dz)>30) continue; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=Math.abs(dx*c+dz*sn)-r[3]/2, lz=Math.abs(-dx*sn+dz*c)-r[4]/2; const d=Math.hypot(Math.max(lx,0),Math.max(lz,0)); if(d<7) p+=80*(1-d/7); } return p; };
+  const FL=LAND.filter(l=>l.t==='farmland').map(l=>({P:l.P,bb:polyBBox(l.P)})); const field=(x,z)=>{ for(const f of FL){ if(x<f.bb[0]||x>f.bb[1]||z<f.bb[2]||z>f.bb[3]) continue; if(pointInPoly(x,z,f.P)) return 22; } return 0; }; /* keep the creek on meadows and field edges, not across ploughed land */
   const xs=[]; let prev=null; const back=[]; for(let x=xa;x<=xb+1e-6;x+=SX){ xs.push(x); const cur=new Float32Array(nz), from=new Int16Array(nz);
-    for(let j=0;j<nz;j++){ const z=Z1+j*SZ; const gi=clamp(Math.round((x-X0)/CELL),0,NX-1)+clamp(Math.round((z-Z0)/CELL),0,NZ-1)*NX; const c=getHeight(x,z)+pen(x,z)+ROADMASK[gi]*10+(penF?penF(x,z):0);
+    for(let j=0;j<nz;j++){ const z=Z1+j*SZ; const gi=clamp(Math.round((x-X0)/CELL),0,NX-1)+clamp(Math.round((z-Z0)/CELL),0,NZ-1)*NX; const c=getHeight(x,z)+pen(x,z)+ROADMASK[gi]*10+field(x,z)+(penF?penF(x,z):0);
       if(!prev){ cur[j]=(za!==null&&Math.abs(z-za)>SZ*0.6)?1e12:c; from[j]=j; continue; } let bv=1e18,bj=j; for(let k=-3;k<=3;k++){ const jj=j+k; if(jj<0||jj>=nz) continue; const v=prev[jj]+Math.abs(k)*0.7; if(v<bv){ bv=v; bj=jj; } } cur[j]=bv+c; from[j]=bj; }
     back.push(from); prev=cur; }
   let j=0; if(zb!==null){ j=clamp(Math.round((zb-Z1)/SZ),0,nz-1); } else { for(let k=1;k<nz;k++) if(prev[k]<prev[j]) j=k; }
@@ -48,7 +49,7 @@ function creekMask(){ const [x0,x1,z0,z1]=CREEK.bb, PX=0.5; const W=Math.ceil((x
   const path=()=>{ g.beginPath(); CREEK.S.forEach((p,i)=>{ const u=(p[0]-x0)/PX, v=(p[1]-z0)/PX; i?g.lineTo(u,v):g.moveTo(u,v); }); };
   g.strokeStyle='rgb(255,0,0)'; g.lineWidth=2*1.75/PX; path(); g.stroke(); g.globalCompositeOperation='lighter'; g.strokeStyle='rgb(0,255,0)'; g.lineWidth=2*(CREEK.Wc-0.3)/PX; path(); g.stroke(); g.globalCompositeOperation='source-over';
   const t=new THREE.CanvasTexture(c); t.flipY=false; t.minFilter=THREE.LinearFilter; t.magFilter=THREE.LinearFilter; t.generateMipmaps=false; t.colorSpace=THREE.NoColorSpace; CREEK.tex=t; CREEK.texB=new THREE.Vector4(x0,z0,x1-x0,z1-z0); }
-function creekTreeFilter(){ if(!CREEK.on) return; const keep=[]; const n=TREES.x.length; for(let i=0;i<n;i++){ if(creekDist(TREES.x[i],TREES.z[i])>CREEK.Wc+0.9) keep.push(i); } for(const k of Object.keys(TREES)){ if(Array.isArray(TREES[k])||ArrayBuffer.isView(TREES[k])) TREES[k]=keep.map(i=>TREES[k][i]); } TREES.n=keep.length; }
+function creekTreeFilter(){ if(!CREEK.on) return; creekRiparian(); const keep=[]; const n=TREES.x.length; for(let i=0;i<n;i++){ if(creekDist(TREES.x[i],TREES.z[i])>CREEK.Wc+0.9) keep.push(i); } for(const k of Object.keys(TREES)){ if(Array.isArray(TREES[k])||ArrayBuffer.isView(TREES[k])) TREES[k]=keep.map(i=>TREES[k][i]); } TREES.n=keep.length; }
 // meshes: fine channel ground, flowing water, bridges with the blue railings
 function creekMeshes(scene){ if(!CREEK.on) return; const S=CREEK.S, N=CREEK.N, T=CREEK.T, Wc=CREEK.Wc;
   const ks=[-3.5,-3.1,-2.75,-2.45,-2.15,-1.85,-1.55,-1.25,-0.95,-0.7,-0.45,-0.2,0,0.2,0.45,0.7,0.95,1.25,1.55,1.85,2.15,2.45,2.75,3.1,3.5]; const nk=ks.length;
@@ -82,3 +83,8 @@ function creekMeshes(scene){ if(!CREEK.on) return; const S=CREEK.S, N=CREEK.N, T
       for(const sd of [-1,1]){ const wx=c.x+(-ctz)*sd*(T-0.15), wz=c.z+ctx*sd*(T-0.15); const wf=frame(wx,wz,Math.atan2(ctz,ctx),0); const by=CREEK.bed[c.i]; const L2=half/Math.max(0.45,sinT)+0.6; G.box(wf,-L2,L2,by-0.2,ry-0.5,-0.18,0.18,CON,0.8); } }
     for(const m of cs.meshes(GAME.bm)) scene.add(m); } }
 function creekTick(dt){ if(CREEK.wtex){ CREEK.wtex.offset.y-=dt*0.32; } }
+
+// a line of alders and willows along the creek where it runs through open fields (as along every Zagorje brook)
+function creekRiparian(){ const S=CREEK.S, R=mulberry32(4242); const col=[0x5f8a3c,0x6f9646,0x557f38,0x7a9a4a];
+  for(let i=6;i<CREEK.N-6;i+=7){ const p=S[i]; if(p[0]>-560&&p[0]<-180) continue; /* the village stretch stays open (photos) */ const a=S[i-2], b=S[i+2]; const tx=b[0]-a[0], tz=b[1]-a[1], l=Math.hypot(tx,tz)||1; const nx=-tz/l, nz=tx/l;
+    for(const sd of [-1,1]){ if(R()<0.35) continue; const o=CREEK.Wc+1.2+R()*2.5; const x=p[0]+nx*sd*o+(R()-0.5)*3, z=p[1]+nz*sd*o+(R()-0.5)*3; if(BHASH.hit(x,z,2)||!roadClear(x,z,2)) continue; const h=7+R()*7; addTree(x,z,h,h*(0.5+R()*0.25),colJ(new THREE.Color(col[(R()*4)|0]),0.2),R()<0.25?2:0); } } TREES.n=TREES.x.length; }

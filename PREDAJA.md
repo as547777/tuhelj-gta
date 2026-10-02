@@ -100,3 +100,11 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - rasvjeta (36_lights.js): lampe svijetle noću, točkasta svjetla oko kamere, farovi na autu
 - radio (37_radio.js): sintetizirane stanice (Radio Kaj, Hit FM Tuhelj, Noćna vožnja, Lounge Krapina), R ili kotačić u autu
 - kamera auta bliže (4.7 m), parkirani auti nikad na kolniku
+
+## Runda: dotjerivanje centra (listopad 2026, 2)
+- kocke na stupu s košem → jedan stup bršljana (lathe)
+- obiteljska kuća paralelna s putem, pročelje ~7 m od puta; drvena garaža desno (PHOTO.garage)
+- brtija: zabat paralelan s cestom od sjevera (veća težina WN u cafeFit), zid dvorišta ide uz pločnik (onWall), apartman uz zid
+- trg: paveArea sada triangulira obris (ravni rubovi), asfalt do cesta; crvena kuća s bijelim balkonom iza stupa (st 'salmonPlaza')
+- potok zaobilazi oranice (kazna u DP), bez kukuruza u koritu, drvored uz potok kroz polja (creekRiparian)
+- škola: dvorana okrenuta (zabat s bijelim pločama prema prilaznoj cesti), tribina uz staru zgradu, narančasti stubišni blok
