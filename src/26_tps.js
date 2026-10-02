@@ -7,7 +7,7 @@ try{ if(localStorage.getItem('tuhelj_tps')==='0') TPS.on=false; }catch(e){}
 function tpsScoped(){ return COMBAT.armed&&COMBAT.ads&&COMBAT.wi===2&&COMBAT.fovK>0.8; }
 function tpsActive(){ return TPS.on&&GAME.started&&!PLAYER.fly&&!PLAYER.driving&&!PLAYER.riding&&!PLAYER.heli&&!(typeof PKC!=='undefined'&&PKC.sit)&&!tpsScoped(); }
 function tpsToggle(){ TPS.on=!TPS.on; try{ localStorage.setItem('tuhelj_tps',TPS.on?'1':'0'); }catch(e){} UI.toast(TPS.on?'Kamera iz trećeg lica (V)':'Kamera iz prvog lica (V)'); }
-addEventListener('keydown',e=>{ if(e.target&&e.target.tagName==='INPUT') return; if(e.code==='KeyV'&&GAME.started&&!GAME.paused&&!PLAYER.driving&&!PLAYER.riding&&!PLAYER.heli) tpsToggle(); });
+addEventListener('keydown',e=>{ if(e.target&&e.target.tagName==='INPUT') return; if(e.code==='KeyC'&&GAME.started&&!GAME.paused&&!PLAYER.fly&&!PLAYER.driving&&!PLAYER.riding&&!PLAYER.heli&&!COMBAT.dead){ PLAYER.crouch=!PLAYER.crouch; } if(e.code==='Space'&&PLAYER.crouch) PLAYER.crouch=false; if(e.code==='KeyV'&&GAME.started&&!GAME.paused&&!PLAYER.driving&&!PLAYER.riding&&!PLAYER.heli) tpsToggle(); });
 
 const _tv=new THREE.Vector3(), _tw=new THREE.Vector3(), _tq=new THREE.Quaternion(), _tq2=new THREE.Quaternion(), _tq3=new THREE.Quaternion();
 function tpsForward(out){ const P=PLAYER, cp=Math.cos(P.pitch); return out.set(-Math.sin(P.yaw)*cp,Math.sin(P.pitch),-Math.cos(P.yaw)*cp); }
@@ -27,7 +27,7 @@ applyCamera=function(cam){ if(!tpsActive()){ _fpApplyCamera(cam); return; }
   let dist=lerp(lerp(2.55,2.05,a),1.2,k), side=lerp(lerp(0.36,0.52,a),0.6,k), up=lerp(0.16,0.1,k);
   if(indoor){ dist=Math.min(dist,lerp(2.2,1.25,k)); side=Math.min(side,0.45); }
   if(dead){ dist=4.2; side=0; up=0.9; }
-  const piv=_tv.set(P.pos.x,(TPS.ys!==undefined&&P.ground?TPS.ys:P.pos.y)+(dead?0.4:1.6),P.pos.z);
+  const piv=_tv.set(P.pos.x,(TPS.ys!==undefined&&P.ground?TPS.ys:P.pos.y)+(dead?0.4:1.6-0.55*TPS.ck),P.pos.z);
   const fw=tpsForward(_tw).clone(), rt=new THREE.Vector3(Math.cos(P.yaw),0,-Math.sin(P.yaw));
   const sidePt=piv.clone().addScaledVector(rt,side).add(new THREE.Vector3(0,up,0)); const sideOk=tpsFree(piv,sidePt); sidePt.lerpVectors(piv,sidePt,sideOk);
   const want=sidePt.clone().addScaledVector(fw,-dist); const f=tpsFree(sidePt,want); const d=Math.max(0.35,dist*f-0.15);
@@ -40,7 +40,7 @@ applyCamera=function(cam){ if(!tpsActive()){ _fpApplyCamera(cam); return; }
 /* ---- the player's avatar ---- */
 function meAvatar(){ if(!ME_AV){ ME_AV=makeAvatar(NET.name||'Ti',NET.color||'#e8412c'); GAME.scene.add(ME_AV.group); } return ME_AV; }
 function angLerp(a,b,t){ let d=b-a; while(d>Math.PI) d-=TAU; while(d<-Math.PI) d+=TAU; return a+d*t; }
-function tpsTick(dt){ TPS.dt=dt; const C=COMBAT, act=tpsActive();
+function tpsTick(dt){ TPS.dt=dt; const C=COMBAT, act=tpsActive(); TPS.ck=(TPS.ck||0)+(((PLAYER.crouch&&!C.dead&&act)?1:0)-(TPS.ck||0))*Math.min(1,dt*8);
   const armed=C.armed&&!C.dead&&!C.drink; TPS.armK+=((armed?1:0)-TPS.armK)*Math.min(1,dt*6); TPS.aimK+=((armed&&C.ads?1:0)-TPS.aimK)*Math.min(1,dt*10);
   if(act&&typeof WMODELS!=='undefined'&&WMODELS) for(const g of WMODELS) g.visible=false;
   if(act&&typeof GLASS!=='undefined'&&GLASS) GLASS.visible=false;
@@ -112,12 +112,14 @@ function holdGun(A,wi,dir,gun,recoil){ const H=GUN_HOLD[wi]; if(!H||!gun) return
 const _fl=new THREE.Vector3(), _fr=new THREE.Vector3();
 function footIK(A){ const R=A.real; if(!R||!R.m.visible) return; const m=R.m, g=k=>m.getObjectByName('Bip01_'+k); if(!R.legs) R.legs={lt:g('L_Thigh'),lc:g('L_Calf'),lf:g('L_Foot'),rt:g('R_Thigh'),rc:g('R_Calf'),rf:g('R_Foot')}; const L=R.legs; if(!L.lf||!L.rf) return;
   const base=A.group.position.y; m.updateMatrixWorld(true); L.lf.getWorldPosition(_fl); L.rf.getWorldPosition(_fr);
-  const dl=groundAt(_fl.x,_fl.z)-base, dr=groundAt(_fr.x,_fr.z)-base; const drop=clamp(Math.min(dl,dr,0),-0.4,0); R.ikDrop=(R.ikDrop||0)+(drop-(R.ikDrop||0))*0.35;
+  const dl=groundAt(_fl.x,_fl.z)-base, dr=groundAt(_fr.x,_fr.z)-base; const drop=clamp(Math.min(dl,dr,0)-0.44*(TPS.ck||0),-0.9,0); R.ikDrop=(R.ikDrop||0)+(drop-(R.ikDrop||0))*0.35;
   m.position.y+=R.ikDrop; m.updateMatrixWorld(true);
   const fw=new THREE.Vector3(-Math.sin(TPS.face),0,-Math.cos(TPS.face));
-  for(const [t,c,f,d] of [[L.lt,L.lc,L.lf,dl],[L.rt,L.rc,L.rf,dr]]){ const lift=clamp(d-R.ikDrop,0,0.45); if(lift<0.01) continue; const fp=f.getWorldPosition(new THREE.Vector3()); const tp=t.getWorldPosition(new THREE.Vector3()); armIK(t,c,f,fp.add(new THREE.Vector3(0,lift,0)),tp.addScaledVector(fw,1.2)); } }
+  for(const [t,c,f,d] of [[L.lt,L.lc,L.lf,dl],[L.rt,L.rc,L.rf,dr]]){ const lift=clamp(d-R.ikDrop,0,0.95); if(lift<0.01) continue; const fp=f.getWorldPosition(new THREE.Vector3()); const tp=t.getWorldPosition(new THREE.Vector3()); armIK(t,c,f,fp.add(new THREE.Vector3(0,lift,0)),tp.addScaledVector(fw,1.2)); } }
 function tpsLate(){ const act=tpsActive(); const C=COMBAT; for(const k in TPS.guns) TPS.guns[k].visible=false; TPS.hasMuzzle=false; if(!act||!ME_AV||!ME_AV.group.visible) return;
   const A=ME_AV, R=A.real; if(PLAYER.ground&&!C.dead) footIK(A);
+  if(R&&R.m.visible&&!C.dead){ const rt=new THREE.Vector3(Math.cos(TPS.face),0,-Math.sin(TPS.face)); if((TPS.ck||0)>0.05&&!(C.armed&&TPS.armK>0.3)){ rbBones(R); spineAim(R,-0.6*TPS.ck,rt); }
+    if(!PLAYER.ground&&!PLAYER.fly&&R.legs){ const D=Math.PI/180, L=R.legs; const k=clamp(PLAYER.vel.y>0?1:0.7,0,1); boneRot(R.m,L.lt,-38*D*k); boneRot(R.m,L.rt,-22*D*k); boneRot(R.m,L.lc,62*D*k); boneRot(R.m,L.rc,40*D*k); } }
   if(R&&R.cur){ const P=PLAYER; const fx=-Math.sin(TPS.face), fz=-Math.cos(TPS.face); const back=(P.vel.x*fx+P.vel.z*fz)<-0.4; R.cur.timeScale=back?-Math.abs(R.cur.timeScale):Math.abs(R.cur.timeScale); }
   if(!C.armed||C.dead||C.drink||TPS.armK<0.3) return;
   const gun=tpsGun(C.wi); if(!gun) return; A.group.updateMatrixWorld(true);

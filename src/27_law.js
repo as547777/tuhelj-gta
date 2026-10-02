@@ -53,7 +53,7 @@ function spawnThug(x,z,opt){ opt=opt||{}; const A=makePerson('Vuk','#141414'); A
   A.group.rotation.y=c.face; LAW.crew.push(c); return c; }
 function thugTick(c,dt){ const A=c.A; if(A.dead){ c.st='dead'; return; } const me=PLAYER.pos, p=A.group.position; const dx=me.x-p.x, dz=me.z-p.z, dd=Math.hypot(dx,dz);
   const eye=_lv.set(p.x,p.y+1.6,p.z), tgt=_lw.set(me.x,me.y+1.2,me.z); const los=dd<60&&sees(eye,tgt);
-  if(!c.alert&&(dd<38&&los||A.hp<70||dd<12)){ c.alert=true; try{ bubble(A,['Eno ga!','Sredi ga!','Ti si mrtav!'][Math.floor(Math.random()*3)],2); }catch(e){} for(const o of LAW.crew) if(o.kind==='thug'&&o.tag===c.tag&&Math.hypot(o.A.group.position.x-p.x,o.A.group.position.z-p.z)<40) o.alert=true; }
+  if(!c.alert&&(dd<(PLAYER.crouch?16:38)&&los||A.hp<70||dd<(PLAYER.crouch?5:12))){ c.alert=true; try{ bubble(A,['Eno ga!','Sredi ga!','Ti si mrtav!'][Math.floor(Math.random()*3)],2); }catch(e){} for(const o of LAW.crew) if(o.kind==='thug'&&o.tag===c.tag&&Math.hypot(o.A.group.position.x-p.x,o.A.group.position.z-p.z)<40) o.alert=true; }
   c.aim=false; if(!c.alert){ c.t+=dt; c.face=angLerp(c.face,c.face+Math.sin(c.t*0.3)*0.5,dt); A.group.rotation.set(0,c.face,0); return; }
   if(COMBAT.dead) return; const keep=c.wi===1?11:14;
   if(dd>keep||!los){ walkTo(c,me.x+Math.sin(c.t+c.home[0])*3,me.z+Math.cos(c.t+c.home[1])*3,dd>14?5.8:3.2,dt); c.aim=los&&dd<30; }

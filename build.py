@@ -309,6 +309,9 @@ body.touch .keys{display:none} body.touch .touchhelp{display:block} body.touch #
 @media (max-height:860px){.logo span{font-size:clamp(60px,9vw,96px)}.lede{font-size:14px;margin-bottom:14px}#start .keys{display:none}#chap{margin-bottom:10px}}
 @media (max-height:620px){.lede{display:none}.logo small{margin-top:4px}}
 #start{overflow-y:auto}
+/* GTA layout on a computer: radar bottom-left */
+body:not(.touch) #mini{top:auto!important;right:auto!important;left:22px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:200px;height:200px;border:3px solid rgba(10,12,10,.65)}
+body:not(.touch) #hint{left:auto;right:22px;transform:none}
 @media (max-width:760px){#tip{display:none}.logo span{font-size:64px;-webkit-text-stroke:2px #0a0a0a}.lede{font-size:14px}}
 </style>
 </head>
@@ -362,7 +365,7 @@ body.touch .keys{display:none} body.touch .touchhelp{display:block} body.touch #
 <script src="%%THREE%%"></script>
 <script id="gltfx">%%GLTFX%%</script>
 <script id="tuhelj-data" type="application/json">%%DATA%%</script>
-<script>window.TUHELJ_PHOTOS=%%PHOTOS%%;</script>
+<script>window.TUHELJ_PHOTOS=%%PHOTOS%%;window.TUHELJ_VOICES=%%VOICES%%;</script>
 <script>
 %%JS%%
 </script>
@@ -380,7 +383,9 @@ GLTFX='window.TUHELJ_PACK_V="'+PACK_V+'";\n'+open(os.path.join(ROOT,'gltf_classi
 # your own photos of Tuhelj: drop .jpg/.png/.webp files into photos/ — they play on the start screen and hang on the wall at home
 PHOTO_SRC=sorted(f for f in glob.glob(os.path.join(ROOT,'photos','*')) if f.lower().endswith(('.jpg','.jpeg','.png','.webp')))
 PHOTOS=['photos/'+os.path.basename(f) for f in PHOTO_SRC]
-html=HTML.replace('%%THREE%%',THREE_URL).replace('%%GLTFX%%',GLTFX,1).replace('%%DATA%%',djs,1).replace('%%MANIFEST%%',MAN,1).replace('%%PHOTOS%%',json.dumps(PHOTOS),1)
+# recorded voice lines: voices/dobar-dan.mp3 etc. (see voices/PROCITAJ.txt)
+VOICE_SRC=sorted(f for f in glob.glob(os.path.join(ROOT,'voices','*')) if f.lower().endswith(('.mp3','.ogg','.m4a')))
+html=HTML.replace('%%THREE%%',THREE_URL).replace('%%GLTFX%%',GLTFX,1).replace('%%DATA%%',djs,1).replace('%%MANIFEST%%',MAN,1).replace('%%PHOTOS%%',json.dumps(PHOTOS),1).replace('%%VOICES%%',json.dumps([os.path.basename(f) for f in VOICE_SRC]),1)
 # touch buttons wiring appended
 extra='''
 document.addEventListener('DOMContentLoaded',()=>{});
@@ -404,6 +409,10 @@ if PHOTO_SRC:
     PD=os.path.join(os.path.dirname(out),'photos'); os.makedirs(PD,exist_ok=True)
     for f in PHOTO_SRC: shutil.copy2(f,os.path.join(PD,os.path.basename(f)))
     print('photos/',len(PHOTO_SRC),'slika')
+if VOICE_SRC:
+    VD=os.path.join(os.path.dirname(out),'voices'); os.makedirs(VD,exist_ok=True)
+    for f in VOICE_SRC: shutil.copy2(f,os.path.join(VD,os.path.basename(f)))
+    print('voices/',len(VOICE_SRC),'snimki')
 # 3D model packs (people/anims/vehicles/weapons) as plain scripts in models/ next to the html (works on Netlify and via file://)
 MD=os.path.join(os.path.dirname(out),'models'); os.makedirs(MD,exist_ok=True); tot=0
 for name,d in PACKS.items():

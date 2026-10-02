@@ -59,6 +59,13 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - `gradeRoads` više ne nasipa dolinu prema brdu. Niža (pokošena) trava, plavije nebo s cirusima i tragovima aviona.
 - Titlovi teku sami (E preskače), priča kreće kad priđeš ★, ljudi pozdravljaju i reagiraju (oblačići, govor ako preglednik ima hrvatski glas), policajci viču, vozači i suvozači u autima (prozirna stakla), smrt „UMRO SI” → buđenje doma, mirnija policija.
 
+## Dorade (listopad 2026, 3. krug)
+- Hodanje/trčanje: root motion uklonjen iz Rocketbox ciklusa (`REAL.spd` = brzina koraka), IK stopala, čučanj/šuljanje (C), poza pri skoku, bliža kamera.
+- Glasovi: nema robotskog TTS-a ni oblačića; sve `bubble()` rečenice su titlovi dolje, a snimke iz `voices/` (vidi voices/PROCITAJ.txt) se puštaju same.
+- Minimapa dolje lijevo na računalu, GTA kotačić oružja (kotačić miša / Tab), kamera s haube u autu, prilagodba oka u zgradama.
+- Dvorište obiteljske kuće: samo popločano (izmišljena pomoćna zgrada i garaža maknute, bez parkiranih auta), bijela vrata, vidljiva ograda balkona.
+- Svjetlo: jače raspršeno (hemi) svjetlo pa sjene nisu crne; bez sivo-crnih krovova i plavih zidova; trgovina = ULTRA.
+
 ## Otvoreno
 - vatrogasni kamion i hitna su još proceduralni (nema dobrog besplatnog realističnog modela); bazuka proceduralna
 - puške u rukama igrača s realističnim izgledom (vezati na kost Bip01_R_Hand)

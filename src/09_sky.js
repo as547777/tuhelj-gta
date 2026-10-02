@@ -42,13 +42,13 @@ function buildSky(scene){
 function setTimeOfDay(renderer,scene,hour){
   const d=sunDirFor(hour); SKY.dir=d; SKY.uni.uSun.value.copy(d);
   const el=Math.asin(d.y); const warm=clamp(1-el/0.5,0,1); // low sun -> warmer
-  SKY.sun.color.setRGB(1,lerp(0.95,0.72,warm),lerp(0.86,0.52,warm)); SKY.sun.intensity=lerp(3.0,1.6,warm)*smooth(-0.05,0.08,el);
+  SKY.sun.color.setRGB(1,lerp(0.95,0.72,warm),lerp(0.86,0.52,warm)); SKY.sun.intensity=lerp(2.6,1.5,warm)*smooth(-0.05,0.08,el);
   SKY.uni.uHor.value.setRGB(lerp(0.66,0.93,warm*0.8),lerp(0.79,0.8,warm*0.8),lerp(0.93,0.72,warm*0.8));
   SKY.uni.uZen.value.setRGB(lerp(0.05,0.12,warm),lerp(0.17,0.22,warm),lerp(0.62,0.48,warm));
   SKY.uni.uGlow.value.setRGB(1,lerp(0.88,0.62,warm),lerp(0.72,0.4,warm));
   const night=smooth(0.07,-0.14,el); SKY.night=night; for(const u of [SKY.uni.uHor.value,SKY.uni.uZen.value]) u.lerp(new THREE.Color(0.02,0.03,0.07),night*0.93); SKY.uni.uGlow.value.lerp(new THREE.Color(0.2,0.22,0.35),night);
   scene.fog.color.copy(SKY.uni.uHor.value).multiplyScalar(0.98);
-  SKY.hemi.intensity=lerp(0.55,0.35,warm)*smooth(-0.1,0.1,el)+0.08+night*0.05; SKY.hemi.color.setRGB(lerp(0.81,0.35,night),lerp(0.88,0.42,night),lerp(1,0.7,night));
+  SKY.hemi.intensity=lerp(1.1,0.75,warm)*smooth(-0.1,0.1,el)+0.1+night*0.06; SKY.hemi.color.setRGB(lerp(0.81,0.35,night),lerp(0.88,0.42,night),lerp(1,0.7,night));
   // environment from sky
   if(!SKY.pmrem) SKY.pmrem=new THREE.PMREMGenerator(renderer);
   const es=new THREE.Scene(); const sm=SKY.mesh.clone(); es.add(sm); sm.material=SKY.mesh.material; sm.scale.setScalar(0.01);

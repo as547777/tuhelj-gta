@@ -27,7 +27,7 @@ const PAINTS=[['#e9e9e6',24],['#9ea3a8',18],['#1d1f22',16],['#28406e',8],['#8c1f
 const CARMAT={};
 function carMats(){ if(CARMAT.paint) return CARMAT;
   CARMAT.paint=new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.55,roughness:0.28,envMapIntensity:1.2});
-  CARMAT.glass=new THREE.MeshStandardMaterial({color:0x26323c,metalness:0.2,roughness:0.05,envMapIntensity:1.5,transparent:true,opacity:0.42,depthWrite:false,side:THREE.DoubleSide}); // see-through: people inside are visible
+  CARMAT.glass=new THREE.MeshStandardMaterial({color:0x26323c,metalness:0.2,roughness:0.05,envMapIntensity:1.5,transparent:true,opacity:0.74,depthWrite:false,side:THREE.DoubleSide}); // tinted, see-through: people inside are visible
   CARMAT.dark=new THREE.MeshStandardMaterial({color:0x161718,roughness:0.85});
   CARMAT.chrome=new THREE.MeshStandardMaterial({color:0xcfd4d8,metalness:1,roughness:0.25});
   CARMAT.head=new THREE.MeshStandardMaterial({color:0xf4f2ea,emissive:0x333333,roughness:0.2});
@@ -148,7 +148,7 @@ function buildCockpit(v){ const g=new THREE.Group(); const T=v.truck; const W=v.
 /* ---- all parked cars (static merged) + drivable ones at key places ---- */
 function buildCars(scene){
   RNG=mulberry32(2468); const M=carMats();
-  const spots=[]; const add=(x,z,a,tag)=>{ if(BHASH.hit(x,z,1.2)) return; spots.push([x,z,a,tag]); };
+  const spots=[]; const add=(x,z,a,tag)=>{ if(BHASH.hit(x,z,1.2)) return; if(typeof PHOTO!=='undefined'&&PHOTO.axis&&Math.hypot(x-PHOTO.axis.H[0],z-PHOTO.axis.H[1])<24) return; /* the family yard stays empty */ spots.push([x,z,a,tag]); };
   const shop=findB(b=>b.n==='Trgovina PZ Tuhelj'); if(shop){ const fr=frame(shop.rect[0],shop.rect[1],shop.rect[2]); const si=sideInfo(shop.f,shop.rect[3]/2,shop.rect[4]/2); [-5,-2.4,2.4].forEach((t,i)=>{ const p=wallPoint(fr,si,t,4.2); add(p[0],p[2],sideAngle(shop.rect[2],si)+Math.PI/2,i===0?'drive':''); }); }
   const cafeB=findB(b=>b.k==='cafe'); if(cafeB){ const fr=frame(cafeB.rect[0],cafeB.rect[1],cafeB.rect[2]); const si=sideInfo(cafeB.f,cafeB.rect[3]/2,cafeB.rect[4]/2); [13.6,16.4].forEach((t,i)=>{ const p=wallPoint(fr,si,t,5.2); add(p[0],p[2],sideAngle(cafeB.rect[2],si),i===0?'drive':''); }); }
   for(const l of LAND){ if(l.t!=='parking') continue; const bb=polyBBox(l.P); let first=true; for(let x=bb[0]+3;x<bb[1]-2;x+=2.7){ for(const z of [bb[2]+3.2,bb[3]-3.2]){ if(RNG()<0.45 && pointInPoly(x,z,l.P)){ add(x,z,Math.PI/2+(RNG()<0.5?0:Math.PI),first?'drive':''); first=false; } } } }

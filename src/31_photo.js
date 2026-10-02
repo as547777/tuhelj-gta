@@ -22,7 +22,7 @@ function photoTrees(){ const A=PHOTO.axis; if(!A) return; const keep=[]; const n
 // 2) land use + the gravel lane
 function photoLand(){ const A=PHOTO.axis; if(!A) return;
   // photo 1: right below the balcony there is only a low red-tiled outbuilding, not a two-storey house
-  for(const b of D.bld){ const r=b.r[0]; if(b.k==='house'&&Math.hypot(r[0]+437,r[1]+131)<4){ b.k='garage'; b.lv=1; } } const inMeadow=(x,z)=>{ const dx=x-A.H[0], dz=z-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=Math.abs(-dx*A.uz+dz*A.ux); return t>0.05&&t<1.0&&d<85; };
+  for(let i=D.bld.length-1;i>=0;i--){ const r=D.bld[i].r[0]; if(D.bld[i].k==='house'&&Math.hypot(r[0]+437,r[1]+131)<4) D.bld.splice(i,1); } /* not there in reality: the yard is paved */ const inMeadow=(x,z)=>{ const dx=x-A.H[0], dz=z-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=Math.abs(-dx*A.uz+dz*A.ux); return t>0.05&&t<1.0&&d<85; };
   const inWide=(x,z)=>{ const dx=x-A.H[0], dz=z-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=Math.abs(-dx*A.uz+dz*A.ux); return t>0.02&&t<1.08&&d<110; };
   for(const l of LAND){ if(l.t!=='farmland') continue; const c=polyCentroid(l.P); const k=l.P.filter(p=>inWide(p[0],p[1])).length; if(inMeadow(c[0],c[1])||k>=l.P.length*0.4) l.t='meadow'; }
   for(const r of ROADS){ if(r.t!=='unclassified'&&r.t!=='track'&&r.t!=='service') continue; if(r.P.some(p=>Math.hypot(p[0]+434,p[1]+119)<12)||r.P.some(p=>Math.hypot(p[0]-A.H[0],p[1]-A.H[1])<30)){ r.gravel=true; r.w=Math.min(r.w,3.4); } } }
@@ -35,7 +35,7 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
   const [cx,cz,ang,L0,W0]=b.rect; const F=frame(cx,cz,ang); const y0=b.hmax+0.15, yb=b.hmin-0.5; b.y0=y0; PHOTO.F=F; PHOTO.ang=ang; PHOTO.y0=y0;
   const g=(k)=>cs.get(k,cx,cz); const G=g('wall'), T=g('trim'), Wd=g('wood'), Mt=g('metal'), Cl=g('cloth'), Hd=g('hedge'), St=g('stonem'), Gl=g('glow');
   const Hh={wall:G,trim:T,glass:g('glassW'),slats:g('slats')};
-  const YEL=lin('#e9c979'), RED=lin('#c4523d'), SAL=lin('#d98c70'), WHT=lin('#f4f3ef'), WOOD=lin('#4a2d1e'), GUT=lin('#c9ccce');
+  const YEL=lin('#e9c979'), RED=lin('#c4523d'), SAL=lin('#d98c70'), WHT=lin('#f4f3ef'), WOOD=lin('#6a3f27'), GUT=lin('#c9ccce');
   const hl=6, hw=5, e=y0+5.0, pitch=34; const rt=e+hw*Math.tan(pitch*Math.PI/180);
   const win=(m,h,o={})=>rectWindow(Hh,m,h,Object.assign({wc:YEL,rc:lin('#f1ead6'),fc:WHT,cols:1,dep:0.2,fw:0.07,sc:WHT,gv:'sheer'},o));
   const A=[-hl,hw], B=[hl,hw], Cc=[hl,-hw], Dd=[-hl,-hw];
@@ -48,7 +48,7 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
   // front cross gable over the red band (attic triangle window)
   { const gx0=3.0, gx1=5.8, gy=e, gpk=e+1.9; facadeSeg(G,mF,[[gx0,gy],[gx1,gy],[(gx0+gx1)/2,gpk]],[[[3.85,gy+0.15],[4.95,gy+0.15],[4.95,gy+0.85],[4.4,gy+1.35],[3.85,gy+0.85]]],RED);
     const tri=[[3.85,gy+0.15],[4.95,gy+0.15],[4.95,gy+0.85],[4.4,gy+1.35],[3.85,gy+0.85]]; reveal(G,mF,tri,0,0.18,lin('#f1ead6')); frameRing(T,mF,tri,0.07,0.16,0.05,WHT); pane(Hh.glass,mF,insetPoly(tri,0.07),0.2,WHITE,GLASSV.plain); bar(T,mF,4.4,gy+0.2,4.4,gy+1.3,0.06,0.16,0.05,WHT);
-    const gc=F(-hl+(gx0+gx1)/2,0,hw+0.15); const gf=frame(gc[0],gc[2],ang+Math.PI/2); emitRoof(cs,gf,ang+Math.PI/2,1.9,1.55,gy,'gable',50,0.35,0.35,lin('#c8673b'),lin('#5a3424')); }
+    const gc=F(-hl+(gx0+gx1)/2,0,hw+0.15); const gf=frame(gc[0],gc[2],ang+Math.PI/2); emitRoof(cs,gf,ang+Math.PI/2,1.9,1.55,gy,'gable',50,0.35,0.35,lin('#c8673b'),lin('#8a5e3e')); }
   band(mE,0,10,yb,e,RED,[holeRect(3.0,3.8,y0+1.1,y0+2.0),holeRect(6.0,6.8,y0+1.1,y0+2.0)]); facadeSeg(G,mE,[[0,e],[10,e],[5,rt]],[holeRect(4.5,5.5,e+0.4,e+1.5)],RED);
   band(mB,0,12,yb,e,YEL,[holeRect(2.0,3.2,y0+1.0,y0+2.1),holeRect(5.5,6.3,y0+1.3,y0+2.0),holeRect(8.4,9.6,y0+1.0,y0+2.1),holeRect(2.2,3.2,y0+3.3,y0+4.3),holeRect(8.6,9.6,y0+3.3,y0+4.3)]);
   band(mW,0,10,yb,e,YEL,[holeRect(4.1,4.9,y0+1.0,y0+2.0)]); facadeSeg(G,mW,[[0,e],[10,e],[5,rt]],[holeRect(4.5,5.5,e+0.4,e+1.4)],YEL);
@@ -57,14 +57,14 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
   for(const h of [holeRect(2.0,3.2,y0+1.0,y0+2.1),holeRect(5.5,6.3,y0+1.3,y0+2.0),holeRect(8.4,9.6,y0+1.0,y0+2.1),holeRect(2.2,3.2,y0+3.3,y0+4.3),holeRect(8.6,9.6,y0+3.3,y0+4.3)]) win(mB,h,{cols:2});
   win(mW,holeRect(4.1,4.9,y0+1.0,y0+2.0)); win(mW,holeRect(4.5,5.5,e+0.4,e+1.4),{cols:2});
   // front door: white with four small windows; three concrete steps
-  { const d=hFront[3]; reveal(G,mF,d,0,0.2,lin('#f1ead6')); Wd.box(mF.T,d[0][0],d[1][0],d[0][1],d[2][1],-0.2,-0.14,WHT); for(let i=0;i<4;i++) Hh.glass.box(mF.T,7.3,7.5,y0+1.15+i*0.33,y0+1.38+i*0.33,-0.14,-0.13,WHITE); Mt.box(mF.T,7.65,7.72,y0+1.4,y0+1.46,-0.14,-0.08,lin('#bdbdbd'));
+  { const d=hFront[3]; reveal(G,mF,d,0,0.2,lin('#f1ead6')); T.box(mF.T,d[0][0],d[1][0],d[0][1],d[2][1],-0.2,-0.14,WHT); for(let i=0;i<4;i++) Hh.glass.box(mF.T,7.3,7.5,y0+1.15+i*0.33,y0+1.38+i*0.33,-0.14,-0.13,WHITE); Mt.box(mF.T,7.65,7.72,y0+1.4,y0+1.46,-0.14,-0.08,lin('#bdbdbd'));
     for(let k=0;k<3;k++) St.box(mF.T,6.55-k*0.12,8.25+k*0.12,yb,y0+0.5-k*0.16,0,0.35+k*0.35,lin('#bdb8ad')); addFloor(F,ang,-hl+6.4,-hl+8.4,hw,hw+1.1,y0+0.18); }
   // canopy over the big window
-  { const cf=frame(...(()=>{ const p=F(-hl+4.4,0,hw); return [p[0],p[2]]; })(),ang); emitRoof(cs,cf,ang,1.15,0.45,y0+2.75,'shed',22,0.1,0.1,lin('#c8673b'),lin('#5a3424'),'roof',4); Wd.box(cf,-1.05,1.05,y0+2.6,y0+2.75,-0.05,0.45,lin('#6b3b22')); }
+  { const cf=frame(...(()=>{ const p=F(-hl+4.4,0,hw); return [p[0],p[2]]; })(),ang); emitRoof(cs,cf,ang,1.15,0.45,y0+2.75,'shed',22,0.1,0.1,lin('#c8673b'),lin('#8a5e3e'),'roof',4); Wd.box(cf,-1.05,1.05,y0+2.6,y0+2.75,-0.05,0.45,lin('#6b3b22')); }
   // round balcony: slab, dark wooden balusters, handrail
   { const bc=F(-hl+7.2,0,hw); const bf=frame(bc[0],bc[2],ang,0); const R=1.55, n=26; for(let i=0;i<n;i++){ const a0=Math.PI*i/n, a1=Math.PI*(i+1)/n; const p=(a,r,y)=>bf(Math.cos(a)*r*1.15,y,Math.sin(a)*r);
       G.quad(p(a0,R,y0+2.95),p(a1,R,y0+2.95),p(a1,R,y0+3.12),p(a0,R,y0+3.12),[0,0],[1,0],[1,1],[0,1],YEL,[Math.cos(a0),0,Math.sin(a0)]); G.tri(bf(0,y0+3.12,0),p(a1,R,y0+3.12),p(a0,R,y0+3.12),[0,0],[1,0],[0,1],lin('#cfc9bb'),[0,1,0]); G.tri(bf(0,y0+2.95,0),p(a0,R,y0+2.95),p(a1,R,y0+2.95),[0,0],[1,0],[0,1],YEL,[0,-1,0]);
-      if(i%1===0){ const q=p(a0+0.06,R-0.06,0); Wd.box(frame(q[0],q[2],ang-a0,0),-0.03,0.03,y0+3.12,y0+4.05,-0.05,0.05,WOOD); }
+      if(i%1===0){ const q=p(a0+0.06,R-0.06,0); Wd.box(frame(q[0],q[2],ang-a0,0),-0.045,0.045,y0+3.12,y0+4.05,-0.07,0.07,WOOD); }
       const q0=p(a0,R-0.06,y0+4.05), q1=p(a1,R-0.06,y0+4.05); beam(Wd,q0,q1,0.06,WOOD); }
     addFloor(bf,ang,-1.7,1.7,0,1.5,y0+3.12); }
   // downpipes and lamp
@@ -72,7 +72,7 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
   { const p=mF.P(8.3,0,-0.06); const lf=frame(p[0],p[2],ang,0); Mt.box(lf,-0.07,0.07,y0+2.2,y0+2.5,-0.02,0.14,lin('#3a3a3a')); Gl.box(lf,-0.05,0.05,y0+2.24,y0+2.44,0.02,0.12,lin('#ffe3a0')); }
   // plinth band and roof
   for(const m of [mF,mE,mB,mW]) plinthSeg(g('plinth'),m,yb,y0+0.32,m===mF?[[6.4,8.4]]:[],SAL);
-  emitRoof(cs,F,ang,hl,hw,e,'gable',pitch,0.65,0.6,lin('#cc6c3e'),lin('#4e2d1f'));
+  emitRoof(cs,F,ang,hl,hw,e,'gable',pitch,0.65,0.6,lin('#cc6c3e'),lin('#8a5e3e'));
   for(const sz of [-1,1]){ const ey=e-0.6*Math.tan(pitch*Math.PI/180)-0.12; Mt.box(F,-hl-0.6,hl+0.6,ey-0.12,ey,sz*(hw+0.62)-0.07,sz*(hw+0.62)+0.07,GUT); }
   // covered terrace on the right (photo 4): hipped roof on posts, lattice frieze, salmon parapet
   { const tf=frame(...(()=>{ const p=F(hl+2.3,0,1.4); return [p[0],p[2]]; })(),ang); const ty=y0+0.05, th=y0+2.7;
@@ -80,17 +80,13 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
     Cl.box(tf,-2.3,2.3,ty,ty+0.95,3.4,3.6,SAL); Cl.box(tf,2.1,2.3,ty,ty+0.95,-3.6,3.6,SAL); localCollider(tf,ang,-2.3,2.3,3.4,3.6,ty-1,ty+1); localCollider(tf,ang,2.1,2.3,-3.6,3.6,ty-1,ty+1);
     for(const [x,z] of [[2.2,3.5],[2.2,-3.5],[-2.2,3.5]]){ Wd.box(tf,x-0.08,x+0.08,ty,th,z-0.08,z+0.08,lin('#5b3524')); }
     for(const [a,c2,z0,z1] of [[-2.3,2.3,3.45,3.55],[2.15,2.25,-3.6,3.6]]) Hh.slats.box(tf,a,c2,th-0.65,th-0.05,z0,z1,lin('#7a4a30'));
-    emitRoof(cs,tf,ang,2.6,3.9,th,'hip',24,0.35,0.35,lin('#cc6c3e'),lin('#4e2d1f'));
+    emitRoof(cs,tf,ang,2.6,3.9,th,'hip',24,0.35,0.35,lin('#cc6c3e'),lin('#8a5e3e'));
     }
   // flowers under the window, potted plants by the steps
   for(let k=0;k<7;k++){ const q=mF.P(6.0+k*0.09,y0+1.0,-0.22); lathe(Hd,frame(q[0],q[2],ang,q[1]),[[0.06,0],[0.05,0.1],[0,0.12]],6,lin(k%2?'#d8344a':'#3f7a33')); }
-  // the yard (photo 1 / 4): paved forecourt down to the lane, and a single garage with a red-tiled roof below the balcony
-  { const o=BLD.find(q=>q.rect&&Math.hypot(q.rect[0]+437,q.rect[1]+131)<4); if(o){ o.st='photo'; const [ox,oz,oa]=o.rect; const of=frame(ox,oz,oa); const oy=getHeight(ox,oz)+0.06;
-      const Pv=cs.get('floorT',ox,oz); floorPoly(Pv,F,[[-hl-1.5,hw+0.2],[hl+4.6,hw+0.2],[hl+4.6,hw+9.5],[-hl-1.5,hw+9.5]],Math.max(y0-0.12,getHeight(...(()=>{ const p=F(0,0,hw+5); return [p[0],p[2]]; })())+0.05),lin('#ebe5d8'),0.6);
-      const gL=6.2, gW=3.6, ge=oy+2.55; const gf=frame(ox,oz,oa); emitWalls(cs,gf,oa,gL/2,gW/2,oy-0.5,ge,'gable',26,lin('#ece5d6'),'wall'); emitPlinth(cs,gf,oa,gL/2,gW/2,oy-0.5,oy+0.25,lin('#9a948a'));
-      emitRoof(cs,gf,oa,gL/2,gW/2,ge,'gable',26,0.4,0.35,lin('#cc6c3e'),lin('#e0dcd2'));
-      g('trim').box(gf,gL/2+0.01,gL/2+0.05,oy,oy+2.2,-1.35,1.35,lin('#f1f0ec')); for(let k=0;k<6;k++) g('trim').box(gf,gL/2+0.05,gL/2+0.06,oy+0.15+k*0.36,oy+0.18+k*0.36,-1.3,1.3,lin('#cfcfcf'));
-      addCollider(ox,oz,oa,gL,gW,oy-2,ge+2); o.top=ge; } }
+  // the yard (photo 1 / 4): just a paved forecourt down to the lane — no outbuilding
+  { const Pv=cs.get('floorT',cx,cz); floorPoly(Pv,F,[[-hl-1.5,hw+0.2],[hl+4.6,hw+0.2],[hl+4.6,hw+9.5],[-hl-1.5,hw+9.5]],Math.max(y0-0.12,getHeight(...(()=>{ const p=F(0,0,hw+5); return [p[0],p[2]]; })())+0.05),lin('#ebe5d8'),0.6);
+}
   PHOTO.door=(()=>{ const p=F(-hl+7.4,0,hw+1.9); return [p[0],p[2]]; })();
   photoYard(cs,scene,F,ang,y0); }
 // 4) the yard and the lane (photos 1, 5, 6): bins, basketball hoop on a vine-covered lamp post, asters, lattice fence

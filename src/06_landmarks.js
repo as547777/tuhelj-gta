@@ -65,7 +65,7 @@ function postTex(){ const c=cvs(256,256), g=c.getContext('2d'); g.fillStyle='#ff
 /* ---------- hand-placed centre buildings ---------- */
 function centreBuilding(cs,scene,b){
   const st=b.st||b.k; if(st==='cafe'){ cafe(cs,scene,b); return; } const s=styleFor(b);
-  if(st==='shopPink'){ s.wall=lin('#eee7d8'); s.plinth=lin('#8a8378'); s.roof=lin('#4f3328'); s.sof=lin('#5a3a26'); s.roofType='hip'; s.pitch=32; s.win='roller_brown'; s.balcony=false; s.garage=false; }
+  if(st==='shopPink'){ s.wall=lin('#efe7d6'); s.plinth=lin('#8c2a26'); s.roof=lin('#4f3328'); s.sof=lin('#5a3a26'); s.roofType='hip'; s.pitch=32; s.win='roller_brown'; s.balcony=false; s.garage=false; }
   if(st==='shopCream'){ s.wall=lin('#efe2c4'); s.roof=lin('#a54a31'); s.roofType='gable'; s.pitch=30; s.balcony=false; s.garage=false; }
   if(st==='cafe'){ s.wall=lin('#f1e8d6'); s.roof=lin('#b85b37'); s.roofType='gable'; s.pitch=28; s.balcony=false; s.garage=false; s.chim=true; }
   if(st==='parish'){ s.wall=lin('#efe3c2'); s.roof=lin('#6e4131'); s.roofType='hip'; s.pitch=47; s.win='old4'; s.balcony=false; s.garage=false; }
@@ -87,11 +87,10 @@ function centreBuilding(cs,scene,b){
     } else {
       const n=Math.max(2,Math.floor(fsi.len/3.4)); for(let i=0;i<n;i++){ const t=-fsi.e+fsi.len*(i+0.5)/n; decal(Wn,f,ang,fsi,t,y0-0.02,i===Math.floor(n/2)?'door_glass':'shop',0.05,1); }
       { const td=-fsi.e+fsi.len*(Math.floor(n/2)+0.5)/n; (LANDMARKS.shopDoors=LANDMARKS.shopDoors||[]).push({n:b.n||'',p:wallPoint(f,fsi,td,1.3)}); }
-      const sp=wallPoint(f,fsi,0,0.35); T.box(frame(sp[0],sp[2],ang),-(b.f<2?0.35:fsi.e),(b.f<2?0.35:fsi.e),y0+2.55,y0+2.65,-(b.f<2?fsi.e:0.35),(b.f<2?fsi.e:0.35),lin('#2e6b3a'));
-      const nm=b.n==='Trgovina PZ Tuhelj'?'TRGOVINA PZ TUHELJ':b.n.toUpperCase(); const sp2=wallPoint(f,fsi,0,0.06); signMesh(scene,signTex([nm],{w:1024,h:128,bg:'#2e6b3a',fg:'#ffffff',border:null,size:62}),Math.min(6.5,fsi.len*0.7),0.8,sp2[0],y0+3.15,sp2[2],sideAngle(ang,fsi));
+      const sp=wallPoint(f,fsi,0,0.35); T.box(frame(sp[0],sp[2],ang),-(b.f<2?0.35:fsi.e),(b.f<2?0.35:fsi.e),y0+2.55,y0+2.65,-(b.f<2?fsi.e:0.35),(b.f<2?fsi.e:0.35),lin(b.n==='Trgovina PZ Tuhelj'?'#5a3b28':'#2e6b3a'));
+      const ultra=b.n==='Trgovina PZ Tuhelj'; const nm=ultra?'ULTRA':b.n.toUpperCase(); const sp2=wallPoint(f,fsi,0,0.06); signMesh(scene,signTex([nm],ultra?{w:1024,h:128,bg:'#f6f3ee',fg:'#d8262e',border:'#d8262e',bw:6,size:84,weight:900}:{w:1024,h:128,bg:'#2e6b3a',fg:'#ffffff',border:null,size:62}),Math.min(6.5,fsi.len*0.7),0.8,sp2[0],y0+3.15,sp2[2],sideAngle(ang,fsi));
       // attic windows
       for(const sk of [0,1,2,3]){ const si=sideInfo(sk,hl,hw); if(sk===b.f) continue; const n2=Math.max(1,Math.floor((si.len-1)/3.2)); for(let i=0;i<n2;i++){ const t=-si.e+si.len*(i+0.5)/n2; decal(Wn,f,ang,si,t,y0+0.9,'roller_brown0'); } }
-      if(st==='shopPink'){ for(const t of [-fsi.e*0.55,-fsi.e*0.15]){ const p=wallPoint(f,fsi,t,3.2); PROPS_EXTRA.push({t:'table',x:p[0],z:p[2],ang}); } }
       if(st==='shopPink'){ const sk=(b.f<2?2:0); const si=sideInfo(sk,hl,hw); const pp=wallPoint(f,si,0,0.06); signMesh(scene,posterTex(),Math.min(7,si.len*0.8),2.6,pp[0],y0+1.9,pp[2],sideAngle(ang,si)); }
     }
     b.top=e; return;

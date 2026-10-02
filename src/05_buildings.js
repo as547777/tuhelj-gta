@@ -9,8 +9,8 @@ const BHASH={cell:16,map:new Map(),
 };
 function addCollider(cx,cz,ang,L,W,y0=-1e4,y1=1e4){ BHASH.add({cx,cz,c:Math.cos(ang),s:Math.sin(ang),hl:L/2,hw:W/2,y0,y1}); }
 const BLD=[]; // runtime building records
-const WALLCOLS=[['#f2f0ea',22],['#eee5d3',16],['#ecdcb6',13],['#efd98c',9],['#e3c47c',5],['#e8b9a2',8],['#ecc8a2',8],['#d8d7d0',5],['#d0dcc2',3],['#cfdbe2',2],['#dcc4a2',6]];
-const ROOFCOLS=[['#b95a36',34],['#9b4731',24],['#613b2d',17],['#4d4c4e',9],['#c8703f',12],['#8a3a2a',6]];
+const WALLCOLS=[['#f2f0ea',22],['#eee5d3',16],['#ecdcb6',13],['#efd98c',9],['#e3c47c',5],['#e8b9a2',8],['#ecc8a2',8],['#d8d7d0',5],['#f4efe4',5],['#dcc4a2',6]];
+const ROOFCOLS=[['#b95a36',34],['#9b4731',24],['#613b2d',17],['#7a4632',9],['#c8703f',12],['#8a3a2a',6]];
 const PLINTHCOLS=['#8c877c','#6f5a4a','#a39b8c','#7a3a34','#5f6360','#9a8f7c'];
 const WINSETS=[['roller_brown',32],['roller_white',14],['roller_red',9],['roller_dark',10],['shut',12],['modern',12],['old4',6],['flowers',5]];
 function prepBuildings(){
