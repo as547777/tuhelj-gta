@@ -28,6 +28,8 @@ function polyBBox(P){ let a=1e9,b=-1e9,c=1e9,d=-1e9; for(const p of P){ if(p[0]<
 function segDist(px,pz,ax,az,bx,bz){ const dx=bx-ax, dz=bz-az; const L2=dx*dx+dz*dz; let t=L2>0?((px-ax)*dx+(pz-az)*dz)/L2:0; t=clamp(t,0,1); const qx=ax+dx*t, qz=az+dz*t; return Math.hypot(px-qx,pz-qz); }
 function col(hex){ return new THREE.Color(hex); }
 function colJ(c, amt){ const hsl={}; c.getHSL(hsl); const o=new THREE.Color(); o.setHSL(hsl.h+(RNG()-0.5)*amt*0.1, clamp(hsl.s+(RNG()-0.5)*amt*0.3,0,1), clamp(hsl.l+(RNG()-0.5)*amt*0.25,0,1)); return o; }
+// Safari < 16 has no roundRect
+if(typeof CanvasRenderingContext2D!=='undefined'&&!CanvasRenderingContext2D.prototype.roundRect){ CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){ r=Math.min(typeof r==='number'?r:(r&&r[0])||0,w/2,h/2); this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r); this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath(); return this; }; }
 const NOHEDGE=[]; function noHedge(x,z){ for(const c of NOHEDGE) if(Math.hypot(x-c[0],z-c[1])<c[2]) return true; return false; } // keep-clear circles (bus stop, parkings, pub yard)
 const yieldFrame = ()=>new Promise(r=>{ let d=false; const go=()=>{ if(!d){ d=true; r(); } }; requestAnimationFrame(go); setTimeout(go,60); }); // timeout too: keeps loading in a background tab
 

@@ -3,13 +3,13 @@
    roofs, the big sports hall with the white-panelled gable, the fenced court (red-orange posts, nets, concrete
    tribune). The access road runs DOWN to the car park and the kindergarten (white, flat roof, green fence), which sit
    on a lower level than the school, not up the hill. */
-const SCH={old:[-234,-252,0,13,21],wing:[-210,-258,0,30,12],wing2:[-206,-246,0,22,8],hall:[-163,-240,Math.PI/2,32,22],court:[-198,-224,38,20],kinder:[-116,-146,0.05,30,11]};
+const SCH={old:[-233.5,-235,0,13,21],wing:[-204,-257,0,30,12],wing2:[-206,-246,0,22,8],hall:[-163,-240,Math.PI/2,32,22],court:[-199.5,-230,38,20],kinder:[-116,-146,0.05,30,11]};
 const SCH_LV={top:173.9,court:173.7,low:170.8};
 function schoolTerrain(){ const sb=D.bld.find(b=>b.k==='school'); if(sb){ sb.r=[SCH.old,SCH.wing,SCH.wing2,SCH.hall].map(r=>[r[0],r[1],r[2],Math.max(r[3],r[4]),Math.min(r[3],r[4]),15].map((v,i)=>i===2&&r[4]>r[3]?r[2]+Math.PI/2:v)); sb.st='school2'; }
   if(!D.bld.some(b=>b.st==='kinder')) D.bld.push({k:'house',st:'kinder',n:'Dječji vrtić',lv:1,f:2,r:[[SCH.kinder[0],SCH.kinder[1],SCH.kinder[2],SCH.kinder[3],SCH.kinder[4],15]]});
   NOHEDGE.push([-120,-165,48],[-200,-240,40]);
   for(const l of LAND){ if(l.t==='pitch'){ const c=polyCentroid(l.P); if(Math.hypot(c[0]+195,c[1]+225)<30) l.t='schoolpitch'; } }
-  const Z=[{x0:-243,x1:-148,z0:-282,z1:-238,h:SCH_LV.top,bl:16},{x0:-178,x1:-148,z0:-260,z1:-218,h:SCH_LV.top,bl:12},{x0:-221,x1:-174,z0:-238,z1:-206,h:SCH_LV.court,bl:10},{x0:-160,x1:-72,z0:-206,z1:-126,h:SCH_LV.low,bl:46}];
+  const Z=[{x0:-243,x1:-148,z0:-282,z1:-238,h:SCH_LV.top,bl:16},{x0:-178,x1:-148,z0:-260,z1:-218,h:SCH_LV.top,bl:12},{x0:-221,x1:-174,z0:-242,z1:-214,h:SCH_LV.court,bl:10},{x0:-243,x1:-219,z0:-250,z1:-221,h:SCH_LV.top,bl:10},{x0:-160,x1:-72,z0:-206,z1:-126,h:SCH_LV.low,bl:46}];
   for(let iz=0;iz<NZ;iz++) for(let ix=0;ix<NX;ix++){ const x=X0+ix*CELL, z=Z0+iz*CELL; if(x<-300||x>0||z<-340||z>-70) continue; const k=iz*NX+ix; let h=HEI[k];
     for(const q of Z){ const dx=Math.max(q.x0-x,0,x-q.x1), dz=Math.max(q.z0-z,0,z-q.z1); const d=Math.hypot(dx,dz); const w=1-smooth(0,q.bl,d); if(w>0) h+=(q.h-h)*w; } HEI[k]=h; } }
 function schoolFacade(cs,b,r,o){ const [cx,cz,ang,L,W]=r; const f=frame(cx,cz,ang); const hl=L/2, hw=W/2; const y0=o.y0, yb=SCH_LV.low-2; const e=y0+o.h;

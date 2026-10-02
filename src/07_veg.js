@@ -87,6 +87,7 @@ function buildTrees(scene,quality){
   const barkMat=lodMaterial(new THREE.MeshStandardMaterial({color:0x5b4a3c,vertexColors:true,roughness:0.95}),true);
   const farMat=lodMaterial(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.92,metalness:0}),false);
   const farBush=lodMaterial(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.92,metalness:0}),false);
+  for(const m of [leafMat,needleMat,farMat,farBush]) foliageFill(m); /* light through the leaves: crowns are never black blocks */
   VEG.T=T; VEG.mats={leafMat,needleMat,barkMat,farMat};
   // far chunks
   const CH=560; const chunks=new Map(); const n=TREES.n; const mtx=new THREE.Matrix4(), q=new THREE.Quaternion(), s=new THREE.Vector3(), p=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
@@ -171,3 +172,8 @@ vBH=bh; vTint=texture(uAlb,suv).rgb; float cv=fract(aOff.z*7.31); vTint*= cv<0.1
   };
   const m=new THREE.Mesh(g,mat); m.frustumCulled=false; m.castShadow=false; m.receiveShadow=true; scene.add(m); VEG.grass=m; return m;
 }
+
+const TREEFILL={value:0.2};
+function foliageFill(m){ const prev=m.onBeforeCompile; const key=m.customProgramCacheKey?m.customProgramCacheKey.bind(m):null;
+  m.onBeforeCompile=(sh,r)=>{ if(prev) prev(sh,r); sh.uniforms.uFill=TREEFILL; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uFill;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*uFill;'); };
+  m.customProgramCacheKey=()=>(key?key():'')+'|fill'; m.needsUpdate=true; }

@@ -108,3 +108,12 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - trg: paveArea sada triangulira obris (ravni rubovi), asfalt do cesta; crvena kuća s bijelim balkonom iza stupa (st 'salmonPlaza')
 - potok zaobilazi oranice (kazna u DP), bez kukuruza u koritu, drvored uz potok kroz polja (creekRiparian)
 - škola: dvorana okrenuta (zabat s bijelim pločama prema prilaznoj cesti), tribina uz staru zgradu, narančasti stubišni blok
+
+## Runda: mobitel + škola oko igrališta (listopad 2026, 3)
+- mobitel (39_mobile.js): automatska kvaliteta (1, slabiji uređaji 0), manje AO uzoraka, 3 točkasta svjetla, HUD za palčeve
+  (radar gore desno + trake, novac i zvjezdice gore lijevo), gumb 📻 za radio u autu, zvuk se otključava na dodir (iOS),
+  roundRect polyfill za stariji Safari. Provjereno u emulaciji Android Chrome (pejzaž): učitava, HUD, ulazak u auto, radio.
+- VAŽNO: shader stringovi u Python editima — koristiti chr(92)+'n', nikad pravi prijelom reda (srušilo bi cijelu skriptu)
+- škola: stara zgrada uz zapadnu stranu igrališta, krila na sjeveru, dvorana na istoku — sve oko igrališta
+- brtija: pročelje i arkada uz glavnu cestu (cafeFit težine), zid dvorišta sam prati sporednu cestu
+- krošnje: blago "svjetlo kroz lišće" (TREEFILL), noću slabi; garaža = otvorena drvena nadstrešnica

@@ -49,7 +49,7 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   { const c=D.bld.find(q=>q.k==='cafe'); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+232,p[1]+36)<15)&&r.P.some(p=>Math.hypot(p[0]+250,p[1]+83)<8)); if(c&&rd){ const RP=smoothCorners(rd.P,8,2).filter(p=>p[0]>-300&&p[0]<-150&&p[1]>-120&&p[1]<0); const o=c.r[0]; const cx=o[0], cz=o[1], a0=o[2];
       const LOC={WN:[-10.5,-5.25],WS:[-10.5,4.25],F1:[-3.5,4.25],F2:[3.6,4.25],A1:[8.4,4.0],A2:[10.4,2.0]}; const want=5.7; const dist=(x,z)=>nearOnPoly(RP,x,z).d;
       const cost=(d,tx,tz)=>{ const cc=Math.cos(a0+d), ss=Math.sin(a0+d); let J=0; const D2={}; for(const k in LOC){ const [lx,lz]=LOC[k]; const x=cx+tx+cc*lx-ss*lz, z=cz+tz+ss*lx+cc*lz; const dd=dist(x,z); D2[k]=dd; if(dd<want-0.4) J+=200*(want-0.4-dd)**2; }
-        J+=(D2.WN-want)**2*3+(D2.WS-want)**2+(D2.F1-want)**2*0.7+(D2.F2-want)**2*0.35+(D2.A1-want)**2*0.2; return J; }; /* the gable hugs the road from the north (photo), the front follows the bend as far as it can */
+        J+=(D2.WN-want)**2*0.6+(D2.WS-want)**2+(D2.F1-want)**2+(D2.F2-want)**2+(D2.A1-want)**2*0.8+(D2.A2-want)**2*0.4; return J; }; /* the front (and the arcade) right on the main road, the yard wall follows the side road by itself */ /* the gable hugs the road from the north (photo), the front follows the bend as far as it can */
       let best=[0,0,0], bj=1e18; for(let d=-0.8;d<=0.35;d+=0.04) for(let tx=-14;tx<=14;tx+=1) for(let tz=-14;tz<=14;tz+=1){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } }
       { const b0=best.slice(); for(let d=b0[0]-0.04;d<=b0[0]+0.04;d+=0.01) for(let tx=b0[1]-1;tx<=b0[1]+1;tx+=0.25) for(let tz=b0[2]-1;tz<=b0[2]+1;tz+=0.25){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } } }
       const [rot,mx,mz]=best; const cr=Math.cos(rot), sr=Math.sin(rot); for(const r of c.r){ const dx=r[0]-cx, dz=r[1]-cz; r[0]=cx+mx+dx*cr-dz*sr; r[1]=cz+mz+dx*sr+dz*cr; r[2]+=rot; }
@@ -134,13 +134,13 @@ function photoHouse(cs,scene){ const b=BLD.find(q=>/Slavi/.test(q.n||'')); if(!b
     for(const [a,c2,z0,z1] of [[-2.3,2.3,3.45,3.55],[2.15,2.25,-3.6,3.6]]) Hh.slats.box(tf,a,c2,th-0.65,th-0.05,z0,z1,lin('#7a4a30'));
     emitRoof(cs,tf,ang,2.6,3.9,th,'hip',24,0.35,0.35,lin('#cc6c3e'),lin('#8a5e3e'));
     }
-  // wooden garage beside the house, open toward the lane (photo from across the meadow)
-  { const gx0=hl+5.0, gx1=hl+11.2, gz0=-2.2, gz1=hw+1.0; const gc=F((gx0+gx1)/2,0,(gz0+gz1)/2); const gf=frame(gc[0],gc[2],ang); const gy=getHeight(gc[0],gc[2]); const hx=(gx1-gx0)/2, hz=(gz1-gz0)/2; const DW=lin('#4e3524'), DW2=lin('#5d4030');
-    for(let x=-hx;x<=hx+0.01;x+=0.18) Wd.box(gf,x-0.08,x+0.08,gy-0.3,gy+2.35,-hz,-hz+0.06,x%0.36<0.18?DW:DW2,0.8);
-    for(const sx of [-1,1]) for(let z=-hz;z<=hz-0.3;z+=0.18) Wd.box(gf,sx*hx-0.03,sx*hx+0.03,gy-0.3,gy+2.35,z-0.08,z+0.08,z%0.36<0.18?DW:DW2,0.8);
-    for(const sx of [-1,1]) Wd.box(gf,sx*hx-0.09,sx*hx+0.09,gy,gy+2.4,hz-0.18,hz,lin('#3c2a1d')); Wd.box(gf,-hx,hx,gy+2.2,gy+2.4,hz-0.18,hz,lin('#3c2a1d'));
-    emitRoof(cs,gf,ang,hx+0.1,hz+0.1,gy+2.4,'gable',14,0.45,0.5,lin('#5a3b2a'),lin('#3c2a1d'));
-    localCollider(gf,ang,-hx,hx,-hz,-hz+0.15,gy-1,gy+3); localCollider(gf,ang,-hx-0.05,-hx+0.08,-hz,hz,gy-1,gy+3); localCollider(gf,ang,hx-0.08,hx+0.05,-hz,hz,gy-1,gy+3); PHOTO.garage=gf; }
+  // wooden garage beside the house: an open timber carport with a back wall, the front open to the lane (photo from the meadow)
+  { const gx0=hl+5.0, gx1=hl+10.4, gz0=-1.6, gz1=hw+0.6; const gc=F((gx0+gx1)/2,0,(gz0+gz1)/2); const gf=frame(gc[0],gc[2],ang); const gy=getHeight(gc[0],gc[2]); const hx=(gx1-gx0)/2, hz=(gz1-gz0)/2; const W1=lin('#8a6240'), W2=lin('#7a5536'), BEAM=lin('#6a4a30');
+    for(let x=-hx;x<=hx-0.1;x+=0.2) Wd.box(gf,x,x+0.19,gy-0.3,gy+2.3,-hz,-hz+0.05,((x+hx)/0.2|0)%2?W1:W2,0.8);
+    for(const sx of [-1,1]){ for(let z=-hz;z<=-hz+2.6;z+=0.2) Wd.box(gf,sx*hx-0.025,sx*hx+0.025,gy-0.3,gy+2.3,z,z+0.19,((z+hz)/0.2|0)%2?W1:W2,0.8); for(const z of [0,hz-0.12]) Wd.box(gf,sx*hx-0.08,sx*hx+0.08,gy,gy+2.35,z-0.08,z+0.08,BEAM); }
+    for(const sx of [-1,1]) Wd.box(gf,sx*hx-0.09,sx*hx+0.09,gy+2.2,gy+2.36,-hz,hz,BEAM); Wd.box(gf,-hx,hx,gy+2.2,gy+2.36,hz-0.18,hz,BEAM);
+    emitRoof(cs,gf,ang,hx+0.15,hz+0.15,gy+2.36,'gable',16,0.4,0.45,lin('#9a5a3c'),lin('#7a5536'));
+    localCollider(gf,ang,-hx,hx,-hz,-hz+0.12,gy-1,gy+3); for(const sx of [-1,1]) localCollider(gf,ang,sx*hx-0.08,sx*hx+0.08,-hz,-hz+2.6,gy-1,gy+3); PHOTO.garage=gf; }
   // flowers under the window, potted plants by the steps
   for(let k=0;k<7;k++){ const q=mF.P(6.5+k*0.09,y0+1.0,-0.22); lathe(Hd,frame(q[0],q[2],ang,q[1]),[[0.06,0],[0.05,0.1],[0,0.12]],6,lin(k%2?'#d8344a':'#3f7a33')); }
   // the yard (photo 1 / 4): just a paved forecourt down to the lane — no outbuilding

@@ -2,7 +2,7 @@
 const GAME={perf:{ema:16,t:0},basePR:1,started:false,paused:false,time:0,hour:16.5,q:1,touch:('ontouchstart' in window)&&matchMedia('(pointer:coarse)').matches,dragLook:false};
 const START={x:-395,z:6,look:[-300,-2]};
 const GRASSN=[16000,34000,60000];
-function detectQuality(){ return 2; } // always the highest quality
+function detectQuality(){ if(!GAME.touch) return 2; const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
 function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?Math.min(devicePixelRatio,1)*0.85:q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(innerWidth,innerHeight);
   GAME.basePR=r.getPixelRatio(); SKY.setShadowQuality(q); { const mts=Math.min(r.capabilities.maxTextureSize||4096,GAME.ios?2048:8192); if(SKY.sun.shadow.mapSize.x>mts){ SKY.sun.shadow.mapSize.set(mts,mts); } } if(q>=1) setupPost(r); else { disposePost(); POST.enabled=false; } if(VEG.grass) VEG.grass.geometry.instanceCount=GRASSN[q]; for(const m of VEG.far){ m.count=Math.max(1,Math.floor(m.userData.full*[0.6,0.85,1][q])); } VEG.uniforms.uLodR.value=[80,110,145][q]; VEG.lastRebuild.set(1e9,0,1e9); }
 async function main(){
