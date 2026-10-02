@@ -1,0 +1,82 @@
+TUHELJ — 3D šetnja kroz selo (multiplayer)
+==========================================
+
+POKRETANJE
+Raspakiraj zip i dvaput klikni na index.html (Chrome ili Edge), ili ga objavi na internetu (ispod).
+Na početku upiši svoje ime i dodirni "Kreni u šetnju".
+
+MULTIPLAYER S PRIJATELJIMA
+Svi koji otvore ISTU internetsku adresu igre (npr. tvoju Netlify poveznicu) automatski su u istom Tuhelju:
+vide se kao likovi s imenom iznad glave, a kad voze — vidi se auto koje se kreće.
+Igrači se spajaju preko besplatnog javnog poslužitelja za poruke (MQTT, EMQX/HiveMQ), pa radi i na mobilnim mrežama
+i s 10 ili više igrača. Ako on ne radi, igra pokuša izravnu vezu (PeerJS). Podaci o položaju su javni, ne upisuj osobne stvari u ime.
+
+BESPLATNA OBJAVA NA INTERNETU
+1) Netlify Drop (najbrže): otvori https://app.netlify.com/drop i povuci cijelu mapu "tuhelj-3d".
+   Dobit ćeš javnu poveznicu (…netlify.app) — pošalji je dečkima. Za trajnu stranicu napravi besplatan račun.
+2) GitHub Pages: novi javni repozitorij, učitaj SVE datoteke iz mape, Settings → Pages → uključi (main).
+
+VOŽNJA
+Auta za vožnju: kod starta, kafića, trgovine, crkve, u Pristavi i vatrogasno vozilo pred vatrogasnim domom.
+Računalo: E – uđi/izađi, W/S – gas i kočnica/rikverc, A/D – volan, Space – ručna, V – pogled iz auta.
+Mobitel: kraj auta dodirni "Vozi"; krug lijevo = volan i gas; "Izađi" dolje desno.
+Suvozač: priđi autu koje vozi prijatelj i pritisni E (mobitel: "Sjedni") — voziš se s njim (do 5 osoba u autu, 6 u vatrogasnom vozilu); E ili "Izađi" za izlaz.
+
+ORUŽJE I MULTIPLAYER BORBA
+Računalo: 1 puška, 2 SMG, 3 snajper, 4 bazuka · Q spremi · lijevi klik puca (drži = rafal) · desni klik nišani · R punjenje.
+Mobitel: gumb "Oružje" gore mijenja oružje (puška → SMG → snajper → bazuka → spremi), oko = nišan, crvena tipka puca.
+Puška 25 (glava 50), SMG 14 (28), snajper 100 (150) s dalekozorom, bazuka raketa s eksplozijom do 125.
+Svaki igrač ima 100 zdravlja; kad padneš, vraćaš se za 4 s.
+
+MISIJE, NOVAC, POLICIJA
+Ljudi sa žutim ❗ iznad glave daju misije (E / žuta tipka na mobitelu): Lidija, Poljanec Martin, Krtek, Prgac, Šemso.
+Novac (€) je gore desno; zarađuješ misijama i gašenjem požara, trošiš u trgovini, na šanku i za stan Kod Ruže (800 €).
+Pucanje blizu ljudi donosi ★ — policija te lovi; ako te uhvate, kazna 100 €. Kad netko padne, dolazi hitna.
+Crvena srca po selu vraćaju zdravlje. Helikopter stoji na igralištu kod škole (Space gore, C dolje).
+
+POŽARI I VATROGASCI
+Povremeno negdje u selu izbije požar (gore se vidi "🔥 Požar … m" sa strelicom). Uđi u vatrogasni kamion
+kod DVD-a i drži lijevi klik ili G (mobitel: plava tipka 💧) — voda ide kamo gledaš. Kad ugasiš, stiže novi požar.
+
+FORMULA
+Crvena formula stoji na cesti kod početka (E — uđi u Formulu); jedno sjedalo, do ~300 km/h.
+
+ŠANK
+Priđi šanku u kafiću i pritisni E (mobitel: "🍺 Šank"): gemišt, Olimpijski, škropec, fiftač,
+pivo, rakija, pelinkovec, sok ili kava. Od alkohola se malo ljulja — i ne vozi pijan!
+
+POKER (s prijateljima)
+U kafiću priđi poker stolu i pritisni E (mobitel: "🃏 Poker") — sjedneš za stol i vidiš karte u rukama.
+Djelitelj dijeli, a flop, turn i river padaju na stol; žetoni, D, SB i BB oznake stoje pred igračima.
+Kad sjedne više prijatelja, igrate jedni protiv drugih (do 6 za stolom). Dok si sam, domaćini
+(Štef, Joža, Bara...) igraju s tobom; gumb "Botovi" ih može isključiti. Žetoni su za zabavu, bez pravog novca.
+
+KAMERA U AUTU
+V (mobitel: "Kamera") mijenja pogled izvana / iz vozačkog sjedala.
+
+UPRAVLJANJE HODANJEM
+Računalo: W A S D/strelice, miš – pogled, Shift – trčanje, Space – skok, M – karta, F – letenje, Esc – izbornik.
+Mobitel: krug dolje lijevo – hodanje, čovječuljak – trčanje, ▲ skok (u letu gore), ▼ dolje, "Let" gore desno, povlačenje prstom – pogled, gore desno Karta/Izbor.
+Karta: zumiranje s dva prsta ili gumbima + i −, dodir na kartu te premjesti.
+
+MOBITEL — CIJELI ZASLON
+Android (Chrome): "Kreni" otvara igru preko cijelog zaslona i vodoravno; ⋮ → "Instaliraj aplikaciju" za ikonu.
+iPhone (Safari): Podijeli → "Dodaj na početni zaslon", pa pokreni ikonu Tuhelj 3D (samo tako ide preko cijelog zaslona).
+
+ZASLUGE
+Podaci karte © OpenStreetMap contributors (ODbL). 3D: three.js (MIT). Multiplayer: MQTT.js (MIT), PeerJS (MIT). Referentne slike ulica: Mapillary contributors (CC BY-SA 4.0).
+
+Realistični lik (Soldier.glb, animacije Idle/Walk/Run) iz primjera three.js (Mixamo); GLTFLoader i SkeletonUtils: three.js (MIT).
+
+3D MODELI (mapa models/)
+- models/ sadrži realistične likove s animacijama (Microsoft Rocketbox, MIT licenca), aute i puške (Quaternius, CC0) i traktor (Kenney, CC0). Licence su u models/LICENSES/.
+- Uvijek uploadaj CIJELU mapu (index.html + models/ + ostale datoteke). Bez models/ igra i dalje radi, ali s jednostavnim likovima i autima.
+- Modeli (~9,6 MB) se učitavaju u pozadini: igra krene odmah, a realistični ljudi se pojave čim se učitaju.
+- Na slabijem mobitelu: Mobitel → Postavke → "Realistični mještani: isključeni".
+- Izgled svog lika biraš u Mobitel → Postavke → "Izgled lika" (11 izgleda, prijatelji te vide tako).
+
+ULAZAK U ZGRADE
+- Otvoreno je: Trgovina PZ Tuhelj, Strahinjčica, Vatrogasni dom (DVD Tuhelj) i Općina. Zeleni krug ispred vrata = ulaz.
+- Na računalu tipka E, na mobitelu gumb koji se pojavi (npr. "🛒 Uđi: Strahinjčica"). Istim putem se kupuje na blagajni i izlazi.
+- U DVD-u možeš obući vatrogasnu opremu, u Općini platiti kaznu ako te traži policija.
+- Na mobitelu se učitavaju lakši likovi (manje podataka, brže).
