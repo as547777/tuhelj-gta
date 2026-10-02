@@ -120,5 +120,6 @@ function gtaTick(dt){ if(!GTA.ready){ GTA.ready=true; money(0); heartsInit(); tr
 function gtaUse(){ if(GTA.dlg){ nextDlg(); return true; } if(PLAYER.heli){ exitHeli(); return true; } if(PLAYER.driving||PLAYER.riding) return false; const g=giverNear(); if(g){ startMission(g); return true; } if(nearHeli()){ enterHeli(); return true; } if(intUse()) return true; if(nearPt(HOME_POS(),4)){ homeAction(); return true; } return false; }
 
 function nearAnyNPC(r){ const me=PLAYER.pos; const all=[...NPCS.map(n=>n.A),...LIFE.villagers.map(v=>v.A),...GTA.peds.map(q=>q.A)]; return all.some(A=>Math.hypot(A.group.position.x-me.x,A.group.position.z-me.z)<r); }
-function gtaShot(){ if(nearAnyNPC(30)&&GAME.time-(GTA.lastCrime||-99)>6){ crime(1); GTA.lastCrime=GAME.time; } }
+// shooting only brings the police if a cop is around or someone right next to you sees it (and then they call it in)
+function gtaShot(){ if(GAME.time-(GTA.lastCrime||-99)<8) return; const copNear=GTA.chasers.some(c=>c.kind==='policija'&&Math.hypot(c.st.x-PLAYER.pos.x,c.st.z-PLAYER.pos.z)<70); if(copNear||(nearAnyNPC(14)&&Math.random()<0.35)){ crime(1); GTA.lastCrime=GAME.time; } }
 function priceOf(D){ const m=String(D.p||'').replace(',','.').match(/[\d.]+/); return m?+m[0]:0; }

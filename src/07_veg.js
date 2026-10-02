@@ -138,7 +138,7 @@ function buildCorn(scene){
 /* ---- GPU grass around the player ---- */
 function buildGrass(scene,count,R){
   const blades=5; const pos=[], bh=[], idx=[]; const rr=mulberry32(17);
-  for(let b=0;b<blades;b++){ const a=rr()*Math.PI, ca=Math.cos(a), sa=Math.sin(a); const ox=(rr()-0.5)*0.22, oz=(rr()-0.5)*0.22; const w=0.022+rr()*0.018, h=0.6+rr()*0.4; const lean=(rr()-0.5)*0.25;
+  for(let b=0;b<blades;b++){ const a=rr()*Math.PI, ca=Math.cos(a), sa=Math.sin(a); const ox=(rr()-0.5)*0.22, oz=(rr()-0.5)*0.22; const w=0.016+rr()*0.014, h=0.26+rr()*0.26; const lean=(rr()-0.5)*0.25;
     const base=pos.length/3; const V=[[-w,0,0],[w,0,0],[-w*0.55,0.55,lean*0.4],[w*0.55,0.55,lean*0.4],[0,1,lean]];
     for(const [x,y,l] of V){ pos.push(ox+ca*x-sa*l, y*h, oz+sa*x+ca*l); bh.push(y*h); }
     idx.push(base,base+1,base+3, base,base+3,base+2, base+2,base+3,base+4); }

@@ -5,15 +5,15 @@ const STORY={ch:0,ward:false,pax:null,deskT:0,tags:new Set()};
 try{ const s=+localStorage.getItem('tuhelj_story'); if(Number.isFinite(s)&&s>=0) STORY.ch=Math.min(7,s); }catch(e){}
 function storySave(){ try{ localStorage.setItem('tuhelj_story',String(STORY.ch)); }catch(e){} }
 function storyDone(n){ if(STORY.ch<n){ STORY.ch=n; storySave(); } }
-const HIDE=[-428,-144]; // Vukova jazbina — stari štagalj iza sela
+const HIDE=[118,-26]; // Vukova jazbina — stari štagalj istočno iza sela
 function hidePos(dx,dz){ return [HIDE[0]+dx,HIDE[1]+dz]; }
 function npcA(n){ const N=npcByName(n); if(N) return N.A; const V=LIFE.villagers.find(v=>v.n===n); if(V) return V.A; const Q=GTA.peds.find(q=>q.A.name===n); return Q?Q.A:null; }
 function storyGangCar(x,z){ const C=spawnChaser('banda'); C.st.x=x; C.st.z=z; C.st.yaw=Math.random()*TAU; C.wait=true; C.story=true; C.v.st=C.st; poseVehicle(C.v); return C; }
 const STORY_M=[
  {id:'s1',story:1,giver:'Poljanec Martin',title:'1 · Povratak u Tuhelj',reward:150,
-  intro:[['Poljanec Martin','Joj, pa to si ti! Deset let te nije bilo, a sad si došel iz Njemačke kak pravi gospon.'],['Poljanec Martin','Baka Ruža ti je pred smrt ostavila stan — Kod Ruže, kraj brtije. Evo ti ključ.'],['Poljanec Martin','Presvuci se, odmori, a navečer svrati u brtiju. Kenka te traži, nekaj je zabrljal.']],
-  steps:[{t:'Dođi do stana Kod Ruže',at:()=>HOME_POS(),r:4.5,onDone:()=>{ if(!GTA.home){ GTA.home=true; try{ localStorage.setItem('tuhelj_home','1'); }catch(e){} } UI.toast('🏠 Stan Kod Ruže je sad tvoj — ormar, krevet, tuš, TV'); }},
-    {t:'Uđi u stan i presvuci se u ormaru',ok:()=>STORY.ward},
+  intro:[['Poljanec Martin','Joj, pa to si ti! Deset let te nije bilo, a sad si došel iz Njemačke kak pravi gospon.'],['Poljanec Martin','Tvoja kuća nasuprot crkve te čeka — žuta, s balkonom. Sve sam ti pospremil dok te nije bilo.'],['Poljanec Martin','Presvuci se, odmori, a navečer svrati u brtiju. Kenka te traži, nekaj je zabrljal.']],
+  steps:[{t:'Dođi do svoje kuće nasuprot crkve',at:()=>houseDoor()||HOME_POS(),r:3.5,onDone:()=>{ UI.toast('🏡 Doma si — ormar, krevet, tuš, TV'); }},
+    {t:'Uđi u kuću i presvuci se u ormaru',ok:()=>STORY.ward},
     {t:'Idi u brtiju (Kafić Putniku) do Kenke',at:()=>npcPos('Kenka'),r:3.4}],
   outro:[['Kenka','E, pa evo našeg Nijemca! Sjedi, sjedi… Lidija, daj mu gemišt!'],['Kenka','Slušaj… dužan sam pet stotina eura Crnim Vukovima. Rekli su da mi zapale kuću ak ne platim do petka.'],['Kenka','Imam skrivene novce kod kapelice, al ja ne smijem voziti. Dođi sutra, molim te.']],
   done:()=>storyDone(1)},

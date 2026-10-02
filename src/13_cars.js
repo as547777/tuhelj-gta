@@ -27,7 +27,7 @@ const PAINTS=[['#e9e9e6',24],['#9ea3a8',18],['#1d1f22',16],['#28406e',8],['#8c1f
 const CARMAT={};
 function carMats(){ if(CARMAT.paint) return CARMAT;
   CARMAT.paint=new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.55,roughness:0.28,envMapIntensity:1.2});
-  CARMAT.glass=new THREE.MeshStandardMaterial({color:0x151b21,metalness:0.3,roughness:0.06,envMapIntensity:1.4});
+  CARMAT.glass=new THREE.MeshStandardMaterial({color:0x26323c,metalness:0.2,roughness:0.05,envMapIntensity:1.5,transparent:true,opacity:0.42,depthWrite:false,side:THREE.DoubleSide}); // see-through: people inside are visible
   CARMAT.dark=new THREE.MeshStandardMaterial({color:0x161718,roughness:0.85});
   CARMAT.chrome=new THREE.MeshStandardMaterial({color:0xcfd4d8,metalness:1,roughness:0.25});
   CARMAT.head=new THREE.MeshStandardMaterial({color:0xf4f2ea,emissive:0x333333,roughness:0.2});

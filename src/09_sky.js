@@ -6,7 +6,7 @@ function sunDirFor(hour){ // simple late-August sun path for 46°N
   const az=Math.PI+t*1.95; // radians from north, clockwise (south at noon)
   const ce=Math.cos(el); return new THREE.Vector3(Math.sin(az)*ce, Math.sin(el), -Math.cos(az)*ce).normalize(); }
 function buildSky(scene){
-  const uni={uSun:{value:new THREE.Vector3(0,1,0)},uTime:{value:0},uZen:{value:new THREE.Color('#3f74c0')},uHor:{value:new THREE.Color('#c9dbe6')},uSunC:{value:new THREE.Color('#fff2d8')},uCloud:{value:0.55},uGlow:{value:new THREE.Color('#ffe2b8')}};
+  const uni={uSun:{value:new THREE.Vector3(0,1,0)},uTime:{value:0},uZen:{value:new THREE.Color('#3f74c0')},uHor:{value:new THREE.Color('#c9dbe6')},uSunC:{value:new THREE.Color('#fff2d8')},uCloud:{value:0.32},uGlow:{value:new THREE.Color('#ffe2b8')}};
   const mat=new THREE.ShaderMaterial({uniforms:uni,side:THREE.BackSide,depthWrite:false,fog:false,
     vertexShader:`varying vec3 vD; void main(){ vD=normalize(position); vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position=p.xyww; }`,
     fragmentShader:`uniform vec3 uSun,uZen,uHor,uSunC,uGlow; uniform float uTime,uCloud; varying vec3 vD;
@@ -21,6 +21,11 @@ function buildSky(scene){
         // clouds on a virtual plane
         if(d.y>0.01){ vec2 cp=d.xz/(d.y+0.08)*1.6+vec2(uTime*0.004,uTime*0.0015); float c=fbm(cp*1.3); c=smoothstep(1.0-uCloud*0.62,1.0-uCloud*0.62+0.28,c); float fade=smoothstep(0.02,0.25,d.y);
           vec3 cc=mix(vec3(0.82,0.84,0.88),vec3(1.0,0.99,0.97),smoothstep(0.3,0.9,fbm(cp*2.1+3.0)))*(0.85+0.3*pow(sd,4.0)); col=mix(col,cc,c*fade*0.92); }
+        // cirrus streaks and a couple of contrails (photos: high, wispy, criss-crossed by planes)
+        if(d.y>0.015){ vec2 q=d.xz/(d.y+0.1); vec2 r=vec2(q.x*0.8+q.y*0.6,-q.x*0.6+q.y*0.8); float fd=smoothstep(0.015,0.3,d.y)*(1.0-smoothstep(0.45,0.85,d.y));
+          float ci=fbm(vec2(r.x*0.45+uTime*0.0015,r.y*5.0)); ci=smoothstep(0.5,0.86,ci)*fbm(r*0.8+7.0); col=mix(col,vec3(0.96,0.97,1.0),clamp(ci*0.9,0.0,0.6)*fd);
+          float c1=abs(dot(q-vec2(0.6,-0.2),normalize(vec2(1.0,0.32)))), c2=abs(dot(q-vec2(-0.4,0.5),normalize(vec2(0.45,-1.0))));
+          float tr=smoothstep(0.03,0.004,c1)*smoothstep(4.0,1.0,length(q))+smoothstep(0.022,0.003,c2)*smoothstep(3.0,0.5,length(q))*0.8; col=mix(col,vec3(1.0),tr*0.55*fd*(1.0-uCloud*0.5)); }
         // below horizon: haze colour
         if(d.y<0.0) col=mix(uHor,uHor*0.92,clamp(-d.y*4.0,0.0,1.0));
         gl_FragColor=vec4(col,1.0);
@@ -38,8 +43,8 @@ function setTimeOfDay(renderer,scene,hour){
   const d=sunDirFor(hour); SKY.dir=d; SKY.uni.uSun.value.copy(d);
   const el=Math.asin(d.y); const warm=clamp(1-el/0.5,0,1); // low sun -> warmer
   SKY.sun.color.setRGB(1,lerp(0.95,0.72,warm),lerp(0.86,0.52,warm)); SKY.sun.intensity=lerp(3.0,1.6,warm)*smooth(-0.05,0.08,el);
-  SKY.uni.uHor.value.setRGB(lerp(0.79,0.93,warm*0.8),lerp(0.86,0.8,warm*0.8),lerp(0.9,0.72,warm*0.8));
-  SKY.uni.uZen.value.setRGB(lerp(0.13,0.16,warm),lerp(0.3,0.26,warm),lerp(0.66,0.5,warm));
+  SKY.uni.uHor.value.setRGB(lerp(0.66,0.93,warm*0.8),lerp(0.79,0.8,warm*0.8),lerp(0.93,0.72,warm*0.8));
+  SKY.uni.uZen.value.setRGB(lerp(0.05,0.12,warm),lerp(0.17,0.22,warm),lerp(0.62,0.48,warm));
   SKY.uni.uGlow.value.setRGB(1,lerp(0.88,0.62,warm),lerp(0.72,0.4,warm));
   const night=smooth(0.07,-0.14,el); SKY.night=night; for(const u of [SKY.uni.uHor.value,SKY.uni.uZen.value]) u.lerp(new THREE.Color(0.02,0.03,0.07),night*0.93); SKY.uni.uGlow.value.lerp(new THREE.Color(0.2,0.22,0.35),night);
   scene.fog.color.copy(SKY.uni.uHor.value).multiplyScalar(0.98);

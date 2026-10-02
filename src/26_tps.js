@@ -26,14 +26,15 @@ applyCamera=function(cam){ if(!tpsActive()){ _fpApplyCamera(cam); return; }
   const indoor=!!INSIDE||floorAt(P.pos.x,P.pos.z)>getHeight(P.pos.x,P.pos.z)+0.4;
   let dist=lerp(lerp(3.7,2.8,a),1.35,k), side=lerp(lerp(0.32,0.55,a),0.62,k), up=lerp(0.28,0.12,k);
   if(indoor){ dist=Math.min(dist,lerp(2.2,1.25,k)); side=Math.min(side,0.45); }
-  if(dead){ dist=5.5; side=0; up=1.8; }
+  if(dead){ dist=4.2; side=0; up=0.9; }
   const piv=_tv.set(P.pos.x,P.pos.y+(dead?0.4:1.58),P.pos.z);
   const fw=tpsForward(_tw).clone(), rt=new THREE.Vector3(Math.cos(P.yaw),0,-Math.sin(P.yaw));
   const sidePt=piv.clone().addScaledVector(rt,side).add(new THREE.Vector3(0,up,0)); const sideOk=tpsFree(piv,sidePt); sidePt.lerpVectors(piv,sidePt,sideOk);
   const want=sidePt.clone().addScaledVector(fw,-dist); const f=tpsFree(sidePt,want); const d=Math.max(0.35,dist*f-0.15);
   TPS.cur=d<TPS.cur?d:TPS.cur+(d-TPS.cur)*Math.min(1,TPS.dt*4);
   cam.position.copy(sidePt).addScaledVector(fw,-TPS.cur);
-  if(INSIDE) cam.position.y=Math.min(cam.position.y,P.pos.y+2.55);
+  if(INSIDE){ cam.position.y=Math.min(cam.position.y,P.pos.y+2.55); const B=INT_BOX.find(b=>Math.abs(P.pos.x-b.x)<b.W+0.5&&Math.abs(P.pos.z-b.z)<b.D+0.5&&Math.abs(P.pos.y-b.y)<3);
+    if(B){ cam.position.x=clamp(cam.position.x,B.x-B.W+0.25,B.x+B.W-0.25); cam.position.z=clamp(cam.position.z,B.z-B.D+0.25,B.z+B.D-0.25); cam.position.y=Math.min(cam.position.y,B.y+B.H-0.2); } }
   const sw=drunkSway(); cam.rotation.set(pitch+C.recoil*0.45,P.yaw+sw[1],sw[0],'YXZ'); };
 
 /* ---- the player's avatar ---- */
@@ -44,13 +45,13 @@ function tpsTick(dt){ TPS.dt=dt; const C=COMBAT, act=tpsActive();
   if(act&&typeof WMODELS!=='undefined'&&WMODELS) for(const g of WMODELS) g.visible=false;
   if(act&&typeof GLASS!=='undefined'&&GLASS) GLASS.visible=false;
   if(!act){ TPS.hasMuzzle=false; for(const k in TPS.guns) TPS.guns[k].visible=false; if(!PLAYER.driving&&!PLAYER.riding&&ME_AV&&!PLAYER.heli) ME_AV.group.visible=false; return; }
-  const A=meAvatar(), P=PLAYER; A.group.visible=TPS.cur>0.7||C.dead; for(const bp of A.body) bp.visible=true; if(A.sprite) A.sprite.visible=false; if(A.bub) A.bub.visible=false;
-  const hs=Math.hypot(P.vel.x,P.vel.z);
+  const A=meAvatar(), P=PLAYER; A.group.visible=TPS.cur>0.7||C.dead; for(const bp of A.body) bp.visible=true; if(A.sprite) A.sprite.visible=false;
+  const hs=Math.hypot(P.vel.x,P.vel.z); if(C.dead){ P.yaw+=dt*0.22; P.pitch+=(-0.5-P.pitch)*Math.min(1,dt*1.5); }
   let want=TPS.face; if(armed||C.ads) want=P.yaw; else if(hs>0.6) want=faceYaw(P.vel.x,P.vel.z);
   TPS.face=angLerp(TPS.face,want,Math.min(1,dt*(armed?16:10)));
   A.group.position.set(P.pos.x,P.pos.y,P.pos.z); A.group.rotation.set(C.dead?-Math.PI/2*0.98:0,TPS.face,0);
   if(C.dead) A.group.position.y+=0.2; A.dead=C.dead;
-  A.forceClip=C.drink?'drink':null;
+  A.forceClip=C.drink?'drink':null; A.spdOv=P.ground?hs:Math.min(hs,2);
   // procedural fallback body: swing legs/arms from speed
   if(!A.real){ P._ph=(P._ph||0)+dt*hs*1.9; const s=Math.min(1,hs/4)*0.7; A.legL.rotation.x=Math.sin(P._ph)*s; A.legR.rotation.x=-Math.sin(P._ph)*s; A.armL.rotation.x=-Math.sin(P._ph)*s*0.7; A.armR.rotation.x=armed?-1.45:Math.sin(P._ph)*s*0.7; } }
 

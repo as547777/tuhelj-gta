@@ -41,6 +41,8 @@ function gradeRoads(){
     const g=(main?0.11:track?0.2:0.15)*step;
     for(let i=1;i<H.length;i++) H[i]=clamp(H[i],H[i-1]-g,H[i-1]+g);
     for(let i=H.length-2;i>=0;i--) H[i]=clamp(H[i],H[i+1]-g,H[i+1]+g);
+    // the grade limit must not drag a hill down into the valley (or build a dam): never move the road far from the ground
+    for(let i=0;i<H.length;i++) H[i]=clamp(H[i],H0[i]-maxCut,H0[i]+Math.min(maxCut,1.5));
     const hw=r.w/2, IN=hw+(track?2.5:4.5), OUT=hw+(track?9:15), pri=main?3:track?0.6:1.5;
     for(let i=0;i<S.length;i++){ const x=S[i][0], z=S[i][1];
       const ix0=Math.max(0,Math.floor((x-OUT-X0)/CELL)), ix1=Math.min(NX-1,Math.ceil((x+OUT-X0)/CELL)), iz0=Math.max(0,Math.floor((z-OUT-Z0)/CELL)), iz1=Math.min(NZ-1,Math.ceil((z+OUT-Z0)/CELL));
@@ -64,7 +66,7 @@ function buildRoads(scene){
   let rid=0;
   for(const r of ROADS){ rid++;
     const main=(r.t==='primary'||r.t==='secondary'||r.t==='tertiary'||r.t==='unclassified');
-    const kind=(r.t==='track'||r.t==='path')?'track':(main && r.t!=='unclassified'?'main':'local');
+    const kind=r.gravel?'gravel':(r.t==='track'||r.t==='path')?'track':(main && r.t!=='unclassified'?'main':'local');
     const step=1.5; const P=smoothCorners(r.P,8,2); const S=resample(P,step); if(S.length<2) continue; const T=tangents(S);
     r.S=S; r.T=T; r.rid=rid;
     for(let i=0;i<S.length;i++) ridxAdd({x:S[i][0],z:S[i][1],tx:T[i][0],tz:T[i][1],w:r.w,t:r.t,n:r.n,ref:r.ref,rid,i,road:r});
@@ -122,7 +124,7 @@ function buildRoads(scene){
   const railG=cs.get('rail',0,0); const railC=new THREE.Color(0.72,0.74,0.76);
   for(const r of ROADS){ if(!r.b || !r.S) continue; for(const side of [1,-1]){ for(let i=0;i<r.S.length-1;i++){ const p=r.S[i], t=r.T[i]; const nx=-t[1]*side, nz=t[0]*side; const x=p[0]+nx*(r.w/2+0.25), z=p[1]+nz*(r.w/2+0.25); const y=getHeight(x,z); const f=frame(x,z,Math.atan2(t[1],t[0]),y);
       if(i%2==0) railG.box(f,-0.05,0.05,0,0.95,-0.05,0.05,railC); railG.box(f,-0.78,0.78,0.72,0.9,-0.03,0.03,railC); } } }
-  const mats={main:matMain,local:matLocal,track:matTrack,paint:matPaint,curb:matCurb,rail:new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,metalness:0.6,roughness:0.4})};
+  const mats={gravel:new THREE.MeshStandardMaterial({map:TEX.gravel||TEX.track,roughness:1,metalness:0,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}),main:matMain,local:matLocal,track:matTrack,paint:matPaint,curb:matCurb,rail:new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,metalness:0.6,roughness:0.4})};
   const meshes=cs.meshes(mats,{cast:k=>k==='curb'||k==='rail'});
   for(const m of meshes){ if(m.material!==matCurb && m.material!==mats.rail){ m.castShadow=false; } scene.add(m); }
   ROADMESH.mats=mats;

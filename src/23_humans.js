@@ -62,19 +62,19 @@ function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady) re
     const show=pick&&A.group.visible&&!odd&&!(seated&&!sitClip)&&!(onBike&&R.key==='soldier')&&d<(kind==='npc'?RMAX:220);
     SPH.center.set(p.x,p.y+0.9,p.z); const inView=FR.intersectsSphere(SPH);
     R.m.visible=show&&inView; showProc(A,!show); if(A.gun&&show) A.gun.visible=false;
-    const v=R.last.distanceTo(p)/Math.max(dt,1e-3); R.last.copy(p); R.spd+=(Math.min(v,9)-R.spd)*Math.min(1,dt*6);
+    if(A.spdOv!==undefined){ R.last.copy(p); R.spd+=(A.spdOv-R.spd)*Math.min(1,dt*10); } else { const v=R.last.distanceTo(p)/Math.max(dt,1e-3); R.last.copy(p); R.spd+=(Math.min(v,9)-R.spd)*Math.min(1,dt*6); }
     if(!show||!inView) continue;
     const shd=GAME.touch?d<12:d<40; if(R.shd!==shd){ R.shd=shd; R.m.traverse(o=>{ if(o.isMesh) o.castShadow=shd; }); }
     const s=A.dead?0:R.spd; let clip, ts=1;
     // speed → idle / stroll / walk / run, with hysteresis and a minimum hold so people don't twitch between clips
-    const BND=[0.28,1.0,2.7]; let c=R.cat; while(c<3&&s>BND[c]+0.12) c++; while(c>0&&s<BND[c-1]-0.12) c--; if(c!==R.cat&&GAME.time-R.catT>0.4){ R.cat=c; R.catT=GAME.time; }
+    const BND=[0.28,1.0,2.7]; let c=R.cat; while(c<3&&s>BND[c]+0.12) c++; while(c>0&&s<BND[c-1]-0.12) c--; if(c!==R.cat&&GAME.time-R.catT>(kind==='me'?0.12:0.4)){ R.cat=c; R.catT=GAME.time; }
     if(A.forceClip&&(R.act[A.forceClip]||RB_FALL[A.forceClip])){ clip=A.forceClip; ts=A.forceTs||1; }
     else if(sitClip){ clip=sitClip; }
     else if(onBike){ clip='idle'; }
     else if(R.cat===0) clip=RB_IDLE[n]||'idle';
     else if(R.cat===1){ clip='stroll'; ts=clamp(s/0.95,0.55,1.3); }
     else if(R.cat===2){ clip=(n==='Kenka'||n==='Jovo')?'drunkwalk':'walk'; ts=clamp(s/1.35,0.7,1.8); }
-    else { clip='run'; ts=clamp(s/3.9,0.75,1.5); }
+    else { clip='run'; ts=clamp(s/3.9,0.75,kind==='me'?1.85:1.5); }
     rbPlay(R,clip,ts);
     R.m.position.y=A.forceY!==undefined&&A.forceClip?A.forceY:sitClip?(0.99-(REAL.pel[R.g][sitClip]||0.58)*R.sc):onBike?0.04:0;
     if(A.dead){ continue; }

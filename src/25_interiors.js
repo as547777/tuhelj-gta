@@ -27,7 +27,8 @@ function intUse(){ const s=intSpot(); if(s){ s.fn(); return true; } const I=intN
 function intPrompt(){ if(INSIDE){ const s=intSpot(); return s?s.t:''; } const I=intNearDoor(); return I?(I.ico+' Uđi: '+I.name):''; }
 function intIcons(){ intInit(); return INTS.filter(I=>I.id!=='pz').map(I=>[I.door(),I.ico]); }
 /* ---- building blocks ---- */
-function intShell(cs,x,z,y,W,D,H,C){ const f=frame(x,z,0,0); const G=cs.get('wall',x,z), Wd=cs.get('wood',x,z);
+const INT_BOX=[]; // room boxes, so the third-person camera stays inside
+function intShell(cs,x,z,y,W,D,H,C){ const f=frame(x,z,0,0); INT_BOX.push({x,z,y,W,D,H}); const G=cs.get('wall',x,z), Wd=cs.get('wood',x,z);
   G.box(f,-W,W,y-0.3,y,-D,D,C.floor); G.box(f,-W,W,y+H,y+H+0.2,-D,D,C.ceil);
   G.box(f,-W-0.2,-W,y,y+H,-D,D,C.wall); G.box(f,W,W+0.2,y,y+H,-D,D,C.wall); G.box(f,-W,W,y,y+H,-D-0.2,-D,C.wall);
   G.box(f,-W,-1.0,y,y+H,D,D+0.2,C.wall); G.box(f,1.0,W,y,y+H,D,D+0.2,C.wall); G.box(f,-1.0,1.0,y+2.3,y+H,D,D+0.2,C.wall);

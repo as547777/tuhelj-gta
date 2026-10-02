@@ -317,7 +317,7 @@ body.touch .keys{display:none} body.touch .touchhelp{display:block} body.touch #
 <div id="start"><div id="slides"></div><div id="shotfade"></div><div class="card">
  <div class="eyebrow">Hrvatsko zagorje · Krapinsko-zagorska županija</div>
  <h1 class="logo"><span>TUHELJ</span><small>Povratak u Zagorje</small></h1>
- <p class="lede">Deset godina u Njemačkoj, a sad si opet doma. Baka Ruža ti je ostavila stan, Kenka je dužan Crnim Vukovima, a netko u općini im drži leđa. Sedam poglavlja, cijelo selo, policija za petama — i brtija koja nikad ne spava.</p>
+ <p class="lede">Deset godina u Njemačkoj, a sad si opet doma — u obiteljskoj kući nasuprot crkve. Kenka je dužan Crnim Vukovima, a netko u općini im drži leđa. Sedam poglavlja, cijelo selo, policija za petama — i brtija koja nikad ne spava.</p>
  <div id="chap"></div>
  <div class="prog"><div id="bar"></div></div><div id="ltxt">Pripremam…</div>
  <div class="namerow"><input id="pname" maxlength="16" placeholder="Tvoje ime (vide ga drugi igrači)" autocomplete="off" spellcheck="false"></div>

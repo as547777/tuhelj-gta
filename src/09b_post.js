@@ -37,8 +37,8 @@ function setupPost(renderer){
         float ao=1.0-occ/float(nS); ao=mix(1.0,ao,1.0-smoothstep(110.0,170.0,dist)); gl_FragColor=vec4(vec3(ao),1.0); }`});
     POST.blur=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tAO:{value:null},res:{value:new THREE.Vector2()}},vertexShader:vs,fragmentShader:`
       uniform sampler2D tAO; uniform vec2 res; varying vec2 vUv; void main(){ vec2 px=1.0/res; float s=0.0; for(int x=-2;x<2;x++) for(int y=-2;y<2;y++) s+=texture2D(tAO,vUv+(vec2(float(x),float(y))+0.5)*px).r; gl_FragColor=vec4(vec3(s/16.0),1.0); }`});
-    POST.comp=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tColor:{value:null},tAO:{value:null},tB1:{value:null},tB2:{value:null},bloomK:{value:0.22},exposure:{value:0.92},aoK:{value:0.85},night:{value:0}},vertexShader:vs,fragmentShader:`
-      uniform sampler2D tColor, tAO, tB1, tB2; uniform float exposure, aoK, bloomK, night; varying vec2 vUv;
+    POST.comp=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tColor:{value:null},tAO:{value:null},tB1:{value:null},tB2:{value:null},bloomK:{value:0.22},exposure:{value:0.92},aoK:{value:0.85},night:{value:0},gray:{value:0}},vertexShader:vs,fragmentShader:`
+      uniform sampler2D tColor, tAO, tB1, tB2; uniform float exposure, aoK, bloomK, night, gray; varying vec2 vUv;
       vec3 RRTAndODTFit(vec3 v){ vec3 a=v*(v+0.0245786)-0.000090537; vec3 b=v*(0.983729*v+0.4329510)+0.238081; return a/b; }
       vec3 aces(vec3 c){ const mat3 I=mat3(vec3(0.59719,0.07600,0.02840),vec3(0.35458,0.90834,0.13383),vec3(0.04823,0.01566,0.83777)); const mat3 O=mat3(vec3(1.60475,-0.10208,-0.00327),vec3(-0.53108,1.10813,-0.07276),vec3(-0.07367,-0.00605,1.07602)); c*=exposure/0.6; c=I*c; c=RRTAndODTFit(c); c=O*c; return clamp(c,0.0,1.0); }
       vec3 toSRGB(vec3 c){ return mix(pow(c,vec3(0.41666))*1.055-0.055,c*12.92,vec3(lessThanEqual(c,vec3(0.0031308)))); }
@@ -50,7 +50,8 @@ function setupPost(renderer){
         float gdom=clamp((t.g-max(t.r,t.b))*4.0,0.0,1.0); t=mix(t,mix(vec3(l),t,0.78)*vec3(1.03,1.0,0.94),gdom*0.55);
         t=mix(vec3(l),t,1.06); t=mix(t,t*vec3(1.04,1.0,0.93),smoothstep(0.4,1.0,l)); t=mix(t,t*vec3(0.95,1.0,1.06)+vec3(0.004,0.006,0.012),1.0-smoothstep(0.0,0.3,l));
         t=clamp((t-0.5)*1.06+0.5,0.0,1.0);
-        vec2 q=vUv-0.5; t*=1.0-dot(q,q)*0.5; gl_FragColor=vec4(toSRGB(t),1.0); }`});
+        float gl2=dot(t,vec3(0.2126,0.7152,0.0722)); t=mix(t,vec3(gl2)*vec3(1.04,0.97,0.92)*0.85,gray);
+        vec2 q=vUv-0.5; t*=1.0-dot(q,q)*(0.5+gray*0.6); gl_FragColor=vec4(toSRGB(t),1.0); }`});
     POST.fxaa=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tDiffuse:{value:null},res:{value:new THREE.Vector2()}},vertexShader:vs,fragmentShader:`
       uniform sampler2D tDiffuse; uniform vec2 res; varying vec2 vUv;
       void main(){ vec2 rcp=1.0/res; vec3 nw=texture2D(tDiffuse,vUv+vec2(-1.0,-1.0)*rcp).rgb, ne=texture2D(tDiffuse,vUv+vec2(1.0,-1.0)*rcp).rgb, sw=texture2D(tDiffuse,vUv+vec2(-1.0,1.0)*rcp).rgb, se=texture2D(tDiffuse,vUv+vec2(1.0,1.0)*rcp).rgb, m=texture2D(tDiffuse,vUv).rgb;
@@ -76,7 +77,7 @@ function renderFrame(renderer,scene,camera){
     Q.material=POST.copy; POST.copy.uniforms.tSrc.value=POST.bA.texture; renderer.setRenderTarget(POST.bC); renderer.render(POST.scene,POST.cam);
     Q.material=B; B.uniforms.tSrc.value=POST.bC.texture; B.uniforms.dir.value.set(1.6/ew,0); renderer.setRenderTarget(POST.bD); renderer.render(POST.scene,POST.cam);
     B.uniforms.tSrc.value=POST.bD.texture; B.uniforms.dir.value.set(0,1.6/eh); renderer.setRenderTarget(POST.bC); renderer.render(POST.scene,POST.cam);
-    const nt=(typeof SKY!=='undefined'&&SKY.night)||0; POST.comp.uniforms.night.value=nt; POST.bright.uniforms.thr.value=2.4-1.5*nt; }
+    const nt=(typeof SKY!=='undefined'&&SKY.night)||0; POST.comp.uniforms.night.value=nt; { const u=POST.comp.uniforms.gray; const want=(typeof COMBAT!=='undefined'&&COMBAT.dead)?1:0; u.value+=(want-u.value)*0.06; } POST.bright.uniforms.thr.value=2.4-1.5*nt; }
   POST.quad.material=POST.comp; renderer.setRenderTarget(POST.ldrRT); renderer.render(POST.scene,POST.cam);
   POST.quad.material=POST.fxaa; renderer.setRenderTarget(null); renderer.render(POST.scene,POST.cam);
 }

@@ -39,11 +39,11 @@ function copCarTick(C,dt){ const crew=lawCrew(C,'cop'); const me=PLAYER.pos; con
     if(c.aim){ c.cd-=dt; if(c.cd<=0){ c.cd=(want>=4?0.45:0.75)+Math.random()*0.7; copShoot(c,dd); } } } }
 function copShoot(c,dd){ const A=c.A; const muzzle=c.muzzle?c.muzzle.clone():A.group.position.clone().add(new THREE.Vector3(0,1.4,0)); const me=PLAYER.pos;
   const moving=Math.hypot(PLAYER.vel.x,PLAYER.vel.z)>5||(PLAYER.driving&&Math.abs(PLAYER.driving.st.v)>5);
-  let pHit=0.55*(1-dd/50)*(moving?0.55:1)*(GTA.wanted>=3?1.15:0.9); if(COMBAT.ads) pHit*=0.85;
+  let pHit=0.36*(1-dd/50)*(moving?0.5:1)*(GTA.wanted>=3?1.15:0.85); if(COMBAT.ads) pHit*=0.85;
   const hit=Math.random()<pHit; const aimP=new THREE.Vector3(me.x+(hit?0:(Math.random()-0.5)*2.4),me.y+(PLAYER.driving?1.0:1.0+Math.random()*0.6),me.z+(hit?0:(Math.random()-0.5)*2.4));
   if(!hit) aimP.add(aimP.clone().sub(muzzle).normalize().multiplyScalar(12));
   addTracer(muzzle,aimP); fxFlash(muzzle,2,0.05,10); sfxAt('pistol',muzzle,200); c.recoil=0.12;
-  if(hit){ if(PLAYER.driving){ const V={v:PLAYER.driving,st:PLAYER.driving.st,ref:PLAYER.driving,kind:'drive'}; damageVehicle(V,4); if(Math.random()<0.3) takeDamage(5,'policija'); } else takeDamage(GTA.wanted>=4?14:9,'policija'); } }
+  if(hit){ if(PLAYER.driving){ const V={v:PLAYER.driving,st:PLAYER.driving.st,ref:PLAYER.driving,kind:'drive'}; damageVehicle(V,4); if(Math.random()<0.3) takeDamage(5,'policija'); } else takeDamage(GTA.wanted>=4?11:7,'policija'); } }
 function lawCarWrecked(V){ const C=V.ref; if(!C.crew) return; for(const c of C.crew){ if(!c.out){ c.out=true; const dp=doorWorld(C,c.seat); c.A.group.position.copy(dp); c.A.seatT=-1; } hurtPerson({A:c.A,n:c.A.name,crew:c},500,false); } }
 function lawCarGone(C){ if(!C.crew) return; for(const c of C.crew) lawRemove(c); C.crew=null; }
 /* ---- Crni Vukovi on foot (story missions): guard a spot, then come at you and shoot ---- */

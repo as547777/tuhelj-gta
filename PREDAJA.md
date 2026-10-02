@@ -53,6 +53,12 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - Popravak: igra otvorena u skrivenoj kartici imala je crni ekran (aspect NaN) — sad se samo popravi.
 - `build.py` čita/piše UTF-8 (radi na Windowsima bez `PYTHONUTF8`), `--dev` dodaje 99_dev.js (`?dev` u adresi: `devStart()`, `CAM()`, `SNAP()`).
 
+## Tuhelj po fotografijama (31_photo.js, 32_voices.js)
+- Igračev dom = OSM „Obiteljska kuća Slaviček” (-457,-148), nasuprot crkve. `photoTerrain` spušta dolinu (kuća je bila 28 m previsoko na brdu), `photoLand` pretvara oranice u livadu između kuće i crkve, šljunčani put (`r.gravel`, `TEX.gravel`). Kuća po fotografijama: žuta žbuka, crvene trake, zabat s trokutastim prozorom, nadstrešnica, polukružni balkon s drvenom ogradom, natkrivena terasa; susjedna niska zgrada s crijepom, stup s košem i vinovom lozom, kante, astre, vrbe. Unutrašnjost `kuca` (ormar, krevet, tuš, TV, namještaj); početak i buđenje ispred kuće.
+- Popravak: sobe interijera bile su izvan granica karte (igrača je vraćalo) i neke ispod terena — sad `groundAt` unutra koristi pod sobe, a kamera ostaje u sobi (`INT_BOX`).
+- `gradeRoads` više ne nasipa dolinu prema brdu. Niža (pokošena) trava, plavije nebo s cirusima i tragovima aviona.
+- Titlovi teku sami (E preskače), priča kreće kad priđeš ★, ljudi pozdravljaju i reagiraju (oblačići, govor ako preglednik ima hrvatski glas), policajci viču, vozači i suvozači u autima (prozirna stakla), smrt „UMRO SI” → buđenje doma, mirnija policija.
+
 ## Otvoreno
 - vatrogasni kamion i hitna su još proceduralni (nema dobrog besplatnog realističnog modela); bazuka proceduralna
 - puške u rukama igrača s realističnim izgledom (vezati na kost Bip01_R_Hand)
