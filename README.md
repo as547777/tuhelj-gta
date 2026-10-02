@@ -1,11 +1,13 @@
 # Tuhelj GTA 🏡🚗
 
+### 🎮 [▶ PLAY NOW](https://as547777.github.io/tuhelj-gta/)
+
 An open-world 3D game in the browser, set in the village of **Tuhelj** in Hrvatsko zagorje, Croatia, built from real OpenStreetMap data. It has driving, missions, police, firefighters, poker at the local pub, shops you can walk into, and multiplayer with friends.
 
 > 🚧 Work in progress, new features are being added regularly.
 
 ## Play
-- **Online:** on Netlify (project `tuhelj-gtav`), and with GitHub Pages enabled at `https://YOUR-USERNAME.github.io/tuhelj-gta/`.
+- **Online:** [https://as547777.github.io/tuhelj-gta/](https://as547777.github.io/tuhelj-gta/)
 - **On a computer:** double-click `docs/index.html` (Chrome or Edge).
 - **On a phone:** open the online address; the game adapts to touch controls automatically.
 
