@@ -1,0 +1,24 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;background:#888}</style></head><body>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+const W=1400,H=620; const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true}); r.setSize(W,H); r.outputColorSpace=THREE.SRGBColorSpace; r.toneMapping=THREE.ACESFilmicToneMapping; r.shadowMap.enabled=true; document.body.appendChild(r.domElement);
+const sc=new THREE.Scene(); sc.background=new THREE.Color(0xb8c6d0); const cam=new THREE.PerspectiveCamera(35,W/H,0.1,100);
+sc.add(new THREE.HemisphereLight(0xdfeaff,0x5a4a3a,1.4)); const sun=new THREE.DirectionalLight(0xffffff,2.2); sun.position.set(4,8,6); sun.castShadow=true; sun.shadow.camera.left=-8; sun.shadow.camera.right=8; sun.shadow.camera.top=8; sun.shadow.camera.bottom=-8; sc.add(sun);
+const gr=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x7a8a6a})); gr.rotation.x=-Math.PI/2; gr.receiveShadow=true; sc.add(gr);
+const L=new GLTFLoader(); L.setMeshoptDecoder(MeshoptDecoder);
+const load=u=>new Promise((a,b)=>L.load(u,a,undefined,b));
+window.run=async function(list,camPos,look){
+  const am=await load('out/final/anim_m.glb'), af=await load('out/final/anim_f.glb');
+  const clipsM={}, clipsF={}; for(const c of am.animations) clipsM[c.name]=c; for(const c of af.animations) clipsF[c.name]=c;
+  const info=[]; let x=-(list.length-1)*0.55;
+  for(const [name,clip,t,rot] of list){ const g=await load('out/final/'+name+'.glb'); const m=SkeletonUtils.clone(g.scene); m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } }); m.position.x=x; x+=1.1; m.rotation.y=rot||0; sc.add(m);
+    const fem=/Female/.test(name); const C=(fem?clipsF:clipsM)[clip]; const mx=new THREE.AnimationMixer(m); if(C){ mx.clipAction(C).play(); mx.update(t||0.3); }
+    const b=new THREE.Box3().setFromObject(m); info.push([name,clip,b.min.y.toFixed(2),b.max.y.toFixed(2)]); }
+  cam.position.set(...camPos); cam.lookAt(...look); r.render(sc,cam); return [r.domElement.toDataURL('image/jpeg',0.9),info,Object.keys(clipsM),Object.keys(clipsF)];
+};
+window.READY=true;
+</script></body></html>

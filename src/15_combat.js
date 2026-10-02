@@ -1,0 +1,69 @@
+/* ===================== weapons, health, drinks ===================== */
+const COMBAT={armed:false,hp:100,dead:false,deaths:0,kills:0,mag:30,reload:0,cd:0,recoil:0,hits:{},shotN:0,shot:null,killer:null,respawnT:0,lastDmgT:0,flash:0,seenHits:new Map(),feed:[],bac:0,drinkT:0,drink:null,menuOpen:false};
+const SPAWNS=[[-395,6],[-258,-30],[-250,-70],[-200,-40],[-150,-30],[-300,30],[-330,-40],[-190,-200]];
+let RIFLE=null, GLASS=null, FLASHM=null; const TRACERS=[];
+function buildViewModels(){ const cam=GAME.camera; const g=new THREE.Group(); const dark=new THREE.MeshStandardMaterial({color:0x25282b,metalness:0.6,roughness:0.45}), wood=new THREE.MeshStandardMaterial({color:0x6b4428,roughness:0.7});
+  const bx=(w,h,d,m,x,y,z)=>{ const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); b.position.set(x,y,z); g.add(b); return b; };
+  bx(0.06,0.08,0.42,dark,0,0,-0.1); bx(0.028,0.028,0.34,dark,0,0.015,-0.48); bx(0.05,0.1,0.2,wood,0,-0.03,0.18); bx(0.04,0.13,0.05,dark,0,-0.09,-0.12); bx(0.035,0.1,0.04,wood,0,-0.08,0.02); bx(0.02,0.03,0.08,dark,0,0.06,-0.05);
+  const fl=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,6),new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:0.95})); fl.position.set(0,0.015,-0.68); fl.visible=false; g.add(fl); FLASHM=fl;
+  g.position.set(0.19,-0.2,-0.38); g.visible=false; cam.add(g); RIFLE=g;
+  const gl=new THREE.Group(); gl.position.set(0.12,-0.18,-0.42); gl.visible=false; cam.add(gl); GLASS=gl;
+  for(const o of [g,gl]) o.traverse(m=>{ if(m.isMesh){ m.renderOrder=10; m.frustumCulled=false; } }); }
+function makeGlass(kind){ while(GLASS.children.length) GLASS.remove(GLASS.children[0]); const glassM=new THREE.MeshStandardMaterial({color:0xdfeaf0,transparent:true,opacity:0.35,roughness:0.05,metalness:0.1}); const col={beer:0xd99a22,wine:0xe9d7a0,shot:kind==='shot2'?0x2a1d10:0xf1efe6,soda:0xe07a1a,coffee:0x3b2414}[kind==='shot2'?'shot':kind]||0xe9d7a0;
+  const liq=new THREE.MeshStandardMaterial({color:col,roughness:0.2,transparent:kind!=='coffee',opacity:0.9});
+  const prof={beer:[[0.035,0],[0.04,0.14],[0,0.14]],wine:[[0.03,0],[0.005,0.01],[0.005,0.07],[0.03,0.09],[0.038,0.14],[0,0.14]],shot:[[0.018,0],[0.022,0.05],[0,0.05]],shot2:[[0.018,0],[0.022,0.05],[0,0.05]],soda:[[0.03,0],[0.033,0.12],[0,0.12]],coffee:[[0.03,0],[0.034,0.06],[0,0.06]]}[kind]||[[0.03,0],[0.035,0.12],[0,0.12]];
+  const pts=prof.map(p=>new THREE.Vector2(p[0],p[1])); const m=new THREE.Mesh(new THREE.LatheGeometry(pts,16),glassM); GLASS.add(m);
+  const top=prof[prof.length-2][1]*0.85; const fill=new THREE.Mesh(new THREE.CylinderGeometry(prof[prof.length-2][0]*0.9,prof[0][0]*0.9,top*0.8,14),liq); fill.position.y=kind==='wine'?top*0.7:top*0.45; GLASS.add(fill); GLASS.userData.fill=fill;
+  if(kind==='beer'){ const foam=new THREE.Mesh(new THREE.CylinderGeometry(0.039,0.039,0.02,14),new THREE.MeshStandardMaterial({color:0xfbf6e8,roughness:0.9})); foam.position.y=0.13; GLASS.add(foam); }
+  GLASS.traverse(o=>{ if(o.isMesh){ o.renderOrder=10; o.frustumCulled=false; } }); }
+function toggleGun(){ if(PLAYER.driving||PLAYER.riding||COMBAT.dead) return; COMBAT.armed=!COMBAT.armed; document.body.classList.toggle('armed',COMBAT.armed); UI.toast(COMBAT.armed?(GAME.touch?'Puška u ruci — tipka s nišanom puca':'Puška u ruci — lijevi klik puca, R punjenje'):'Puška spremljena'); updateCombatHUD(); }
+function reloadGun(){ if(!COMBAT.armed||COMBAT.reload>0||COMBAT.mag===30) return; COMBAT.reload=1.4; updateCombatHUD(); }
+function rayCyl(o,d,cx,cz,y0,y1,r){ const ox=o.x-cx, oz=o.z-cz; const a=d.x*d.x+d.z*d.z; if(a<1e-8) return null; const b=2*(ox*d.x+oz*d.z), c=ox*ox+oz*oz-r*r; const disc=b*b-4*a*c; if(disc<0) return null; const t=(-b-Math.sqrt(disc))/(2*a); if(t<0) return null; const y=o.y+d.y*t; if(y<y0||y>y1) return null; return {t,y}; }
+function fireGun(){ const C=COMBAT; if(!C.armed||C.dead||C.cd>0||C.reload>0||PLAYER.driving||PLAYER.riding||C.drink) return; if(C.mag<=0){ reloadGun(); return; }
+  C.cd=0.13; C.mag--; C.recoil=Math.min(0.09,C.recoil+0.035); if(FLASHM){ FLASHM.visible=true; C.flash=0.05; }
+  const cam=GAME.camera; const o=cam.getWorldPosition(new THREE.Vector3()); const d=new THREE.Vector3(0,0,-1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  if(C.bac>0.3){ d.x+=(Math.random()-0.5)*C.bac*0.02; d.y+=(Math.random()-0.5)*C.bac*0.02; d.normalize(); }
+  let best=null; for(const R of NET.remotes.values()){ if(!R.cur||R.dead||(R.d>=0)||(R.pa>=0)) continue; const gy=groundAt(R.cur.x,R.cur.z); const h=rayCyl(o,d,R.cur.x,R.cur.z,gy,gy+1.85,0.36); if(h&&h.t<150&&(!best||h.t<best.t)) best={t:h.t,R,head:h.y>gy+1.55}; }
+  let end=150; for(let t=1;t<(best?best.t:150);t+=0.7){ const x=o.x+d.x*t, y=o.y+d.y*t, z=o.z+d.z*t; if(y<getHeight(x,z)){ end=t; best=null; break; } const hb=BHASH.hit(x,z,0); if(hb && y<hb.y1 && y>hb.y0){ end=t; best=null; break; } }
+  if(best){ end=best.t; const dmg=best.head?50:25; C.hits[best.R.id]=(C.hits[best.R.id]||0)+dmg; showHitMarker(best.head); }
+  const muzzle=FLASHM?FLASHM.getWorldPosition(new THREE.Vector3()):o.clone(); const e=o.clone().addScaledVector(d,end);
+  addTracer(muzzle,e); C.shot={n:++C.shotN,a:[+muzzle.x.toFixed(2),+muzzle.y.toFixed(2),+muzzle.z.toFixed(2)],b:[+e.x.toFixed(2),+e.y.toFixed(2),+e.z.toFixed(2)]}; updateCombatHUD(); }
+function addTracer(a,b){ const g=new THREE.BufferGeometry().setFromPoints([a,b]); const m=new THREE.LineBasicMaterial({color:0xffe6a0,transparent:true,opacity:0.9}); const l=new THREE.Line(g,m); l.frustumCulled=false; GAME.scene.add(l); TRACERS.push({l,t:0.09}); }
+function showHitMarker(head){ const el=document.getElementById('hitmark'); if(!el) return; el.classList.remove('on','head'); void el.offsetWidth; el.classList.add('on'); if(head) el.classList.add('head'); }
+function takeDamage(d,fromId){ const C=COMBAT; if(C.dead||d<=0) return; C.hp=Math.max(0,C.hp-d); C.lastDmgT=GAME.time; const v=document.getElementById('dmgv'); if(v){ v.classList.remove('on'); void v.offsetWidth; v.classList.add('on'); }
+  if(C.hp<=0){ try{ spawnAmbulance(PLAYER.pos.x,PLAYER.pos.z); money(-50,'bolnica'); if(GTA.mission) failMission('pao si'); }catch(e){} C.dead=true; C.deaths++; C.killer=fromId; C.respawnT=4; C.armed=false; document.body.classList.remove('armed'); if(PLAYER.driving) exitCar(); if(PLAYER.riding) exitRide(); const R=NET.remotes.get(fromId); const nm=R?R.name:'netko'; const el=document.getElementById('deadscr'); if(el){ el.querySelector('.who').textContent='Srušio te '+nm; el.classList.add('on'); } pushFeed(nm+' → '+NET.name); }
+  updateCombatHUD(); }
+function respawn(){ const C=COMBAT; C.dead=false; C.hp=100; C.mag=30; C.reload=0; const hp=GTA.home&&HOME_POS(); const s=hp||SPAWNS[Math.floor(Math.random()*SPAWNS.length)]; teleport(s[0]+Math.random()*2-1,s[1]+Math.random()*2-1); const el=document.getElementById('deadscr'); if(el) el.classList.remove('on'); updateCombatHUD(); }
+function pushFeed(txt){ COMBAT.feed.push({txt,t:6}); if(COMBAT.feed.length>5) COMBAT.feed.shift(); renderFeed(); }
+function renderFeed(){ const el=document.getElementById('killfeed'); if(!el) return; el.replaceChildren(...COMBAT.feed.map(f=>{ const d=document.createElement('div'); d.textContent=f.txt; return d; })); }
+function updateCombatHUD(){ const C=COMBAT; const hb=document.getElementById('hpfill'); if(hb){ hb.style.width=C.hp+'%'; hb.style.background=C.hp>50?'#5fc46a':C.hp>25?'#f0b43a':'#e5483b'; } const am=document.getElementById('ammo'); if(am) am.textContent=C.reload>0?'punim…':(C.mag+' / 30'); const ba=document.getElementById('bac'); if(ba){ ba.style.display=C.bac>0.02?'block':'none'; ba.textContent='🍺 '+C.bac.toFixed(2)+' ‰'; } }
+/* remote side: called from upsertRemote with the raw state */
+function combatRemote(R,st){ const C=COMBAT; const me=NET.myId;
+  if(st.hits && typeof st.hits==='object' && me){ const tot=+st.hits[me]||0; if(!C.seenHits.has(R.id)) C.seenHits.set(R.id,tot); else { const prev=C.seenHits.get(R.id); if(tot>prev){ C.seenHits.set(R.id,tot); takeDamage(Math.min(100,tot-prev),R.id); } } }
+  if(st.sh && Number.isFinite(st.sh.n) && st.sh.n!==R.lastShot && Array.isArray(st.sh.a)){ if(R.lastShot!==undefined){ if(!remoteShot(R,st.sh) && Array.isArray(st.sh.b)) addTracer(new THREE.Vector3(+st.sh.a[0],+st.sh.a[1],+st.sh.a[2]),new THREE.Vector3(+st.sh.b[0],+st.sh.b[1],+st.sh.b[2])); } R.lastShot=st.sh.n; }
+  const dc=Number.isFinite(+st.dc)?+st.dc:0; if(R.lastDc===undefined) R.lastDc=dc; else if(dc>R.lastDc){ R.lastDc=dc; const kid=st.kb; let kn='netko'; if(kid===me){ kn=NET.name; C.kills++; } else { const K=NET.remotes.get(kid); if(K){ kn=K.name; K.kills=(K.kills||0)+1; } } R.deaths=(R.deaths||0)+1; pushFeed(kn+' → '+R.name); updateOnline(); try{ if(R.cur) spawnAmbulance(R.cur.x,R.cur.z); if(kid===me) crime(2); }catch(e){} }
+  R.dead=!!st.dead; R.armed=!!st.ar; const hp=Number.isFinite(+st.hp)?+st.hp:100; if(R.hp!==hp){ R.hp=hp; if(R.av) setTagHP(R); } if(R.av){ if(R.av.gun) R.av.gun.visible=R.armed&&!R.dead; R.av.group.rotation.x=R.dead?-Math.PI/2*0.98:0; } }
+/* ---- drinks ---- */
+const DRINKS=[{n:'Gemišt',p:'1,50 €',a:0.12,g:'wine'},{n:'Gemišt Olimpijski',p:'1,80 €',a:0.16,g:'wine'},{n:'Škropec',p:'1,50 €',a:0.10,g:'wine'},{n:'Fiftač',p:'1,60 €',a:0.13,g:'wine'},{n:'Pivo',p:'2,50 €',a:0.22,g:'beer'},{n:'Rakija',p:'1,50 €',a:0.28,g:'shot'},{n:'Pelinkovec (Lavov)',p:'2,00 €',a:0.28,g:'shot2'},{n:'Cola Zero',p:'2,20 €',a:0,g:'soda'},{n:'Sok',p:'2,00 €',a:0,g:'soda'},{n:'Kava',p:'1,20 €',a:0,g:'coffee'}];
+function nearBar(){ const B=LANDMARKS.bar; if(!B||PLAYER.driving||PLAYER.riding) return false; return Math.hypot(PLAYER.pos.x-B.x,PLAYER.pos.z-B.z)<2.9 && Math.abs(PLAYER.pos.y-B.y)<1.5; }
+function openDrinks(via){ COMBAT.via=via||null; const h=document.querySelector('#drinkmenu h3'); if(h) h.textContent=via==='valentina'?'Valentina: Kaj bute popili?':'Šank · Kafić Putniku'; if(COMBAT.menuOpen) return; COMBAT.menuOpen=true; const el=document.getElementById('drinkmenu'); el.classList.add('on'); PLAYER.enabled=false; if(document.pointerLockElement) document.exitPointerLock(); }
+function closeDrinks(){ COMBAT.menuOpen=false; document.getElementById('drinkmenu').classList.remove('on'); PLAYER.enabled=true; if(!GAME.touch&&!GAME.dragLook){ try{ GAME.renderer.domElement.requestPointerLock(); }catch(e){} } }
+function orderDrink(i){ const D=DRINKS[i]; const pr=priceOf(D); if(GTA.money<pr){ UI.toast('Nemaš dovoljno novca'); return; } money(-pr); if(COMBAT.via==='valentina'){ closeDrinks(); const V=npcByName('Valentina'); if(V&&V.srv){ V.srv.order=i; V.srv.st='fetch'; V.srv.route=[]; bubble(V.A,'Odmah stiže!',3); } COMBAT.via=null; return; } closeDrinks(); if(COMBAT.armed){ COMBAT.armed=false; document.body.classList.remove('armed'); } makeGlass(D.g); COMBAT.drink={D,t:0}; GLASS.visible=true; UI.toast('Živjeli! '+D.n); }
+function buildDrinkMenu(){ const list=document.getElementById('drinklist'); if(!list) return; list.replaceChildren(...DRINKS.map((D,i)=>{ const b=document.createElement('button'); b.className='drink'; const n=document.createElement('span'); n.textContent=D.n; const p=document.createElement('b'); p.textContent=D.p; b.append(n,p); b.addEventListener('click',()=>orderDrink(i)); return b; })); document.getElementById('drinkclose').addEventListener('click',closeDrinks); }
+/* ---- per-frame ---- */
+function combatTick(dt){ const C=COMBAT; C.cd=Math.max(0,C.cd-dt); C.recoil*=Math.exp(-dt*10);
+  if(C.reload>0){ C.reload-=dt; if(C.reload<=0){ C.reload=0; C.mags[C.wi]=WEAPONS[C.wi].mag; C.mag=C.mags[C.wi]; updateCombatHUD(); } }
+  if(C.flash>0){ C.flash-=dt; if(C.flash<=0&&FLASHM) FLASHM.visible=false; }
+  if(RIFLE){ RIFLE.visible=C.armed&&!C.dead&&!PLAYER.driving&&!PLAYER.riding&&!C.drink; RIFLE.position.z=-0.38+C.recoil*1.4; RIFLE.rotation.x=C.recoil*2.2+(C.reload>0?-0.6*Math.sin(Math.min(1,(1.4-C.reload)/1.4)*Math.PI):0); }
+  for(let i=TRACERS.length-1;i>=0;i--){ const T=TRACERS[i]; T.t-=dt; T.l.material.opacity=Math.max(0,T.t/0.09); if(T.t<=0){ GAME.scene.remove(T.l); T.l.geometry.dispose(); T.l.material.dispose(); TRACERS.splice(i,1); } }
+  if(C.dead){ C.respawnT-=dt; const el=document.getElementById('deadscr'); if(el) el.querySelector('.t').textContent='Ponovno za '+Math.max(0,Math.ceil(C.respawnT))+' s'; if(C.respawnT<=0) respawn(); }
+  else if(C.hp<100 && GAME.time-C.lastDmgT>6){ C.hp=Math.min(100,C.hp+6*dt); if(Math.random()<0.1) updateCombatHUD(); }
+  if(C.drink){ const k=C.drink; k.t+=dt; const T=2.2; const u=Math.min(1,k.t/T); const lift=Math.sin(Math.min(1,u*1.6)*Math.PI*0.5)*(u<0.8?1:1-(u-0.8)/0.2); GLASS.position.set(0.12-0.1*lift,-0.18+0.14*lift,-0.42+0.12*lift); GLASS.rotation.x=lift*0.9; if(GLASS.userData.fill) GLASS.userData.fill.scale.y=Math.max(0.05,1-u);
+    if(k.t>=T){ C.bac+=k.D.a; C.drink=null; GLASS.visible=false; updateCombatHUD(); if(C.bac>0.5) UI.toast('Malo si pripit — pazi, i ne vozi! 🚫🚗'); } }
+  if(C.bac>0){ C.bac=Math.max(0,C.bac-dt*0.004); }
+  for(const f of C.feed){ f.t-=dt; } if(C.feed.length && C.feed[0].t<=0){ C.feed.shift(); renderFeed(); }
+  const bb=document.getElementById('barbtn'); if(bb){ const nb=!COMBAT.menuOpen&&(nearBar()||nearValentina()); bb.classList.toggle('on',nb); } const pb=document.getElementById('pokerbtn'); if(pb){ pb.classList.toggle('on',!COMBAT.menuOpen&&nearPoker()); }
+}
+function drunkSway(){ const b=COMBAT.bac; if(b<0.05) return [0,0]; const t=GAME.time; return [Math.sin(t*0.9)*b*0.06+Math.sin(t*2.3)*b*0.015, Math.sin(t*0.6+1)*b*0.03]; }
+
+function toggleFly(){ if(PLAYER.driving||PLAYER.riding||COMBAT.dead) return; PLAYER.fly=!PLAYER.fly; PLAYER.vel.set(0,0,0); document.body.classList.toggle('flying',PLAYER.fly); const b=document.getElementById('flytg'); if(b) b.textContent=PLAYER.fly?'Letenje: uključeno':'Letenje: isključeno'; UI.toast(PLAYER.fly?(GAME.touch?'Letiš — ▲ gore, ▼ dolje':'Letenje uključeno (F) — Space gore, C dolje'):'Hodanje'); }

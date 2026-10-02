@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>convert</title></head><body>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+window.THREE = THREE;
+
+function manager(dir){
+  const m = new THREE.LoadingManager();
+  m.setURLModifier(u => {
+    const b = decodeURIComponent(u).split(/[\\/]/).pop();
+    if (/\.(tga|png|jpe?g|dds|psd|bmp)$/i.test(b)) return dir + b.replace(/\.(tga|dds|psd|bmp|jpe?g)$/i, '.png');
+    return u;
+  });
+  const tl = new THREE.TextureLoader(m);
+  m.addHandler(/\.tga$/i, { path:'', setPath(p){ this.path = p || ''; return this; }, load(url, a, b, c){ return tl.load(this.path + url, a, b, c); } });
+  return m;
+}
+function loadFBX(url, dir){
+  return new Promise((res, rej) => {
+    const mg = manager(dir);
+    let obj = null, done = false;
+    const fin = () => { if (obj && done) res(obj); };
+    mg.onLoad = () => { done = true; fin(); };
+    new FBXLoader(mg).load(url, o => { obj = o; setTimeout(() => { done = true; fin(); }, 4000); fin(); }, undefined, rej);
+  });
+}
+function src(t){ return t && t.image ? (t.image.currentSrc || t.image.src || ('data ' + t.image.width + 'x' + t.image.height)) : null; }
+function b64(buf){ let s = ''; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return btoa(s); }
+
+function mergeGroups(geo){
+  if (!geo.groups || geo.groups.length <= 1) return geo;
+  const mats = [...new Set(geo.groups.map(g => g.materialIndex))].sort((a, b) => a - b);
+  if (mats.length === geo.groups.length) return geo;
+  const g0 = geo.index ? geo.toNonIndexed() : geo;
+  const out = new THREE.BufferGeometry(); const order = [];
+  for (const m of mats) for (const g of geo.groups) if (g.materialIndex === m) order.push(g);
+  for (const name of Object.keys(g0.attributes)) {
+    const a = g0.attributes[name]; const arr = new a.array.constructor(a.array.length); let o = 0;
+    for (const g of order) { const s0 = g.start * a.itemSize, n = g.count * a.itemSize; arr.set(a.array.subarray(s0, s0 + n), o); o += n; }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, a.itemSize, a.normalized));
+  }
+  let st = 0; for (const m of mats) { let c = 0; for (const g of geo.groups) if (g.materialIndex === m) c += g.count; out.addGroup(st, c, m); st += c; }
+  return out;
+}
+window.convertAvatar = async function(name){
+  const dir = 'rb/' + name + '/';
+  const obj = await loadFBX(dir + name + '.fbx', dir);
+  const info = { name, meshes: [], bones: 0, rootBone: null };
+  const meshes = [];
+  obj.traverse(o => {
+    if (o.isBone) { info.bones++; if (!info.rootBone && !(o.parent && o.parent.isBone)) info.rootBone = { name: o.name, pos: o.position.toArray().map(v => +v.toFixed(2)) }; }
+    if (o.isMesh) meshes.push(o);
+  });
+  for (const o of meshes) {
+    const mats = [].concat(o.material);
+    const nm = mats.map(m => {
+      const alpha = !!(m.transparent || m.alphaMap || /opacity/i.test(src(m.map) || ''));
+      const s = new THREE.MeshStandardMaterial({ name: m.name, map: m.map || null, normalMap: m.normalMap || null, roughness: 0.8, metalness: 0 });
+      if (s.map) { s.map.colorSpace = THREE.SRGBColorSpace; s.map.userData.mimeType = alpha ? 'image/png' : 'image/jpeg'; }
+      if (s.normalMap) s.normalMap.userData.mimeType = 'image/jpeg';
+      if (alpha) { s.alphaTest = 0.45; s.side = THREE.DoubleSide; if (m.alphaMap && !s.map) { s.map = m.alphaMap; } }
+      info.meshes.push({ mesh: o.name, skinned: !!o.isSkinnedMesh, tris: Math.round((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3), mat: m.name, type: m.type, map: src(m.map), alphaMap: src(m.alphaMap), normal: !!m.normalMap, transparent: m.transparent, opacity: m.opacity, alpha });
+      return s;
+    });
+    o.material = Array.isArray(o.material) ? nm : nm[0];
+    if (Array.isArray(o.material)) { const ng = mergeGroups(o.geometry); if (ng !== o.geometry) { o.geometry = ng; } info.groups = o.geometry.groups.length; }
+    o.castShadow = true;
+  }
+  const box = new THREE.Box3().setFromObject(obj);
+  info.bbox = [box.min.toArray().map(v => +v.toFixed(2)), box.max.toArray().map(v => +v.toFixed(2))];
+  const root = new THREE.Group(); root.name = 'Root';
+  const h = box.max.y - box.min.y; const sc = h > 10 ? 0.01 : 1; root.scale.setScalar(sc); info.scale = sc;
+  root.add(obj);
+  const glb = await new GLTFExporter().parseAsync(root, { binary: true, onlyVisible: false, maxTextureSize: 512 });
+  info.bytes = glb.byteLength;
+  return { info, glb: b64(glb) };
+};
+
+window.convertAnims = async function(label, list){
+  const clips = []; let rig = null; const info = { label, clips: [] };
+  for (const [file, cname, maxDur] of list) {
+    const obj = await loadFBX('rb_anim/' + file + '.fbx', 'rb_anim/');
+    let clip = obj.animations.slice().sort((a, b) => b.duration - a.duration)[0];
+    if (!clip) { info.clips.push({ file, err: 'no clip' }); continue; }
+    let root = null; obj.traverse(o => { if (o.isBone && !root && !(o.parent && o.parent.isBone)) root = o; });
+    const rootName = root ? root.name : '';
+    const before = clip.tracks.length;
+    const tracks = clip.tracks.filter(t => { const [n, p] = [t.name.slice(0, t.name.lastIndexOf('.')), t.name.slice(t.name.lastIndexOf('.') + 1)];
+      if (p === 'scale') return false; if (p === 'position') return n === rootName; return p === 'quaternion'; });
+    let c = new THREE.AnimationClip(cname, clip.duration, tracks);
+    if (maxDur && clip.duration > maxDur) c = THREE.AnimationUtils.subclip(c, cname, 0, Math.round(maxDur * 30), 30);
+    c.optimize();
+    const pt = tracks.find(t => t.name === rootName + '.position');
+    info.clips.push({ file, name: cname, dur: +clip.duration.toFixed(2), tracks: before + '->' + tracks.length, root: rootName, rootPos0: pt ? Array.from(pt.values.slice(0, 3)).map(v => +v.toFixed(1)) : null, keys: pt ? pt.times.length : 0,
+      sample: tracks.slice(0, 4).map(t => t.name) });
+    clips.push(c);
+    if (!rig) { rig = obj; const rm = []; rig.traverse(o => { if (o.isMesh) rm.push(o); }); for (const m of rm) m.parent.remove(m); }
+  }
+  const root = new THREE.Group(); root.name = 'Root'; root.scale.setScalar(0.01); root.add(rig);
+  const glb = await new GLTFExporter().parseAsync(root, { binary: true, animations: clips, onlyVisible: false });
+  info.bytes = glb.byteLength;
+  return { info, glb: b64(glb) };
+};
+window.convertModel = async function(url){
+  const dir = url.slice(0, url.lastIndexOf('/') + 1);
+  const obj = await loadFBX(url, dir);
+  const info = { url, nodes: [], anims: obj.animations.map(a => a.name + ':' + a.duration.toFixed(2) + ':' + a.tracks.length) };
+  const matMap = new Map();
+  obj.traverse(o => {
+    const e = { n: o.name, t: o.type, p: o.position.toArray().map(v => +v.toFixed(2)), r: o.rotation.toArray().slice(0,3).map(v => +v.toFixed(2)), s: o.scale.toArray().map(v => +v.toFixed(3)), par: o.parent ? o.parent.name : null };
+    if (o.isMesh) {
+      o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox; e.bb = [bb.min.toArray().map(v => +v.toFixed(2)), bb.max.toArray().map(v => +v.toFixed(2))];
+      e.tris = Math.round((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3);
+      const mats = [].concat(o.material);
+      e.m = mats.map(m => m.name + '#' + (m.color ? m.color.getHexString() : '') + (m.map ? '+map' : ''));
+      const nm = mats.map(m => { if (!matMap.has(m)) { const s = new THREE.MeshStandardMaterial({ name: m.name, color: m.color ? m.color.clone() : 0xffffff, map: m.map || null, roughness: 0.6, metalness: 0.1, transparent: m.opacity < 1, opacity: m.opacity }); matMap.set(m, s); } return matMap.get(m); });
+      o.material = Array.isArray(o.material) ? nm : nm[0];
+      if (Array.isArray(o.material)) { o.geometry = mergeGroups(o.geometry); }
+    }
+    info.nodes.push(e);
+  });
+  const box = new THREE.Box3().setFromObject(obj); info.bbox = [box.min.toArray().map(v => +v.toFixed(2)), box.max.toArray().map(v => +v.toFixed(2))];
+  const glb = await new GLTFExporter().parseAsync(obj, { binary: true, animations: obj.animations, onlyVisible: false });
+  info.bytes = glb.byteLength;
+  return { info, glb: b64(glb) };
+};
+const GUNCOL={Black:[0x1c1d1f,0.35,0.55],Metal:[0x5d6166,0.85,0.35],LightWood:[0x9a6236,0,0.7],DarkWood:[0x5b3620,0,0.7],Wood:[0x7a4a2a,0,0.7],Grey:[0x3a3c3f,0.4,0.5],Magazine:[0x26272a,0.5,0.5],Muzzle:[0x2a2b2d,0.7,0.4],Barrel:[0x333538,0.8,0.35],Trigger:[0x222326,0.6,0.4],BulletYellow:[0xc9a23a,0.9,0.3],BulletRed:[0x9a2a22,0.3,0.5],BulletTip:[0xb87333,0.9,0.3],Handle:[0x2a2522,0.2,0.6],Scope:[0x151618,0.6,0.35],Lens:[0x1a3a5a,0.2,0.05]};
+function gunMat(name){ const k=Object.keys(GUNCOL).find(k=>name.replace(/[._0-9]+$/,'').toLowerCase()===k.toLowerCase())||Object.keys(GUNCOL).find(k=>name.toLowerCase().includes(k.toLowerCase())); const c=GUNCOL[k]||[0x2c2e31,0.5,0.5];
+  return new THREE.MeshStandardMaterial({name, color:c[0], metalness:c[1], roughness:c[2]}); }
+window.bakeGun = async function(url, targetLen){
+  const dir = url.slice(0, url.lastIndexOf('/') + 1);
+  const obj = await loadFBX(url, dir); obj.updateMatrixWorld(true);
+  const out = new THREE.Group(); out.name = url.split('/').pop().replace('.fbx','');
+  const v = new THREE.Vector3(); const info = { mats: [] };
+  obj.traverse(o => { if (!o.isMesh) return;
+    const g = o.geometry; const pos = g.attributes.position; const arr = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i); if (o.isSkinnedMesh) o.applyBoneTransform(i, v); v.applyMatrix4(o.matrixWorld); arr.set([v.x, v.y, v.z], i * 3); }
+    const ng = new THREE.BufferGeometry(); ng.setAttribute('position', new THREE.BufferAttribute(arr, 3)); if (g.attributes.uv) ng.setAttribute('uv', g.attributes.uv.clone()); if (g.index) ng.setIndex(g.index.clone());
+    for (const gr of g.groups) ng.addGroup(gr.start, gr.count, gr.materialIndex);
+    ng.computeVertexNormals();
+    const mats = [].concat(o.material).map(m => { info.mats.push(m.name); return gunMat(m.name); });
+    const m = new THREE.Mesh(mergeGroups(ng), mats.length > 1 ? mats : mats[0]); out.add(m); });
+  const box = new THREE.Box3().setFromObject(out); const size = box.getSize(new THREE.Vector3()); const c = box.getCenter(new THREE.Vector3());
+  const L = Math.max(size.x, size.y, size.z); const sc = targetLen / L; info.axis = size.x === L ? 'x' : size.y === L ? 'y' : 'z'; info.size = size.toArray().map(x => +(x * sc).toFixed(3));
+  for (const m of out.children) { m.geometry.translate(-c.x, -c.y, -c.z); m.geometry.scale(sc, sc, sc); }
+  const glb = await new GLTFExporter().parseAsync(out, { binary: true }); info.bytes = glb.byteLength;
+  return { info, glb: b64(glb) };
+};
+window.READY = true;
+</script></body></html>
