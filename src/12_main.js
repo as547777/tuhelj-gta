@@ -39,7 +39,7 @@ async function main(){
   await step(0.58,'Postavljam stupove i ograde…'); buildProps(scene,q); try{ await waitPack('vehicles',7000); prepVehicles(); }catch(e){ console.warn('vozila',e); } buildCars(scene); buildCourts(scene);
   finishGround();
   await step(0.66,'Oblikujem brežuljke…'); const tmat=makeTerrainMaterial({cut:true}); for(const m of buildTerrainMeshes(tmat)) scene.add(m); try{ creekMeshes(scene); }catch(e){ console.warn('potok-mesh',e); }
-  await step(0.72,'Sadim šume i voćnjake…'); placeTrees(); try{ photoTrees(); photoHillWoods(); creekTreeFilter(); }catch(e){ console.warn(e); }
+  await step(0.72,'Sadim šume i voćnjake…'); placeTrees(); try{ photoTrees(); photoHillWoods(); creekTreeFilter(); pristavaTrees(); }catch(e){ console.warn(e); }
   await step(0.8,'Sadim stabla…'); buildTrees(scene,q); buildCorn(scene); try{ photoWillows(scene); }catch(e){ console.warn(e); }
   await step(0.88,'Kosim travu…'); buildGrass(scene,GRASSN[2],30); VEG.grass.geometry.instanceCount=GRASSN[q];
   await step(0.92,'Palim sunce…'); buildSky(scene); SKY.setShadowQuality(q); setTimeOfDay(renderer,scene,GAME.hour); buildWater(scene); try{ lightsInit(scene); }catch(e){ console.warn('svjetla',e); }

@@ -65,6 +65,7 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   { const p=(D.pois||[]).find(q=>q.k==='bus_stop'&&Math.hypot(q.x+213,q.z+30)<8); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+213,q[1]+30)<12)); if(p&&rd){ const n=nearOnPoly(rd.P,p.x,p.z); p.x=n.x+n.tz*4.5; p.z=n.z-n.tx*4.5; } }
   // Street View "38 Tuhelj": the salmon-red house with the white balcony stands right behind the column, facing the bend
   if(!D.bld.some(b=>b.st==='salmonPlaza')) D.bld.push({k:'house',st:'salmonPlaza',lv:2,f:2,r:[[-257,-19,Math.PI+0.25,11,9,15]]});
+  try{ pristavaLand(); }catch(e){ console.warn('pristava',e); }
   NOHEDGE.push([-211,-42,10],[PUBYARD.apt[0]-1,PUBYARD.apt[1]+1,15],[-309.8,-22,11]);
   const inWide=(x,z)=>{ const dx=x-A.H[0], dz=z-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=Math.abs(-dx*A.uz+dz*A.ux); return t>0.02&&t<1.08&&d<110; };
   for(const l of LAND){ if(l.t!=='farmland') continue; const c=polyCentroid(l.P); const k=l.P.filter(p=>inWide(p[0],p[1])).length; if(inMeadow(c[0],c[1])||k>=l.P.length*0.4) l.t='meadow'; }
@@ -267,7 +268,7 @@ function photoCentre(cs,scene){ const Mt=cs.get('metal',CENTER[0],CENTER[1]), G=
             Mt.box(ff,-0.04,0.04,0,1.05,-0.04,0.04,BLUE); Mt.box(ff,-0.78,0.78,0.98,1.05,-0.035,0.035,BLUE); Mt.box(ff,-0.78,0.78,0.12,0.17,-0.03,0.03,BLUE); for(let q=-3;q<=3;q++) Mt.box(ff,q*0.22-0.012,q*0.22+0.012,0.15,1.0,-0.012,0.012,BLUE); addCollider(x,z,Math.atan2(tg[1],tg[0]),1.6,0.15,y-1,y+1.1); } } } } } } }
 /* ---- hedges and garden fences between houses and the road (Mapillary / Street View: almost every plot has one) ---- */
 function photoHedges(cs){ const R=mulberry32(99); const Hd=cs.get('hedge',CENTER[0],CENTER[1]), Mt=cs.get('metal',CENTER[0],CENTER[1]), G=cs.get('wall',CENTER[0],CENTER[1]);
-  for(const b of BLD){ if(b.k!=='house'||!b.rect||b.st==='photo') continue; const [cx,cz,ang,L,W]=b.rect; if(Math.hypot(cx-CENTER[0],cz-CENTER[1])>700) continue;
+  for(const b of BLD){ if(b.k!=='house'||!b.rect||b.st==='photo'||b.st==='pristava82') continue; const [cx,cz,ang,L,W]=b.rect; if(Math.hypot(cx-CENTER[0],cz-CENTER[1])>700) continue;
     const n=nearestRoad(cx,cz,22,s=>s.t!=='path'&&s.t!=='track'); if(!n) continue; const s=n.s, r=s.road; if(!r||!r.S) continue; const u=R();
     const kind=u<0.6?'hedge':u<0.85?'fence':null; if(!kind) continue;
     const nx=-s.tz, nz=s.tx; const side=((cx-s.x)*nx+(cz-s.z)*nz)>=0?1:-1; const off=r.w/2+(r.t==='secondary'||r.t==='primary'?2.4:1.0);

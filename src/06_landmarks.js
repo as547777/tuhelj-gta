@@ -64,7 +64,7 @@ function townhall(cs,scene,b){
 function postTex(){ const c=cvs(256,256), g=c.getContext('2d'); g.fillStyle='#ffd21a'; g.beginPath(); g.arc(128,128,124,0,TAU); g.fill(); g.strokeStyle='#1a3f8f'; g.lineWidth=18; g.beginPath(); g.arc(128,128,70,Math.PI*0.2,Math.PI*1.2); g.stroke(); g.fillStyle='#1a3f8f'; g.font='900 64px Manrope, Arial'; g.textAlign='center'; g.fillText('HP',128,150); return mkTex(c,{repeat:false}); }
 /* ---------- hand-placed centre buildings ---------- */
 function centreBuilding(cs,scene,b){
-  const st=b.st||b.k; if(st==='cafe'){ cafe(cs,scene,b); return; } if(st==='kinder') return; /* built with the school (38_school.js) */ const s=styleFor(b);
+  const st=b.st||b.k; if(st==='cafe'){ cafe(cs,scene,b); return; } if(st==='kinder') return; if(st==='pristava82'){ pristavaHouse(cs,scene,b); return; } /* built with the school (38_school.js) */ const s=styleFor(b);
   if(st==='shopPink'){ s.wall=lin('#efe7d6'); s.plinth=lin('#8c2a26'); s.roof=lin('#4f3328'); s.sof=lin('#5a3a26'); s.roofType='hip'; s.pitch=32; s.win='roller_brown'; s.balcony=false; s.garage=false; }
   if(st==='shopCream'){ s.wall=lin('#efe2c4'); s.roof=lin('#a54a31'); s.roofType='gable'; s.pitch=30; s.balcony=false; s.garage=false; }
   if(st==='cafe'){ s.wall=lin('#f1e8d6'); s.roof=lin('#b85b37'); s.roofType='gable'; s.pitch=28; s.balcony=false; s.garage=false; s.chim=true; }

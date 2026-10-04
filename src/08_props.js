@@ -75,7 +75,7 @@ function buildProps(scene,quality){
   /* ---- fences & hedges along house lots ---- */
   const fenceMats={bars:fenceTex('bars'),picket:fenceTex('picket'),mesh:fenceTex('mesh')};
   const fg={bars:new GB(),picket:new GB(),mesh:new GB()};
-  for(const b of BLD){ if(b.k!=='house' || !b.dw || b.st==='photo' || RNG()>0.5) continue; const n=nearestRoad(b.dw[0],b.dw[1],6); if(!n) continue; const s=n.s; const [cx,cz]=b.rect; const toH=[cx-s.x,cz-s.z]; const nx=-s.tz, nz=s.tx; const side=(toH[0]*nx+toH[1]*nz)>0?1:-1;
+  for(const b of BLD){ if(b.k!=='house' || !b.dw || (b.st==='photo'||b.st==='pristava82') || RNG()>0.5) continue; const n=nearestRoad(b.dw[0],b.dw[1],6); if(!n) continue; const s=n.s; const [cx,cz]=b.rect; const toH=[cx-s.x,cz-s.z]; const nx=-s.tz, nz=s.tx; const side=(toH[0]*nx+toH[1]*nz)>0?1:-1;
     const off=s.w/2+(s.t==='residential'||s.t==='service'?0.9:1.6); const len=Math.max(b.rect[3],b.rect[4])+rnd(4,10); const kind=wpick([['hedge',30],['bars',30],['picket',18],['mesh',22]]);
     const gap0=-1.6+rnd(-2,2), gap1=gap0+3.2;
     const ox=s.x+nx*side*off, oz=s.z+nz*side*off; // projected base
