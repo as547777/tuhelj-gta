@@ -55,7 +55,7 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
       const [A,cx,cz]=best; c.r=[[cx,cz,A,r[3],r[4],r[5]||15]]; const ca=Math.cos(A), sa=Math.sin(A); const L=(lx,lz)=>[cx+ca*lx-sa*lz, cz+sa*lx+ca*lz];
       if(c.dw) c.dw=L(14,-10); PHOTO.cafeFit={A,cx,cz,J:bj};
       // the little yard right behind the pub: apartment balcony toward the gate, the grey-and-white T-Roc beside it
-      PUBYARD.apt=L(-16.5,-3.0); PUBYARD.aptA=A; PUBYARD.gate=L(-12,5.5); PUBYARD.troc=[L(-17.6,-12.7),L(-13,-12.7)]; } }
+      PUBYARD.apt=L(-14,-28.5); PUBYARD.aptA=A; PUBYARD.gate=L(-12,5.5); PUBYARD.troc=[L(-21.5,-8),L(-21.5,-3)]; } }
   // Street View (Oct 2026): the house beside the church does not exist — its plot is a car park
   for(let i=D.bld.length-1;i>=0;i--){ const r=D.bld[i].r[0]; if(D.bld[i].k==='house'&&Math.hypot(r[0]+309.8,r[1]+22)<3){ PHOTO.churchPark=r.slice(); D.bld.splice(i,1); } }
   // "Kod Ruže" stands inside the pub's walled yard, just behind the café (Street View "38 Tuhelj"); the gate opens to the road from Lovrečan
