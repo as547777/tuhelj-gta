@@ -10753,10 +10753,10 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'); if(!cafe
     for(let k=0;k<n;k++){ const t0=k*L/n, t1=(k+1)*L/n; const mx=a[0]+dx*(t0+t1)/2/L, mz=a[1]+dz*(t0+t1)/2/L; const y=getHeight(mx,mz); const ff=frame(mx,mz,an,y); const hl=(t1-t0)/2;
       Mt.box(ff,-hl,-hl+0.06,0,h,-0.03,0.03,GRN); Mt.box(ff,-hl,hl,h-0.04,h,-0.02,0.02,GRN); Mt.box(ff,-hl,hl,0.05,0.09,-0.02,0.02,GRN); for(let x=-hl+0.1;x<hl;x+=0.1) Mt.box(ff,x-0.006,x+0.006,0.07,h-0.02,-0.006,0.006,GRN); addCollider(mx,mz,an,t1-t0,0.15,y-1,y+h); } };
   // the yard takes the whole free plot behind the pub (photo "38 Tuhelj": a long drive from the gate, the little house far back)
-  const XW=-26, ZB=-36; const NWc=L2(-10.5,4.25), R0=onWall(NWc), R1=onWall(L2(XW,4.25)), BW=L2(XW,ZB), BE=L2(3.6,ZB), RE=L2(3.6,-15.6);
-  paveArea(scene,[NWc,R0,R1,BW,BE,RE,L2(3.6,-5.25),L2(-10.5,-5.25)],'asphalt',{tile:4,roads:false});
+  const XW=-26, ZB=-36; const NWc=L2(-10.5,4.25), R0=onWall(NWc), R1=onWall(L2(XW,4.25)), BW=L2(XW,ZB), BE=L2(10.4,ZB), RE=L2(10.4,-15.6);
+  paveArea(scene,[NWc,R0,R1,BW,BE,RE,L2(3.6,-15.6),L2(3.6,-5.25),L2(-10.5,-5.25)],'asphalt',{tile:4,roads:false});
   NOHEDGE.push([...L2(-11,-15),26]);
-  const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[1.2,5.0]; if(Math.hypot(R0[0]-NWc[0],R0[1]-NWc[1])>0.3) wall(NWc,R0,1.75); wall(R0,R1,1.75,[gt]); wall(R1,BW,1.75); fence(BW,BE,1.6);
+  const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[1.2,5.0]; if(Math.hypot(R0[0]-NWc[0],R0[1]-NWc[1])>0.3) wall(NWc,R0,1.75); wall(R0,R1,1.75,[gt]); wall(R1,BW,1.75); fence(BW,BE,1.6); fence(BE,RE,1.6);
   { const an=Math.atan2(R1[1]-R0[1],R1[0]-R0[0]); const P=(t)=>[R0[0]+(R1[0]-R0[0])*t/LR,R0[1]+(R1[1]-R0[1])*t/LR];
     for(const t of gt){ const [x,z]=P(t); const y=getHeight(x,z); const pf=frame(x,z,an,y); G.box(pf,-0.2,0.2,-0.5,1.95,-0.2,0.2,WALL); Tl.box(pf,-0.24,0.24,1.95,2.05,-0.24,0.24,CAP); addCollider(x,z,an,0.4,0.4,y-1,y+2); }
     { const [x,z]=P(gt[1]+0.3); const y=getHeight(x,z); const lf=frame(x,z,an,y); Mt.box(lf,0,3.4,0.05,1.55,0.26,0.3,lin('#f4f4f2')); Mt.box(lf,0,3.4,1.5,1.56,0.25,0.31,lin('#8a4a2c')); }
@@ -10771,14 +10771,7 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'); if(!cafe
   pubBackAnnex(cs,scene,cafeB,f); kodRuzeRow(cs,scene,f,ang,L2); }
 // "Kod Ruže" rooms: the long low white building carrying on from the arcade along the main road, behind the gravel parking
 // and the bus stop (Street View "7 Tuhelj"), with the gravel parking in front of the arcade and the rooms
-function kodRuzeRow(cs,scene,pf,pang,L2){ const c=L2(7.0,-25.4); const ang=pang+Math.PI/2; const f=frame(c[0],c[1],ang); const hl=9.6, hw=3.4; let y0=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y0=Math.min(y0,getHeight(p[0],p[2])); } y0+=0.12; const e=y0+2.75;
-  const Wd=cs.get('wood',c[0],c[1]), Gs=cs.get('glassW',c[0],c[1]); const WOOD=lin('#8a4f2a');
-  emitWalls(cs,f,ang,hl,hw,y0-0.8,e,'gable',22,lin('#efefea'),'wall'); emitPlinth(cs,f,ang,hl,hw,y0-0.8,y0+0.35,lin('#b9b4aa')); emitRoof(cs,f,ang,hl,hw,e,'gable',22,0.55,0.5,lin('#b05a38'),lin('#6e4a30'));
-  const zz=-hw-0.02; for(const [s0,w,door] of [[-7.0,1.2,false],[-4.4,1.2,false],[-1.0,1.1,false],[1.4,1.1,false],[4.4,1.0,true],[6.8,1.0,false]]){ if(door){ Wd.box(f,s0-0.5,s0+0.5,y0,y0+2.15,zz-0.04,zz+0.05,WOOD); continue; }
-    Wd.box(f,s0-w/2,s0+w/2,y0+0.95,y0+2.05,zz-0.04,zz+0.03,WOOD); Gs.box(f,s0-w/2+0.08,s0+w/2-0.08,y0+1.03,y0+1.97,zz-0.05,zz-0.04,WHITE); }
-  { const pc=f(4.4,0,-hw-0.55); emitRoof(cs,frame(pc[0],pc[2],ang),ang,0.9,0.55,y0+2.35,'shed',20,0.1,0.1,lin('#b05a38'),lin('#6e4a30'),'roof',4); }
-  { const p=f(2.9,0,-hw-0.06); signMesh(scene,kodRuzeTex(),1.0,0.42,p[0],y0+2.1,p[2],-ang+Math.PI); }
-  localCollider(f,ang,-hl,hl,-hw,hw,y0-1,e+2);
+function kodRuzeRow(cs,scene,pf,pang,L2){ /* no rooms building here (player: it does not exist) — just the gravel parking */
   paveArea(scene,[L2(10.6,-4),L2(10.6,-36),L2(22,-36),L2(22,-4)],'gravel',{tile:5});
   for(let z=-20;z>=-33;z-=3.2){ const q=L2(14.2,z); EXTRA_PARK.push([q[0],q[1],pang,'']); }
   NOHEDGE.push([...L2(16,-20),16]); }
