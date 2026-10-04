@@ -5748,6 +5748,7 @@ class GB {
     g.setAttribute('uv',new THREE.Float32BufferAttribute(this.uv,2));
     g.setAttribute('color',new THREE.Float32BufferAttribute(this.c,3));
     g.computeBoundingSphere(); g.computeBoundingBox();
+    this._n=this.p.length/3; this.p=[]; this.n=[]; this.uv=[]; this.c=[]; // free the JS arrays: the GPU copy is all we need (phones ran out of memory)
     return g;
   }
 }
@@ -5757,7 +5758,7 @@ class ChunkSet {
   get(matKey, x, z){ const k=matKey+'|'+Math.floor(x/this.tile)+'|'+Math.floor(z/this.tile); let g=this.map.get(k); if(!g){ g=new GB(); g.matKey=matKey; this.map.set(k,g);} return g; }
   meshes(mats, opts={}){
     const out=[];
-    for(const [k,g] of this.map){ if(g.count===0) continue; const m=new THREE.Mesh(g.geometry(), mats[g.matKey]); m.castShadow = opts.cast!==undefined? (typeof opts.cast==='function'?opts.cast(g.matKey):opts.cast) : true; m.receiveShadow=true; m.matrixAutoUpdate=false; m.updateMatrix(); out.push(m); }
+    for(const [k,g] of this.map){ if(g.count===0) continue; const geo=g.geometry(); if(typeof GAME!=='undefined'&&GAME.touch){ for(const at of Object.values(geo.attributes)) at.onUpload(function(){ this.array=new this.array.constructor(this.itemSize); }); } /* phones: static meshes live on the GPU only */ const m=new THREE.Mesh(geo, mats[g.matKey]); m.castShadow = opts.cast!==undefined? (typeof opts.cast==='function'?opts.cast(g.matKey):opts.cast) : true; m.receiveShadow=true; m.matrixAutoUpdate=false; m.updateMatrix(); out.push(m); }
     return out;
   }
 }
@@ -8197,8 +8198,8 @@ function fmtHour(h){ const H=Math.floor(h), m=Math.round((h-H)*60); return H+':'
 const GAME={perf:{ema:16,t:0},basePR:1,started:false,paused:false,time:0,hour:16.5,q:1,touch:('ontouchstart' in window)&&matchMedia('(pointer:coarse)').matches,dragLook:false};
 const START={x:-395,z:6,look:[-300,-2]};
 const GRASSN=[16000,34000,60000];
-function detectQuality(){ if(!GAME.touch) return 2; const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
-function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?Math.min(devicePixelRatio,1)*0.85:q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(innerWidth,innerHeight);
+function detectQuality(){ if(!GAME.touch) return 2; if(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)) return 0; /* iOS Safari kills tabs that use too much memory */ const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
+function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?(GAME.touch?Math.min(devicePixelRatio,1.0):Math.min(devicePixelRatio,1)*0.85):q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(innerWidth,innerHeight);
   GAME.basePR=r.getPixelRatio(); SKY.setShadowQuality(q); { const mts=Math.min(r.capabilities.maxTextureSize||4096,GAME.ios?2048:8192); if(SKY.sun.shadow.mapSize.x>mts){ SKY.sun.shadow.mapSize.set(mts,mts); } } if(q>=1) setupPost(r); else { disposePost(); POST.enabled=false; } if(VEG.grass) VEG.grass.geometry.instanceCount=GRASSN[q]; for(const m of VEG.far){ m.count=Math.max(1,Math.floor(m.userData.full*[0.6,0.85,1][q])); } VEG.uniforms.uLodR.value=[80,110,145][q]; VEG.lastRebuild.set(1e9,0,1e9); }
 async function main(){
   setTimeout(()=>{ try{ startModelPacks(); }catch(e){ console.warn('modeli',e); } },0);
@@ -8211,7 +8212,7 @@ async function main(){
     if(GAME.ios && !navigator.standalone){ const th=document.querySelector('.touchhelp'); if(th) th.innerHTML='<b>iPhone:</b> za cijeli zaslon dodirni Podijeli → „Dodaj na početni zaslon” i pokreni ikonu. '+th.innerHTML; } }
   const q=detectQuality(); GAME.q=q;
   document.querySelectorAll('[data-q]').forEach(x=>x.classList.toggle('sel',+x.dataset.q===q));
-  const renderer=new THREE.WebGLRenderer({antialias:!GAME.touch,powerPreference:'high-performance',stencil:false});
+  const renderer=new THREE.WebGLRenderer({antialias:!GAME.touch,powerPreference:GAME.touch?'default':'high-performance',stencil:false});
   renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.92;
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.25)); renderer.setSize(innerWidth,innerHeight); $('view').appendChild(renderer.domElement);
@@ -8221,7 +8222,7 @@ async function main(){
   { const cb=D.bld.find(b=>b.k==='cafe'); if(cb&&cb.r.length===1){ const r=cb.r[0]; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=7.0, lz=-5.1; cb.r.push([r[0]+c*lx-sn*lz, r[1]+sn*lx+c*lz, r[2], 7.4, 2.6, r[5]]); } }
   photoTerrain(); photoLand(); gradeRoads(); try{ schoolTerrain(); }catch(e){ console.warn('škola',e); } flattenSites(); try{ creekBuild(); }catch(e){ console.warn('potok',e); }
   await step(0.08,'Izrađujem teksture…'); buildTextures(); photoTextures(); buildWindowAtlas();
-  await step(0.16,'Crtam polja i livade…'); paintGround(GAME.ios?3072:(q>=2?4096:3072));
+  await step(0.16,'Crtam polja i livade…'); paintGround(GAME.touch?2048:(q>=2?4096:3072));
   await step(0.26,'Postavljam kuće…'); prepBuildings();
   await step(0.30,'Asfaltiram ceste…'); buildRoads(scene);
   await step(0.38,'Gradim crkvu i kuće…');
@@ -8456,7 +8457,7 @@ function carjack(g){ const T=g.T, v=T.v; const i=g.list.indexOf(T); if(i>=0) g.l
   v.st={x:s.x,z:s.z,yaw:s.yaw,v:0,steer:0,y:s.y,pitch:s.pitch||0,roll:s.roll||0,spin:s.spin||0}; v.idx=DRIVE.length; DRIVE.push(v); poseVehicle(v); return v; }
 function buildCars(scene){
   RNG=mulberry32(2468); const M=carMats();
-  const spots=[]; const add=(x,z,a,tag)=>{ { const n=nearestRoad(x,z,8,q=>q.t!=='path'&&q.t!=='track'); if(n&&n.d<1.25){ let nx=x-n.s.x, nz=z-n.s.z; const l=Math.hypot(nx,nz)||1; if(l<0.3) return; nx/=l; nz/=l; x+=nx*(1.3-n.d); z+=nz*(1.3-n.d); a=Math.atan2(n.s.tz,n.s.tx); } } /* never on the carriageway: nudge onto the verge, parallel to the road */ if(BHASH.hit(x,z,1.2)) return; if(typeof PHOTO!=='undefined'&&PHOTO.axis&&Math.hypot(x-PHOTO.axis.H[0],z-PHOTO.axis.H[1])<24) return; /* the family yard stays empty */ spots.push([x,z,a,tag]); };
+  const spots=[]; const add=(x,z,a,tag)=>{ { const n=nearestRoad(x,z,8,q=>q.t!=='path'&&q.t!=='track'); if(n&&n.d<1.25){ let nx=x-n.s.x, nz=z-n.s.z; const l=Math.hypot(nx,nz)||1; if(l<0.3) return; nx/=l; nz/=l; x+=nx*(1.3-n.d); z+=nz*(1.3-n.d); a=Math.atan2(n.s.tz,n.s.tx); } } /* never on the carriageway: nudge onto the verge, parallel to the road */ if(BHASH.hit(x,z,1.2)) return; { const dc=Math.hypot(x-CENTER[0],z-CENTER[1]); if(tag!=='drive'&&(GAME.touch?dc>340:(dc>650&&RNG()<0.5))) return; } /* fewer parked cars far out (the merged car mesh was 1.5M vertices) */ if(typeof PHOTO!=='undefined'&&PHOTO.axis&&Math.hypot(x-PHOTO.axis.H[0],z-PHOTO.axis.H[1])<24) return; /* the family yard stays empty */ spots.push([x,z,a,tag]); };
   const shop=findB(b=>b.n==='Trgovina PZ Tuhelj'); if(shop){ const fr=frame(shop.rect[0],shop.rect[1],shop.rect[2]); const si=sideInfo(shop.f,shop.rect[3]/2,shop.rect[4]/2); [-5,-2.4,2.4].forEach((t,i)=>{ const p=wallPoint(fr,si,t,4.2); add(p[0],p[2],sideAngle(shop.rect[2],si)+Math.PI/2,i===0?'drive':''); }); }
   const cafeB=null; /* café cars now stand in the gravel lot by the bus stop (photoPaving) */ if(cafeB){ const fr=frame(cafeB.rect[0],cafeB.rect[1],cafeB.rect[2]); const si=sideInfo(cafeB.f,cafeB.rect[3]/2,cafeB.rect[4]/2); [13.6,16.4].forEach((t,i)=>{ const p=wallPoint(fr,si,t,5.2); add(p[0],p[2],sideAngle(cafeB.rect[2],si),i===0?'drive':''); }); }
   for(const l of LAND){ if(l.t!=='parking') continue; const bb=polyBBox(l.P); let first=true; for(let x=bb[0]+3;x<bb[1]-2;x+=2.7){ for(const z of [bb[2]+3.2,bb[3]-3.2]){ if(RNG()<0.45 && pointInPoly(x,z,l.P)){ add(x,z,Math.PI/2+(RNG()<0.5?0:Math.PI),first?'drive':''); first=false; } } } }
@@ -10863,7 +10864,7 @@ const _gh0=getHeight;
 function creekChannelH(x,z,h){ const q=creekNear(x,z); if(!q||q.d>=CREEK.Wc) return h; const i=q.i; const hb=CREEK.bed[i]+(CREEK.bed[Math.min(CREEK.N-1,i+1)]-CREEK.bed[i])*q.t; const dep=Math.max(0,h-hb); const f=1-smooth(CREEK.Bh,CREEK.T+0.5,q.d); return h-dep*f; }
 getHeight=function(x,z){ const h=_gh0(x,z); if(!CREEK.on||x<CREEK.bb[0]||x>CREEK.bb[1]||z<CREEK.bb[2]||z>CREEK.bb[3]) return h; const q=creekNear(x,z); if(!q||q.d>=CREEK.Wc) return h; if(creekOnDeck(x,z)) return h; return creekChannelH(x,z,h); };
 // mask: G = cut the coarse terrain away, R = no grass (bed and water)
-function creekMask(){ const [x0,x1,z0,z1]=CREEK.bb, PX=0.5; const W=Math.ceil((x1-x0)/PX), Hh=Math.ceil((z1-z0)/PX); const c=cvs(W,Hh), g=c.getContext('2d'); g.fillStyle='#000'; g.fillRect(0,0,W,Hh); g.lineCap='round'; g.lineJoin='round';
+function creekMask(){ const [x0,x1,z0,z1]=CREEK.bb, PX=GAME.touch?1.0:0.5; const W=Math.ceil((x1-x0)/PX), Hh=Math.ceil((z1-z0)/PX); const c=cvs(W,Hh), g=c.getContext('2d'); g.fillStyle='#000'; g.fillRect(0,0,W,Hh); g.lineCap='round'; g.lineJoin='round';
   const path=()=>{ g.beginPath(); CREEK.S.forEach((p,i)=>{ const u=(p[0]-x0)/PX, v=(p[1]-z0)/PX; i?g.lineTo(u,v):g.moveTo(u,v); }); };
   g.strokeStyle='rgb(255,0,0)'; g.lineWidth=2*1.75/PX; path(); g.stroke(); g.globalCompositeOperation='lighter'; g.strokeStyle='rgb(0,255,0)'; g.lineWidth=2*(CREEK.Wc-0.3)/PX; path(); g.stroke(); g.globalCompositeOperation='source-over';
   const t=new THREE.CanvasTexture(c); t.flipY=false; t.minFilter=THREE.LinearFilter; t.magFilter=THREE.LinearFilter; t.generateMipmaps=false; t.colorSpace=THREE.NoColorSpace; CREEK.tex=t; CREEK.texB=new THREE.Vector4(x0,z0,x1-x0,z1-z0); }
@@ -11218,7 +11219,7 @@ makeTractor=function(){ const g=new THREE.Group(); const M=(c,r=0.55,m=0.15)=>ne
   const cx0=-0.95, cx1=0.25, cw=0.62; for(const [x,z] of [[cx0,cw],[cx0,-cw],[cx1,cw],[cx1,-cw]]) box(0.07,1.45,0.07,BLK,x,1.95,z);
   box(cx1-cx0,1.3,0.02,GL,(cx0+cx1)/2,1.9,cw); box(cx1-cx0,1.3,0.02,GL,(cx0+cx1)/2,1.9,-cw); box(0.02,1.3,2*cw,GL,cx1,1.9,0); box(0.02,1.3,2*cw,GL,cx0,1.9,0);
   box(cx1-cx0+0.22,0.09,2*cw+0.22,WH,(cx0+cx1)/2,2.7,0); box(cx1-cx0+0.1,0.05,2*cw+0.1,RED2,(cx0+cx1)/2,2.63,0); box(1.15,0.08,1.3,DARK,(cx0+cx1)/2,1.22,0);
-  box(0.42,0.08,0.44,BLK,-0.55,1.62,0); box(0.07,0.5,0.44,BLK,-0.78,1.88,0); cyl(0.19,0.19,0.03,BLK,0.0,1.95,0,'y',16).rotation.z=0.9; cyl(0.02,0.02,0.45,DARK,0.12,1.75,0).rotation.z=0.9;
+  box(0.46,0.08,0.46,BLK,-0.42,1.4,-0.38); box(0.07,0.55,0.46,BLK,-0.68,1.68,-0.38); cyl(0.19,0.19,0.03,BLK,0.08,1.82,-0.38,'y',16).rotation.z=0.9; cyl(0.02,0.02,0.45,DARK,0.2,1.62,-0.38).rotation.z=0.9; /* driver sits low in the cab, in line with the seat */
   for(const s of [-1,1]){ box(0.5,0.04,0.22,DARK,-0.35,0.95,s*0.78); box(0.5,0.04,0.22,DARK,-0.35,0.62,s*0.78); box(0.1,0.12,0.06,M(0xd62a1a,0.4),cx0-0.05,2.45,s*0.6); }
   // mudguards over the rear wheels
   for(const s of [-1,1]){ box(1.05,0.05,0.56,RED,-0.85,1.68,s*0.95); box(0.32,0.05,0.56,RED,-0.27,1.5,s*0.95,0,0.95); box(0.32,0.05,0.56,RED,-1.43,1.5,s*0.95,0,-0.95); box(1.1,0.75,0.04,RED2,-0.85,1.2,s*0.7); } /* flat mudguards over the rear wheels */
@@ -11234,7 +11235,7 @@ makeTractor=function(){ const g=new THREE.Group(); const M=(c,r=0.55,m=0.15)=>ne
     for(let k=0;k<6;k++){ const b=new THREE.Mesh(new THREE.BoxGeometry(r*0.08,r*0.08,w+0.04),DARK); const a=k/6*TAU; b.position.set(Math.cos(a)*r*0.38,Math.sin(a)*r*0.38,0); sp.add(b); }
     wheels.push({w:wg,spin:sp,front}); };
   for(const s of [-1,1]){ mk(-0.85,s*0.95,0.8,0.46,false); mk(1.45,s*0.78,0.44,0.24,true); }
-  return {group:g,wheels,wb:2.3,track:1.9,len:4.1,wid:2.2,r:0.8,paint:null,col:'#b51f1a',halfL:2.05,label:'Traktor',tractor:true,plough:pl,roofY:2.75,seatY:1.2,eyeH:2.25,phys:{maxV:10.5,rev:-4,acc:3.0,brake:9,maxSteer:0.6,sv:6}}; };
+  return {group:g,wheels,wb:2.3,track:1.9,len:4.1,wid:2.2,r:0.8,paint:null,col:'#b51f1a',halfL:2.05,label:'Traktor',tractor:true,plough:pl,roofY:2.75,seatY:0.72,eyeH:2.25,phys:{maxV:10.5,rev:-4,acc:3.0,brake:9,maxSteer:0.6,sv:6}}; };
 // ploughing: furrows behind the tractor on farmland
 function furrowInit(){ const n=TRACT.cap; const pos=new Float32Array(n*4*3), uv=new Float32Array(n*4*2), idx=new Uint32Array(n*6); for(let i=0;i<n;i++){ const b=i*4; idx.set([b,b+2,b+1,b+1,b+2,b+3],i*6); }
   const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('uv',new THREE.BufferAttribute(uv,2)); geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.setDrawRange(0,0); geo.computeBoundingSphere(); geo.boundingSphere.radius=1e5;
@@ -11248,6 +11249,73 @@ function tractorTick(dt){ const v=PLAYER.driving; for(const o of DRIVE){ if(o.pl
   if(!down){ TRACT.last=null; return; } if(!TRACT.last){ TRACT.last=[hx,hz]; return; } const d=Math.hypot(hx-TRACT.last[0],hz-TRACT.last[1]); if(d<1.1) return;
   furrowAdd(TRACT.last,[hx,hz]); TRACT.last=[hx,hz]; TRACT.acc+=d; if(Math.random()<0.5) try{ puff(new THREE.Vector3(hx,getHeight(hx,hz)+0.4,hz),1.2,0x7a5a3c); }catch(e){}
   if(TRACT.acc>60){ TRACT.acc-=60; try{ money(6,'oranje'); }catch(e){} if(!TRACT.told){ TRACT.told=true; UI.toast('🚜 Oreš njivu — svakih 60 m brazde 6 €'); } } }
+
+/* ===================== title screen in the style of the big open-world games =====================
+   Loading: your photos of Tuhelj redrawn as comic-style poster panels (posterised colour + ink edges), tilted collage,
+   huge logo, spinner and "UČITAVANJE" bottom-right. Ready: "PRITISNI BILO KOJU TIPKU" then a left-hand menu over the
+   cinematic fly-through, letterboxed. The old card stays in the DOM (hidden) because the loader writes progress into it. */
+(function(){ const st=document.createElement('style'); st.textContent=`
+#start .card{position:absolute!important;left:-9999px!important;top:0!important;opacity:0!important;pointer-events:none!important}
+#start #tip{display:none!important} #start::before{background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 40%,rgba(0,0,0,.65) 100%)!important}
+#tt{position:absolute;inset:0;z-index:3;overflow:hidden;font-family:Anton,Impact,"Arial Narrow",sans-serif;color:#fff;user-select:none;-webkit-user-select:none}
+#tt .art{position:absolute;inset:0;background:#0b0b0b;transition:opacity 1.2s}
+#tt.ready .art{opacity:0;pointer-events:none}
+#tt .pan{position:absolute;border:7px solid #f4f1ea;box-shadow:0 18px 50px rgba(0,0,0,.7);background-size:cover;background-position:center;opacity:0;transform:scale(1.06) rotate(var(--r));transition:opacity 1.4s,transform 9s linear}
+#tt .pan.on{opacity:1;transform:scale(1) rotate(var(--r))}
+#tt .bars:before,#tt .bars:after{content:"";position:absolute;left:0;right:0;height:9vh;background:#000;z-index:2}
+#tt .bars:before{top:0} #tt .bars:after{bottom:0}
+#tt .logo{position:absolute;left:5vw;bottom:13vh;z-index:4;line-height:.82;transform:rotate(-3deg);transform-origin:left bottom}
+#tt .logo b{display:block;font-size:min(19vw,190px);letter-spacing:.01em;color:#fff;-webkit-text-stroke:5px #0a0a0a;paint-order:stroke fill;text-shadow:7px 7px 0 #0a0a0a}
+#tt .logo i{display:inline-block;font-style:normal;margin-top:10px;background:#0a0a0a;color:#ffd24a;font-size:min(5vw,40px);padding:6px 16px 4px;letter-spacing:.12em}
+#tt .load{position:absolute;right:4vw;bottom:calc(9vh + 18px);z-index:4;display:flex;align-items:center;gap:12px;font:800 15px Manrope,sans-serif;letter-spacing:.16em;text-shadow:0 2px 6px #000}
+#tt .load s{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:ttsp 1s linear infinite;text-decoration:none}
+@keyframes ttsp{to{transform:rotate(360deg)}}
+#tt .pct{position:absolute;left:0;bottom:9vh;height:4px;background:#ffd24a;z-index:4;transition:width .4s}
+#tt .press{position:absolute;left:0;right:0;bottom:calc(9vh + 24px);text-align:center;z-index:4;font:800 16px Manrope,sans-serif;letter-spacing:.3em;display:none;animation:ttbl 1.4s ease-in-out infinite;text-shadow:0 2px 8px #000}
+@keyframes ttbl{50%{opacity:.35}}
+#tt.ready .press{display:block} #tt.menu .press{display:none}
+#tt .menu{position:absolute;left:5vw;top:15vh;z-index:5;display:none;flex-direction:column;gap:6px;min-width:min(360px,80vw)}
+#tt.menu .menu{display:flex} #tt.menu .logo{bottom:auto;top:calc(9vh + 12px);transform:rotate(-3deg) scale(.42);transform-origin:left top}
+#start ~ .attr,body:not(.ingame) .attr{display:none!important}
+#tt.menu .menu{top:calc(9vh + 150px)}
+#tt .menu button{all:unset;cursor:pointer;font-family:Anton,Impact,sans-serif;font-size:min(7vw,36px);letter-spacing:.03em;padding:4px 18px;color:#fff;background:linear-gradient(90deg,rgba(0,0,0,.72),rgba(0,0,0,0));text-shadow:2px 2px 0 #000}
+#tt .menu button small{display:block;font:600 12px Manrope,sans-serif;letter-spacing:.08em;color:rgba(255,255,255,.75);text-shadow:none;margin-top:-2px}
+#tt .menu button.sel,#tt .menu button:hover{background:#f4f1ea;color:#111;text-shadow:none} #tt .menu button.sel small,#tt .menu button:hover small{color:#444}
+#tt .menu .q{display:flex;gap:6px;padding:4px 18px} #tt .menu .q span{font:800 12px Manrope,sans-serif;padding:6px 10px;background:rgba(0,0,0,.6);cursor:pointer;letter-spacing:.1em} #tt .menu .q span.on{background:#ffd24a;color:#111}
+#tt .menu input{all:unset;font:700 15px Manrope,sans-serif;padding:8px 18px;background:rgba(0,0,0,.6);border-left:4px solid #ffd24a;color:#fff}
+#tt .help{position:absolute;right:4vw;top:calc(9vh + 20px);z-index:5;max-width:min(420px,44vw);font:600 13px/1.6 Manrope,sans-serif;background:rgba(0,0,0,.6);padding:14px 18px;display:none}
+#tt.menu .help.on{display:block}
+#tt .cr{position:absolute;right:2vw;bottom:2vh;z-index:6;font:500 10px Manrope,sans-serif;color:rgba(255,255,255,.55)}
+@media (max-width:760px),(max-height:520px){ #tt .logo b{font-size:min(16vw,120px);-webkit-text-stroke:3px #0a0a0a;text-shadow:4px 4px 0 #0a0a0a} #tt.menu .menu{top:calc(9vh + 110px);gap:2px} #tt .menu button{font-size:24px;padding:2px 14px} #tt .help{max-width:52vw;font-size:11px} }
+`; document.head.appendChild(st); })();
+const TT={el:null,i:0,t:0,arts:[],ready:false};
+// photo → comic poster (posterise + saturation + ink edges)
+function comicArt(img,W){ const H=Math.round(W*img.height/img.width); const c=cvs(W,H), g=c.getContext('2d'); g.drawImage(img,0,0,W,H); const id=g.getImageData(0,0,W,H), d=id.data; const L=new Float32Array(W*H);
+  for(let i=0;i<W*H;i++){ let r=d[i*4],gg=d[i*4+1],b=d[i*4+2]; const l=(r*0.3+gg*0.59+b*0.11); L[i]=l; const s=1.45; r=l+(r-l)*s; gg=l+(gg-l)*s; b=l+(b-l)*s; const q=(v)=>Math.max(0,Math.min(255,Math.round(((v-128)*1.18+128)/42)*42)); d[i*4]=q(r); d[i*4+1]=q(gg); d[i*4+2]=q(b); }
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){ const i=y*W+x; const gx=L[i+1]-L[i-1]+(L[i+1-W]-L[i-1-W]+L[i+1+W]-L[i-1+W])*0.5, gy=L[i+W]-L[i-W]+(L[i+W+1]-L[i-W+1]+L[i+W-1]-L[i-W-1])*0.5; const e=Math.hypot(gx,gy); if(e>70){ const k=Math.min(1,(e-70)/80); for(let j=0;j<3;j++) d[i*4+j]=d[i*4+j]*(1-k)+12*k; } }
+  g.putImageData(id,0,0); const v=g.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.85); v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,0.45)'); g.fillStyle=v; g.fillRect(0,0,W,H); return c.toDataURL('image/jpeg',0.85); }
+function ttInit(){ const s=document.getElementById('start'); if(!s||TT.el) return; const el=document.createElement('div'); el.id='tt';
+  el.innerHTML='<div class="art"></div><div class="bars"></div><div class="logo"><b>TUHELJ</b><i>POVRATAK U ZAGORJE</i></div><div class="pct" style="width:0"></div><div class="load"><s></s><span>UČITAVANJE</span></div><div class="press">'+(GAME.touch?'DODIRNI ZASLON':'PRITISNI BILO KOJU TIPKU')+'</div><div class="menu"></div><div class="help"></div><div class="cr">© OpenStreetMap · Mapillary CC BY-SA · Rocketbox MIT · Quaternius/Kenney CC0</div>';
+  s.appendChild(el); TT.el=el;
+  // art panels from your photos (falls back to plain dark if there are none)
+  const P=Array.isArray(window.TUHELJ_PHOTOS)?window.TUHELJ_PHOTOS:[]; const art=el.querySelector('.art'); const W=GAME.touch?720:1100;
+  const lay=[{l:'4%',t:'10%',w:'62%',h:'62%',r:'-2.5deg'},{l:'52%',t:'16%',w:'44%',h:'46%',r:'3deg'},{l:'30%',t:'40%',w:'48%',h:'50%',r:'-1deg'}];
+  P.forEach((u,k)=>{ const im=new Image(); im.onload=()=>{ setTimeout(()=>{ try{ const url=comicArt(im,W); const d=document.createElement('div'); d.className='pan'; const L=lay[TT.arts.length%3]; Object.assign(d.style,{left:L.l,top:L.t,width:L.w,height:L.h,backgroundImage:'url('+url+')'}); d.style.setProperty('--r',L.r); art.appendChild(d); TT.arts.push(d); if(TT.arts.length===1) d.classList.add('on'); }catch(e){} },120*k); }; im.src=u; });
+  const anyKey=()=>{ if(TT.ready&&!el.classList.contains('menu')) ttMenu(); }; addEventListener('keydown',anyKey); el.addEventListener('pointerup',anyKey); }
+function ttMenu(){ const el=TT.el; el.classList.add('menu'); const m=el.querySelector('.menu'); const n=(typeof STORY!=='undefined')?STORY.ch:0; const go=document.getElementById('go');
+  const items=[[n>=7?'SLOBODNA IGRA':n?'NASTAVI PRIČU':'PRIČA',n?('Poglavlje '+Math.min(7,n+1)+' od 7'):'Deset godina u Njemačkoj — sad si opet doma',()=>go.click()],
+    ['KONTROLE',GAME.touch?'Dodirne kontrole':'Tipkovnica i miš',()=>{ const h=el.querySelector('.help'); h.classList.toggle('on'); h.innerHTML=GAME.touch?'Lijevi krug — hodanje · prst po ekranu — pogled · gumbi desno — skok, trčanje, pucanje · Vozi — uđi u auto · 📻 — radio':'W A S D hodanje · Shift trčanje · Space skok · C čučanj<br>E vrata, auto, razgovor · V pogled iz auta · R radio u autu<br>Kotačić / Tab oružje · lijevi klik puca · desni nišani<br>M karta · P mobitel · Esc izbornik'; }]];
+  if((typeof STORY!=='undefined'&&STORY.ch>0)||GTA.home) items.push(['NOVA IGRA','Briše napredak',()=>{ const ng=document.getElementById('newgame'); if(ng) ng.click(); }]);
+  m.innerHTML=''; items.forEach((it,i)=>{ const b=document.createElement('button'); b.innerHTML=it[0]+'<small>'+it[1]+'</small>'; if(!i) b.classList.add('sel'); b.addEventListener('click',e=>{ e.stopPropagation(); it[2](); }); b.addEventListener('pointerenter',()=>{ m.querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b)); }); m.appendChild(b); });
+  const q=document.createElement('div'); q.className='q'; ['NISKA','SREDNJA','VISOKA'].forEach((t,i)=>{ const s=document.createElement('span'); s.textContent=t; if(GAME.q===i) s.className='on'; s.addEventListener('click',e=>{ e.stopPropagation(); setQuality(i); q.querySelectorAll('span').forEach((x,j)=>x.classList.toggle('on',j===i)); }); q.appendChild(s); }); m.appendChild(q);
+  const pn=document.getElementById('pname'); if(pn){ const inp=document.createElement('input'); inp.placeholder='Tvoje ime'; inp.maxLength=16; inp.value=pn.value; inp.addEventListener('input',()=>{ pn.value=inp.value; pn.dispatchEvent(new Event('input')); }); inp.addEventListener('pointerup',e=>e.stopPropagation()); m.appendChild(inp); }
+  let sel=0; addEventListener('keydown',e=>{ if(GAME.started||!el.classList.contains('menu')) return; const bs=[...m.querySelectorAll('button')]; if(e.code==='ArrowDown'||e.code==='KeyS'){ sel=(sel+1)%bs.length; } else if(e.code==='ArrowUp'||e.code==='KeyW'){ sel=(sel+bs.length-1)%bs.length; } else if(e.code==='Enter'||e.code==='Space'){ bs[sel].click(); return; } else return; bs.forEach((x,j)=>x.classList.toggle('sel',j===sel)); }); }
+function ttTick(dt){ if(!TT.el){ try{ ttInit(); }catch(e){ return; } } if(GAME.started){ TT.el.style.display='none'; return; } TT.el.style.display='';
+  const bar=document.getElementById('bar'); const p=TT.el.querySelector('.pct'); if(bar&&p) p.style.width=bar.style.width||'0';
+  const go=document.getElementById('go'); if(go&&!go.disabled&&!TT.ready){ TT.ready=true; TT.el.classList.add('ready'); TT.el.querySelector('.load span').textContent='SPREMNO'; TT.el.querySelector('.load s').style.display='none'; }
+  TT.t-=dt; if(TT.t<=0&&TT.arts.length>1){ TT.t=6; TT.arts.forEach(a=>a.classList.remove('on')); TT.arts[++TT.i%TT.arts.length].classList.add('on'); } }
+// runs while loading too (the game loop has not started yet)
+(function loop(){ let last=performance.now(); const f=()=>{ const n=performance.now(); try{ ttTick((n-last)/1000); }catch(e){} last=n; if(!GAME.started) setTimeout(f,100); else ttTick(0); }; if(document.readyState==='loading') addEventListener('DOMContentLoaded',f); else setTimeout(f,0); })();
 
 document.addEventListener('DOMContentLoaded',()=>{});
 (function(){ const tm=document.getElementById('tmap'), tu=document.getElementById('tmenu'); if(tm) tm.addEventListener('pointerdown',(e)=>{ e.preventDefault(); if(!GAME.started) return; openMap(!UI.mapOpen); if(!UI.mapOpen) resumeGame(); }); if(tu) tu.addEventListener('pointerdown',(e)=>{ e.preventDefault(); if(!GAME.started) return; togglePause(!GAME.paused); }); const tf=document.getElementById('tfs'); if(tf) tf.addEventListener('pointerdown',(e)=>{ e.preventDefault(); toggleFullscreen(); }); const fb=document.getElementById('fsbtn'); if(fb) fb.addEventListener('click',()=>toggleFullscreen()); const cb=document.getElementById('carbtn'); if(cb) cb.addEventListener('touchstart',e=>{ e.preventDefault(); useCarKey(); },{passive:false}); const eb=document.getElementById('exitbtn'); if(eb) eb.addEventListener('touchstart',e=>{ e.preventDefault(); if(PLAYER.heli) exitHeli(); else if(PLAYER.riding) exitRide(); else exitCar(); },{passive:false}); const pn=document.getElementById('pname'); if(pn){ try{ pn.value=localStorage.getItem('tuhelj_name')||''; }catch(e){} pn.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'&&!document.getElementById('go').disabled) startGame(); }); } const $$=(id)=>document.getElementById(id);

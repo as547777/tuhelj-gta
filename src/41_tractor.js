@@ -20,7 +20,7 @@ makeTractor=function(){ const g=new THREE.Group(); const M=(c,r=0.55,m=0.15)=>ne
   const cx0=-0.95, cx1=0.25, cw=0.62; for(const [x,z] of [[cx0,cw],[cx0,-cw],[cx1,cw],[cx1,-cw]]) box(0.07,1.45,0.07,BLK,x,1.95,z);
   box(cx1-cx0,1.3,0.02,GL,(cx0+cx1)/2,1.9,cw); box(cx1-cx0,1.3,0.02,GL,(cx0+cx1)/2,1.9,-cw); box(0.02,1.3,2*cw,GL,cx1,1.9,0); box(0.02,1.3,2*cw,GL,cx0,1.9,0);
   box(cx1-cx0+0.22,0.09,2*cw+0.22,WH,(cx0+cx1)/2,2.7,0); box(cx1-cx0+0.1,0.05,2*cw+0.1,RED2,(cx0+cx1)/2,2.63,0); box(1.15,0.08,1.3,DARK,(cx0+cx1)/2,1.22,0);
-  box(0.42,0.08,0.44,BLK,-0.55,1.62,0); box(0.07,0.5,0.44,BLK,-0.78,1.88,0); cyl(0.19,0.19,0.03,BLK,0.0,1.95,0,'y',16).rotation.z=0.9; cyl(0.02,0.02,0.45,DARK,0.12,1.75,0).rotation.z=0.9;
+  box(0.46,0.08,0.46,BLK,-0.42,1.4,-0.38); box(0.07,0.55,0.46,BLK,-0.68,1.68,-0.38); cyl(0.19,0.19,0.03,BLK,0.08,1.82,-0.38,'y',16).rotation.z=0.9; cyl(0.02,0.02,0.45,DARK,0.2,1.62,-0.38).rotation.z=0.9; /* driver sits low in the cab, in line with the seat */
   for(const s of [-1,1]){ box(0.5,0.04,0.22,DARK,-0.35,0.95,s*0.78); box(0.5,0.04,0.22,DARK,-0.35,0.62,s*0.78); box(0.1,0.12,0.06,M(0xd62a1a,0.4),cx0-0.05,2.45,s*0.6); }
   // mudguards over the rear wheels
   for(const s of [-1,1]){ box(1.05,0.05,0.56,RED,-0.85,1.68,s*0.95); box(0.32,0.05,0.56,RED,-0.27,1.5,s*0.95,0,0.95); box(0.32,0.05,0.56,RED,-1.43,1.5,s*0.95,0,-0.95); box(1.1,0.75,0.04,RED2,-0.85,1.2,s*0.7); } /* flat mudguards over the rear wheels */
@@ -36,7 +36,7 @@ makeTractor=function(){ const g=new THREE.Group(); const M=(c,r=0.55,m=0.15)=>ne
     for(let k=0;k<6;k++){ const b=new THREE.Mesh(new THREE.BoxGeometry(r*0.08,r*0.08,w+0.04),DARK); const a=k/6*TAU; b.position.set(Math.cos(a)*r*0.38,Math.sin(a)*r*0.38,0); sp.add(b); }
     wheels.push({w:wg,spin:sp,front}); };
   for(const s of [-1,1]){ mk(-0.85,s*0.95,0.8,0.46,false); mk(1.45,s*0.78,0.44,0.24,true); }
-  return {group:g,wheels,wb:2.3,track:1.9,len:4.1,wid:2.2,r:0.8,paint:null,col:'#b51f1a',halfL:2.05,label:'Traktor',tractor:true,plough:pl,roofY:2.75,seatY:1.2,eyeH:2.25,phys:{maxV:10.5,rev:-4,acc:3.0,brake:9,maxSteer:0.6,sv:6}}; };
+  return {group:g,wheels,wb:2.3,track:1.9,len:4.1,wid:2.2,r:0.8,paint:null,col:'#b51f1a',halfL:2.05,label:'Traktor',tractor:true,plough:pl,roofY:2.75,seatY:0.72,eyeH:2.25,phys:{maxV:10.5,rev:-4,acc:3.0,brake:9,maxSteer:0.6,sv:6}}; };
 // ploughing: furrows behind the tractor on farmland
 function furrowInit(){ const n=TRACT.cap; const pos=new Float32Array(n*4*3), uv=new Float32Array(n*4*2), idx=new Uint32Array(n*6); for(let i=0;i<n;i++){ const b=i*4; idx.set([b,b+2,b+1,b+1,b+2,b+3],i*6); }
   const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('uv',new THREE.BufferAttribute(uv,2)); geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.setDrawRange(0,0); geo.computeBoundingSphere(); geo.boundingSphere.radius=1e5;

@@ -133,3 +133,11 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - dvorište sjeverno od kuće (photoPubYard, okvir kafića), zid na pločniku, kapija, plava vrtna vrata, apartman [-233.2,-73.2] balkonom na zapad
 - kodRuzeRow: duga niska zgrada "Kod Ruže" iza stanice
 - parking kod crkve: travnjak između popločenja crkve i Ultre, ulaz s crkvene ceste (traka + kocke + ograda + lampe)
+
+## Runda: mobitel memorija, početni ekran, traktor (listopad 2026, 6)
+- iOS Safari "problem se ponovio" = OOM. Mjereno u emulaciji: JS heap 670 MB → 226 MB:
+  GB.geometry() oslobađa JS nizove; na touch uređajima ChunkSet meshevi oslobađaju CPU kopiju nakon uploada (onUpload);
+  parkirani auti na touchu samo do 340 m od centra (spojeni mesh auta bio je 1,5 M vrhova), na desktopu prorijeđeni dalje od 650 m;
+  ground albedo 2048 na touchu, creek maska 1 m/px, iOS kvaliteta 0 (bez posta, PR 1.0)
+- početni ekran (42_title.js): stripovski paneli iz photos/, veliki logo, učitavanje, "pritisni tipku", izbornik (priča, kontrole, nova igra, kvaliteta, ime)
+- traktor: seatY 0.72, sjedalo i volan u liniji vozača

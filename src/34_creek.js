@@ -45,7 +45,7 @@ const _gh0=getHeight;
 function creekChannelH(x,z,h){ const q=creekNear(x,z); if(!q||q.d>=CREEK.Wc) return h; const i=q.i; const hb=CREEK.bed[i]+(CREEK.bed[Math.min(CREEK.N-1,i+1)]-CREEK.bed[i])*q.t; const dep=Math.max(0,h-hb); const f=1-smooth(CREEK.Bh,CREEK.T+0.5,q.d); return h-dep*f; }
 getHeight=function(x,z){ const h=_gh0(x,z); if(!CREEK.on||x<CREEK.bb[0]||x>CREEK.bb[1]||z<CREEK.bb[2]||z>CREEK.bb[3]) return h; const q=creekNear(x,z); if(!q||q.d>=CREEK.Wc) return h; if(creekOnDeck(x,z)) return h; return creekChannelH(x,z,h); };
 // mask: G = cut the coarse terrain away, R = no grass (bed and water)
-function creekMask(){ const [x0,x1,z0,z1]=CREEK.bb, PX=0.5; const W=Math.ceil((x1-x0)/PX), Hh=Math.ceil((z1-z0)/PX); const c=cvs(W,Hh), g=c.getContext('2d'); g.fillStyle='#000'; g.fillRect(0,0,W,Hh); g.lineCap='round'; g.lineJoin='round';
+function creekMask(){ const [x0,x1,z0,z1]=CREEK.bb, PX=GAME.touch?1.0:0.5; const W=Math.ceil((x1-x0)/PX), Hh=Math.ceil((z1-z0)/PX); const c=cvs(W,Hh), g=c.getContext('2d'); g.fillStyle='#000'; g.fillRect(0,0,W,Hh); g.lineCap='round'; g.lineJoin='round';
   const path=()=>{ g.beginPath(); CREEK.S.forEach((p,i)=>{ const u=(p[0]-x0)/PX, v=(p[1]-z0)/PX; i?g.lineTo(u,v):g.moveTo(u,v); }); };
   g.strokeStyle='rgb(255,0,0)'; g.lineWidth=2*1.75/PX; path(); g.stroke(); g.globalCompositeOperation='lighter'; g.strokeStyle='rgb(0,255,0)'; g.lineWidth=2*(CREEK.Wc-0.3)/PX; path(); g.stroke(); g.globalCompositeOperation='source-over';
   const t=new THREE.CanvasTexture(c); t.flipY=false; t.minFilter=THREE.LinearFilter; t.magFilter=THREE.LinearFilter; t.generateMipmaps=false; t.colorSpace=THREE.NoColorSpace; CREEK.tex=t; CREEK.texB=new THREE.Vector4(x0,z0,x1-x0,z1-z0); }

@@ -2,8 +2,8 @@
 const GAME={perf:{ema:16,t:0},basePR:1,started:false,paused:false,time:0,hour:16.5,q:1,touch:('ontouchstart' in window)&&matchMedia('(pointer:coarse)').matches,dragLook:false};
 const START={x:-395,z:6,look:[-300,-2]};
 const GRASSN=[16000,34000,60000];
-function detectQuality(){ if(!GAME.touch) return 2; const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
-function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?Math.min(devicePixelRatio,1)*0.85:q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(innerWidth,innerHeight);
+function detectQuality(){ if(!GAME.touch) return 2; if(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)) return 0; /* iOS Safari kills tabs that use too much memory */ const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
+function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?(GAME.touch?Math.min(devicePixelRatio,1.0):Math.min(devicePixelRatio,1)*0.85):q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(innerWidth,innerHeight);
   GAME.basePR=r.getPixelRatio(); SKY.setShadowQuality(q); { const mts=Math.min(r.capabilities.maxTextureSize||4096,GAME.ios?2048:8192); if(SKY.sun.shadow.mapSize.x>mts){ SKY.sun.shadow.mapSize.set(mts,mts); } } if(q>=1) setupPost(r); else { disposePost(); POST.enabled=false; } if(VEG.grass) VEG.grass.geometry.instanceCount=GRASSN[q]; for(const m of VEG.far){ m.count=Math.max(1,Math.floor(m.userData.full*[0.6,0.85,1][q])); } VEG.uniforms.uLodR.value=[80,110,145][q]; VEG.lastRebuild.set(1e9,0,1e9); }
 async function main(){
   setTimeout(()=>{ try{ startModelPacks(); }catch(e){ console.warn('modeli',e); } },0);
@@ -16,7 +16,7 @@ async function main(){
     if(GAME.ios && !navigator.standalone){ const th=document.querySelector('.touchhelp'); if(th) th.innerHTML='<b>iPhone:</b> za cijeli zaslon dodirni Podijeli → „Dodaj na početni zaslon” i pokreni ikonu. '+th.innerHTML; } }
   const q=detectQuality(); GAME.q=q;
   document.querySelectorAll('[data-q]').forEach(x=>x.classList.toggle('sel',+x.dataset.q===q));
-  const renderer=new THREE.WebGLRenderer({antialias:!GAME.touch,powerPreference:'high-performance',stencil:false});
+  const renderer=new THREE.WebGLRenderer({antialias:!GAME.touch,powerPreference:GAME.touch?'default':'high-performance',stencil:false});
   renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.92;
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.25)); renderer.setSize(innerWidth,innerHeight); $('view').appendChild(renderer.domElement);
@@ -26,7 +26,7 @@ async function main(){
   { const cb=D.bld.find(b=>b.k==='cafe'); if(cb&&cb.r.length===1){ const r=cb.r[0]; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=7.0, lz=-5.1; cb.r.push([r[0]+c*lx-sn*lz, r[1]+sn*lx+c*lz, r[2], 7.4, 2.6, r[5]]); } }
   photoTerrain(); photoLand(); gradeRoads(); try{ schoolTerrain(); }catch(e){ console.warn('škola',e); } flattenSites(); try{ creekBuild(); }catch(e){ console.warn('potok',e); }
   await step(0.08,'Izrađujem teksture…'); buildTextures(); photoTextures(); buildWindowAtlas();
-  await step(0.16,'Crtam polja i livade…'); paintGround(GAME.ios?3072:(q>=2?4096:3072));
+  await step(0.16,'Crtam polja i livade…'); paintGround(GAME.touch?2048:(q>=2?4096:3072));
   await step(0.26,'Postavljam kuće…'); prepBuildings();
   await step(0.30,'Asfaltiram ceste…'); buildRoads(scene);
   await step(0.38,'Gradim crkvu i kuće…');
