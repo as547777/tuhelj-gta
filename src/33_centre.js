@@ -42,6 +42,7 @@ function groundLine(scene,M,x0,z0,x1,z1,w=0.12){ const L=Math.hypot(x1-x0,z1-z0)
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); const m=new THREE.Mesh(g,M); m.receiveShadow=true; scene.add(m); }
 
 function photoPaving(cs,scene){
+  if(PHOTO.forecourt) paveArea(scene,PHOTO.forecourt,'concrete',{tile:2.5,roads:true,lift:0.05,mat:PHOTO.foreMat||null});
   // 1) church: red clay pavers right round it, a wider square on the entrance side
   const ch=BLD.find(b=>b.k==='church'); if(ch){ const [cx,cz,ang,L,W]=ch.rect; const f=frame(cx,cz,ang); const e=4.6;
     const P=[[-L/2-e,-W/2-e],[L/2+13,-W/2-e],[L/2+13,W/2+e],[-L/2-e,W/2+e]].map(q=>{ const p=f(q[0],0,q[1]); return [p[0],p[2]]; });
@@ -113,7 +114,7 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
   pubBackAnnex(cs,scene,cafeB,f); kodRuzeRow(cs,scene); }
 // "Kod Ruže": the long low white building with the red tiled roof, wooden windows and the brown door, behind the bus stop
 // on the north side of the gravel lot east of the arcade (Street View "7 Tuhelj")
-function kodRuzeRow(cs,scene){ const cx=-215.8, cz=-50.6, ang=0.32; const f=frame(cx,cz,ang); const hl=9.0, hw=3.4; let y0=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y0=Math.min(y0,getHeight(p[0],p[2])); } y0+=0.12; const e=y0+2.75;
+function kodRuzeRow(cs,scene){ const sh=PUBYARD.cafeShift||[0,0]; const cx=-215.8+Math.max(0,sh[0]), cz=-50.6+Math.min(0,sh[1]), ang=0.32; const f=frame(cx,cz,ang); const hl=9.0, hw=3.4; let y0=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y0=Math.min(y0,getHeight(p[0],p[2])); } y0+=0.12; const e=y0+2.75;
   const G=cs.get('wall',cx,cz), T=cs.get('trim',cx,cz), Wd=cs.get('wood',cx,cz), Gs=cs.get('glassW',cx,cz); const WH=lin('#efefea'), WOOD=lin('#8a4f2a');
   emitWalls(cs,f,ang,hl,hw,y0-0.8,e,'gable',22,WH,'wall'); emitPlinth(cs,f,ang,hl,hw,y0-0.8,y0+0.35,lin('#b9b4aa')); emitRoof(cs,f,ang,hl,hw,e,'gable',22,0.55,0.5,lin('#b05a38'),lin('#6e4a30'));
   for(const [s0,w,door] of [[-6.5,1.2,false],[-3.8,1.2,false],[0.6,1.1,false],[2.6,1.1,false],[5.2,1.0,true],[7.3,1.0,false]]){ const zz=hw+0.02; if(door){ Wd.box(f,s0-0.5,s0+0.5,y0,y0+2.15,zz-0.05,zz+0.04,WOOD); for(const xx of [s0-0.3,s0+0.3]) Wd.box(f,xx-0.03,xx+0.03,y0+0.2,y0+2.0,zz+0.04,zz+0.06,lin('#6e3e22')); continue; }
