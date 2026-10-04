@@ -64,7 +64,7 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   // the bus stop is on the café side of the road, in front of the gravel lot east of the arcade (Street View)
   { const p=(D.pois||[]).find(q=>q.k==='bus_stop'&&Math.hypot(q.x+213,q.z+30)<8); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+213,q[1]+30)<12)); if(p&&rd){ const n=nearOnPoly(rd.P,p.x,p.z); p.x=n.x+n.tz*4.5; p.z=n.z-n.tx*4.5; } }
   // Street View "38 Tuhelj": the salmon-red house with the white balcony stands right behind the column, facing the bend
-  if(!D.bld.some(b=>b.st==='salmonPlaza')) D.bld.push({k:'house',st:'salmonPlaza',lv:2,f:2,r:[[-257,-19,Math.PI+0.25,11,9,15]]});
+  if(!D.bld.some(b=>b.st==='salmonPlaza')) D.bld.push({k:'house',st:'salmonPlaza',lv:2,f:2,r:[[-252.6,-21.2,Math.PI+0.25,11,9,15]]});
   try{ pristavaLand(); }catch(e){ console.warn('pristava',e); }
   NOHEDGE.push([-211,-42,10],[PUBYARD.apt[0]-1,PUBYARD.apt[1]+1,15],[-309.8,-22,11]);
   const inWide=(x,z)=>{ const dx=x-A.H[0], dz=z-A.H[1]; const t=(dx*A.ux+dz*A.uz)/A.L, d=Math.abs(-dx*A.uz+dz*A.ux); return t>0.02&&t<1.08&&d<110; };

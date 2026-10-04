@@ -14,6 +14,7 @@ function paverTex(kind){ const S=512, c=cvs(S,S), g=c.getContext('2d'); const R=
   else if(kind==='concrete'){ g.fillStyle='#b9b7b1'; g.fillRect(0,0,S,S); for(let i=0;i<22000;i++){ const v=150+R()*70|0; g.fillStyle=`rgba(${v},${v},${v-4},0.35)`; g.fillRect(R()*S,R()*S,1.6,1.6); }
     for(let i=0;i<40;i++){ g.fillStyle=`rgba(90,88,82,${R()*0.08})`; g.beginPath(); g.arc(R()*S,R()*S,10+R()*40,0,TAU); g.fill(); }
     g.strokeStyle='rgba(70,70,66,0.55)'; g.lineWidth=2; for(const q of [0,S/2]){ g.beginPath(); g.moveTo(q,0); g.lineTo(q,S); g.stroke(); g.beginPath(); g.moveTo(0,q); g.lineTo(S,q); g.stroke(); } }
+  else if(kind==='setts'){ g.fillStyle='#5e5d59'; g.fillRect(0,0,S,S); const n=30, c=S/n; for(let r=0;r<n;r++) for(let q=0;q<n;q++){ const v=118+R()*40|0, j=(R()-0.5)*1.4; g.fillStyle=`rgb(${v},${v-2},${v-6})`; g.fillRect(q*c+1.2+j,r*c+1.2+j,c-2.4,c-2.4); g.fillStyle='rgba(255,255,255,0.06)'; g.fillRect(q*c+1.2,r*c+1.2,c-2.4,1.2); } }
   else if(kind==='asphalt'){ g.fillStyle='#6b6c6e'; g.fillRect(0,0,S,S); for(let i=0;i<30000;i++){ const v=80+R()*80|0; g.fillStyle=`rgba(${v},${v},${v+2},0.45)`; g.fillRect(R()*S,R()*S,1.4,1.4); } }
   else { // gravel lot
     g.fillStyle='#a8a396'; g.fillRect(0,0,S,S); for(let i=0;i<30000;i++){ const v=130+R()*100|0; g.fillStyle=`rgb(${v},${v-5|0},${v-16|0})`; g.beginPath(); g.arc(R()*S,R()*S,0.6+R()*2.0,0,TAU); g.fill(); }
@@ -47,12 +48,26 @@ function photoPaving(cs,scene){
     paveArea(scene,P,'red',{ang,tile:3,skip:(x,z)=>nearWater(x,z,2.6)}); PHOTO.churchPave=P;
     // granite kerb round the paving
     const K=cs.get('curb',cx,cz); const KC=lin('#b9b6ae'); for(let i=0;i<4;i++){ const a=P[i], b=P[(i+1)%4]; const dl=Math.hypot(b[0]-a[0],b[1]-a[1]); for(let t=0;t<dl;t+=1){ const x=a[0]+(b[0]-a[0])*t/dl, z=a[1]+(b[1]-a[1])*t/dl; if(onRoadOrWalk(x,z)||nearWater(x,z,2.6)) continue; const kf=frame(x,z,Math.atan2(b[1]-a[1],b[0]-a[0]),getHeight(x,z)); K.box(kf,0,Math.min(1,dl-t),-0.06,0.1,-0.09,0.09,KC); } } }
-  // 2) car park on the plot beside the church
-  if(PHOTO.churchPark){ const [px,pz,pa,pl,pw]=PHOTO.churchPark; const f=frame(px,pz,pa); const hl=pl/2+0.8, hw=Math.max(5.2,pw/2+0.5); /* exactly the old house plot */
-    const P=[[-hl,-hw],[hl,-hw],[hl,hw],[-hl,hw]].map(q=>{ const p=f(q[0],0,q[1]); return [p[0],p[2]]; }); paveArea(scene,P,'asphalt',{ang:pa,tile:4,skip:(x,z)=>PHOTO.churchPave&&pointInPoly(x,z,PHOTO.churchPave)});
-    const LM=new THREE.MeshStandardMaterial({color:0xe9e9e4,roughness:0.7,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-8});
-    for(let x=-hl+0.6;x<=hl-0.5;x+=2.6){ for(const sd of [-1,1]){ const a=f(x,0,sd*hw), b=f(x,0,sd*(hw-5)); if(PHOTO.churchPave&&(pointInPoly(a[0],a[2],PHOTO.churchPave)||pointInPoly(b[0],b[2],PHOTO.churchPave))) continue; groundLine(scene,LM,a[0],a[2],b[0],b[2]); } }
-    const ch2=BLD.find(b=>b.k==='church'); const far=ch2?((()=>{ const A=f(0,0,-hw), B=f(0,0,hw); return Math.hypot(A[0]-ch2.rect[0],A[2]-ch2.rect[1])>Math.hypot(B[0]-ch2.rect[0],B[2]-ch2.rect[1])?-1:1; })()):1; let k=0; for(let x=-hl+1.9;x<hl-1;x+=2.6){ for(const sd of [far]){ if((k++)%2===1) continue; const q=f(x,0,sd*(hw-2.5)); if(PHOTO.churchPave&&pointInPoly(q[0],q[2],PHOTO.churchPave)) continue; EXTRA_PARK.push([q[0],q[2],pa+Math.PI/2,'']); } } }
+  // 2) the church car park (Street View "35 Tuhelj"): a strip of grey granite setts along the church road, on the side away from
+  //    the church — cars nose-in, granite kerbs, a grass island with a sign where it starts, street lamps, green mesh fence behind
+  { const rd=ROADS.find(r=>r.t==='service'&&r.P.some(q=>Math.hypot(q[0]+273,q[1]+11)<2)); const ch=BLD.find(b=>b.k==='church'); if(rd&&rd.S&&ch){
+      const S=rd.S, T=rd.T; const near=(x,z)=>{ let bi=0,bd=1e9; for(let i=0;i<S.length;i++){ const d=Math.hypot(S[i][0]-x,S[i][1]-z); if(d<bd){ bd=d; bi=i; } } return bi; };
+      const i0=near(-262.5,-33), i1=near(-276,-1); const mid=Math.floor((i0+i1)/2); const sideOf=(i)=>{ const nx=-T[i][1], nz=T[i][0]; return ((ch.rect[0]-S[i][0])*nx+(ch.rect[1]-S[i][1])*nz)>0?-1:1; }; const sd=sideOf(mid);
+      const w0=rd.w/2+0.15, w1=w0+5.2; const P=[]; for(let i=i0;i<=i1;i++){ const nx=-T[i][1]*sd, nz=T[i][0]*sd; P.push([S[i][0]+nx*w0,S[i][1]+nz*w0]); } for(let i=i1;i>=i0;i--){ const nx=-T[i][1]*sd, nz=T[i][0]*sd; P.push([S[i][0]+nx*w1,S[i][1]+nz*w1]); }
+      paveArea(scene,P,'setts',{tile:3,roads:true,lift:0.06}); NOHEDGE.push([S[mid][0],S[mid][1],22]);
+      const K=cs.get('curb',S[mid][0],S[mid][1]), Mt=cs.get('metal',S[mid][0],S[mid][1]), Hd=cs.get('hedge',S[mid][0],S[mid][1]); const KC=lin('#d6d3cc'), FG=lin('#2f6b45');
+      const LM=new THREE.MeshStandardMaterial({color:0xe9e9e4,roughness:0.7,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-8}); let k=0;
+      for(let i=i0;i<=i1;i++){ const nx=-T[i][1]*sd, nz=T[i][0]*sd, a=Math.atan2(T[i][1],T[i][0]); const back=[S[i][0]+nx*(w1+0.15),S[i][1]+nz*(w1+0.15)]; const y=getHeight(back[0],back[1]);
+        K.box(frame(back[0],back[1],a,y),-0.8,0.8,-0.2,0.18,-0.12,0.12,KC,0.8); // kerb behind the bays
+        if(i%2===0){ const f=frame(back[0]+nx*1.2,back[1]+nz*1.2,a,getHeight(back[0]+nx*1.2,back[1]+nz*1.2)); Mt.box(f,-0.03,0.03,0,1.5,-0.03,0.03,FG); Mt.box(f,-0.75,0.75,0.05,1.45,-0.006,0.006,lin('#3b7a52')); addCollider(back[0]+nx*1.2,back[1]+nz*1.2,a,1.5,0.1,y-1,y+1.5); }
+        if((i-i0)%2===0){ const a0=[S[i][0]+nx*(w0+0.4),S[i][1]+nz*(w0+0.4)], a1=[S[i][0]+nx*(w1-0.2),S[i][1]+nz*(w1-0.2)]; groundLine(scene,LM,a0[0],a0[1],a1[0],a1[1],0.1); }
+        if((i-i0)%2===1&&(k++)%3!==1){ const c=[S[i][0]+nx*(w0+2.6),S[i][1]+nz*(w0+2.6)]; EXTRA_PARK.push([c[0],c[1],Math.atan2(nz,nx),'']); }
+        if((i-i0)%9===4){ for(const o of [w1+0.7,-(rd.w/2+1.2)]){ const lx=S[i][0]+nx*o, lz=S[i][1]+nz*o; const ly=getHeight(lx,lz); const lf=frame(lx,lz,Math.atan2(-nz,-nx)*0+a,ly); Mt.cyl(lf,0.06,0.05,0,6.2,8,lin('#a7acaf'),1,false); Mt.box(lf,-0.05,0.05,6.1,6.2,-0.05,0.05,lin('#a7acaf')); addCollider(lx,lz,0,0.25,0.25,ly-1,ly+6); if(typeof LAMPS!=='undefined') LAMPS.push({x:lx,y:ly+6.1,z:lz,a}); } } }
+      // grass island with a kerb and the give-way sign where the strip starts
+      { const i=i0, nx=-T[i][1]*sd, nz=T[i][0]*sd, a=Math.atan2(T[i][1],T[i][0]); const c=[S[i][0]-T[i][0]*3.5+nx*(w0+2.5),S[i][1]-T[i][1]*3.5+nz*(w0+2.5)]; const y=getHeight(c[0],c[1]); const f=frame(c[0],c[1],a,y);
+        K.box(f,-2.8,2.8,-0.2,0.16,-2.4,2.4,KC,0.8); Hd.box(f,-2.65,2.65,0.1,0.18,-2.25,2.25,lin('#6d8f45'),0.7); Mt.cyl(frame(c[0],c[1],0,y),0.035,0.035,0,2.4,8,lin('#a7acaf'),1,false); }
+      PHOTO.churchStrip=P; } }
+  // the old plot beside the church stays grass (the car park is the strip along the road)
   // 3) gravel lot with the bus stop between the café arcade and the next house
   { const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+213,q[1]+30)<12)); if(rd){ const n=nearOnPoly(rd.P,-211,-33); const a=Math.atan2(n.tz,n.tx); const f=frame(n.x,n.z,a);
       const P=[[-8.3,-4.9],[2.6,-4.9],[2.6,-15.5],[-7.6,-15.5]].map(q=>{ const p=f(q[0],0,q[1]); return [p[0],p[2]]; }); paveArea(scene,P,'gravel',{ang:a,tile:5});
