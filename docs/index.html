@@ -8259,7 +8259,7 @@ async function main(){
     if(innerHeight>0 && !(Math.abs(camera.aspect-innerWidth/innerHeight)<1e-3)) onResize();
     if(GAME.started){ if(!GAME.paused){ if(PLAYER.heli) heliTick(dt); else if(PLAYER.driving) updateDriving(dt); else if(PLAYER.riding) updateRiding(dt); else updatePlayer(dt); } if(PLAYER.heli) heliCamera(camera,dt); else if(PLAYER.driving||PLAYER.riding) carCamera(camera,dt); else if(PKC.sit) pkCamera(camera); else applyCamera(camera);
       if(fr%6===0){ const inCar=PLAYER.driving||PLAYER.riding; const nv=(!inCar&&!GAME.paused)?(nearestVehicle(PLAYER.pos.x,PLAYER.pos.z,3.4,true)||((g)=>g?g.T.v:null)(grabbableCar(PLAYER.pos.x,PLAYER.pos.z,3.4))):null; GAME.nearCar=nv; const cb=document.getElementById('carbtn'); if(cb){ cb.classList.toggle('on',!!nv); const sp=cb.querySelector('span'); if(sp) sp.textContent=nv&&nv.remote?'Sjedni':'Vozi'; } const pr=document.getElementById('prompt'); if(pr){ const gg=giverNear(); const txt=GTA.dlg?'':PLAYER.heli?'E — izađi iz helikoptera (na tlu)':gg?'E — misija: '+gg.title:nearHeli()?'E — uđi u helikopter':intPrompt()?'E — '+intPrompt():(!PLAYER.driving&&nearPt(HOME_POS(),4))?(GTA.home?'E — odmori se kod kuće':'E — kupi stan Kod Ruže (800 €)'):PLAYER.driving?'E — izađi iz auta · V — pogled iz auta':PLAYER.riding?'E — izađi (suvozač) · V — pogled':(nv?(nv.remote?'E — sjedni kao suvozač':(nv.truck?'E — uđi u vatrogasno vozilo':nv.bike?'E — sjedni na bicikl':nv.label?'E — uđi u '+nv.label:'E — uđi u auto')):(nearValentina()?'E — naruči kod Valentine':nearBar()?'E — naruči piće na šanku':(nearPoker()?'E — sjedni za poker':(LANDMARKS.churchDoor&&Math.hypot(PLAYER.pos.x-LANDMARKS.churchDoor.x,PLAYER.pos.z-LANDMARKS.churchDoor.z)<7?'Crkva je otvorena — samo uđi ⛪':'')))); if(pr.dataset.t!==txt){ pr.dataset.t=txt; pr.innerHTML=promptHTML(txt); } pr.classList.toggle('on',!!txt); } }
-      netTick(dt); occupantTick(); npcTick(dt); lifeTick(dt); gtaTick(dt); gta2Tick(dt); owTick(dt); modelsTick(); combatTick(dt); weaponTick(dt); tpsTick(dt); pokerTick(dt); try{ intTick(dt); }catch(e){ console.warn(e); } try{ creekTick(dt); lightsTick(); radioTick(dt); }catch(e){} try{ parkedTick(); }catch(e){ console.warn("parked",e); } try{ lawTick(dt); }catch(e){ console.warn('law',e); } try{ homeTick(dt); storyTick(dt); voicesTick(dt); }catch(e){ console.warn('story',e); } humansTick(dt); tpsLate(); try{ lawLate(); }catch(e){ console.warn('lawLate',e); } if(COMBAT.hold&&COMBAT.armed) fireGun(); }
+      netTick(dt); occupantTick(); npcTick(dt); lifeTick(dt); gtaTick(dt); gta2Tick(dt); owTick(dt); modelsTick(); combatTick(dt); weaponTick(dt); tpsTick(dt); pokerTick(dt); try{ intTick(dt); }catch(e){ console.warn(e); } try{ tractorTick(dt); }catch(e){} try{ creekTick(dt); lightsTick(); radioTick(dt); }catch(e){} try{ parkedTick(); }catch(e){ console.warn("parked",e); } try{ lawTick(dt); }catch(e){ console.warn('law',e); } try{ homeTick(dt); storyTick(dt); voicesTick(dt); }catch(e){ console.warn('story',e); } humansTick(dt); tpsLate(); try{ lawLate(); }catch(e){ console.warn('lawLate',e); } if(COMBAT.hold&&COMBAT.armed) fireGun(); }
     else { startCam(camera,dt); lookTick(dt); }
     const cp=GAME.started?PLAYER.pos:camera.position; VEG.uniforms.uPlayer.value.set(cp.x,cp.y,cp.z); VEG.uniforms.uTime.value=GAME.time; SKY.uni.uTime.value=GAME.time;
     if(Math.hypot(cp.x-VEG.lastRebuild.x,cp.z-VEG.lastRebuild.z)>((PLAYER.driving||PLAYER.riding)?38:14)) rebuildNearTrees(cp.x,cp.z);
@@ -11170,7 +11170,7 @@ function pristavaHouse(cs,scene,b){ const [cx,cz]=b.rect; const ang=0; const F=f
     rail(x1,z0+1.2,x1,z1); rail(x0,z1,x1,z1); localCollider(F,ang,x1-0.05,x1+0.05,z0+1.2,z1,ty-1,ty+1); localCollider(F,ang,x0,x1,z1-0.05,z1+0.05,ty-1,ty+1);
     for(let k=0;k<3;k++) St.box(F,x0+0.2,x0+1.3,yb,ty-0.17*k,z0-0.35*(k+1),z0-0.35*k,lin('#cfc9bf')); }
   // red-roofed wing behind (west, toward the barn)
-  { const wc=F(-hl+2.0,0,-hw-2.6); const wa=ang+Math.PI/2; const wf=frame(wc[0],wc[2],wa); const whl=2.8, whw=2.6, we=y0+3.0;
+  { const wc=F(-hl-2.75,0,hw-2.2); const wa=ang+Math.PI/2; const wf=frame(wc[0],wc[2],wa); const whl=2.8, whw=2.6, we=y0+3.0;
     emitWalls(cs,wf,wa,whl,whw,yb,we,'gable',38,PINK,'wall'); emitRoof(cs,wf,wa,whl,whw,we,'gable',38,0.5,0.45,lin('#b5523a'),SOF); localCollider(wf,wa,-whl,whl,-whw,whw,yb-1,we+2); }
   // flower bed along the long side, air-conditioner on the gable
   for(let k=0;k<18;k++){ const p=F(hl-0.5-k*0.45,0,-hw-0.55); lathe(Hd,frame(p[0],p[2],k,getHeight(p[0],p[2])),[[0.2,0],[0.16,0.25],[0,0.32]],6,lin(k%3===0?'#d8344a':k%3===1?'#e98a2a':'#4f7d34')); }
@@ -11179,9 +11179,9 @@ function pristavaHouse(cs,scene,b){ const [cx,cz]=b.rect; const ang=0; const F=f
 function pristavaYard(cs,scene,F,y0){ const g=(k)=>cs.get(k,PRIST.H[0],PRIST.H[1]); const Wd=g('wood'), G=g('wall'), Hd=g('hedge'), St=g('stonem');
   // the long low garage east of the house, off the uphill side road (Street View "83 Pristava"): hipped tile roof,
   // toward the main road a timber part (lattice above, brown boards below), a white block wall with a window, boards at the end
-  { const cx=-679.6, cz=127.6, a=Math.PI/2; const f=frame(cx,cz,a,0); const hl=4.8, hw=2.5; let y=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y=Math.min(y,getHeight(p[0],p[2])); } const ye=y+2.55;
+  { const cx=-689.6, cz=126.6, a=0; /* behind, in line with the house front; gable to the main road, long side to the uphill road */ const f=frame(cx,cz,a,0); const hl=4.8, hw=2.5; let y=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y=Math.min(y,getHeight(p[0],p[2])); } const ye=y+2.55;
     const BLK=lin('#e4e2dc'), WOOD=lin('#8f5a3c'), WOOD2=lin('#b07650'), DARK=lin('#5a4232'), T=g('trim'), Gs=g('glassW');
-    G.box(f,-hl,hl,y-0.6,ye,hw-0.22,hw,BLK,0.7); G.box(f,-hl,-hl+0.22,y-0.6,ye,-hw,hw,BLK,0.7); G.box(f,hl-0.22,hl,y-0.6,ye,-hw,hw,BLK,0.7); G.box(f,-hl,hl,y-0.6,y+0.02,-hw,hw,lin('#bdb9b0'),0.7);
+    G.box(f,-hl,hl,y-0.6,ye,hw-0.22,hw,BLK,0.7); G.box(f,-hl,-hl+0.22,y-0.6,ye,-hw,hw,BLK,0.7); G.box(f,hl-0.5,hl,y-0.6,ye,-0.5,0.5,BLK,0.7); for(const zz of [-hw+0.1,hw-0.1]) Wd.box(f,hl-0.2,hl,y,ye,zz-0.1,zz+0.1,lin('#7c2e22')); { const top=ye+hw*Math.tan(24*Math.PI/180); for(let z=-hw;z<hw;z+=0.2){ const h0=top-Math.abs(z+0.1)*Math.tan(24*Math.PI/180); Wd.box(f,hl-0.06,hl,ye-0.25,h0,z,z+0.19,((z+hw)/0.2|0)%2?lin('#7c2e22'):lin('#8e3a2a')); } } /* open bays with a block pillar, dark-red timber gable (photo 82) */ G.box(f,-hl,hl,y-0.6,y+0.02,-hw,hw,lin('#bdb9b0'),0.7);
     // east face (local z=-hw): boards at the north end, block wall with a window, timber with lattice toward the house
     for(let x=-hl;x<-3.5;x+=0.2) Wd.box(f,x,x+0.19,y,ye,-hw,-hw+0.06,((x+hl)/0.2|0)%2?WOOD:WOOD2,0.8);
     G.box(f,-3.5,0.35,y-0.6,ye,-hw,-hw+0.25,BLK,0.7); T.box(f,-2.25,-0.95,y+1.05,y+2.05,-hw-0.05,-hw+0.02,lin('#f6f6f2')); Gs.box(f,-2.15,-1.05,y+1.12,y+1.98,-hw-0.06,-hw-0.03,WHITE);
@@ -11189,13 +11189,66 @@ function pristavaYard(cs,scene,F,y0){ const g=(k)=>cs.get(k,PRIST.H[0],PRIST.H[1
     for(const x of [0.35,2.55,hl-0.08]) Wd.box(f,x-0.08,x+0.08,y,ye,-hw-0.02,-hw+0.12,WOOD);
     Wd.box(f,0.35,hl,y+1.12,y+1.22,-hw-0.02,-hw+0.08,WOOD); Wd.box(f,0.35,hl,ye-0.2,ye,-hw-0.02,-hw+0.1,WOOD);
     for(let k=-12;k<=18;k++){ const x0=0.35+k*0.32; for(const sd of [1,-1]){ const ax=x0, bx=x0+sd*1.1; const cl=(v)=>Math.max(0.42,Math.min(hl-0.1,v)); const A=[cl(ax),y+1.22], B=[cl(bx),ye-0.2]; if(Math.abs(A[0]-B[0])<0.05) continue; beam(Wd,f(A[0],A[1],-hw+0.02),f(B[0],B[1],-hw-0.01),0.03,WOOD2); } }
-    emitRoof(cs,f,a,hl,hw,ye,'hip',24,0.5,0.55,lin('#9a5a3c'),lin('#5a3b2a'));
-    localCollider(f,a,-hl,hl,-hw,hw,y-1,ye+1.5); }
+    emitRoof(cs,f,a,hl,hw,ye,'gable',24,0.5,0.55,lin('#9a5a3c'),lin('#5a3b2a'));
+    localCollider(f,a,-hl,hl-1.5,hw-0.25,hw,y-1,ye+1.5); localCollider(f,a,-hl,hl-1.5,-hw,-hw+0.3,y-1,ye+1.5); localCollider(f,a,-hl,-hl+0.25,-hw,hw,y-1,ye+1.5); EXTRA_PARK.push([cx+2.0,cz+1.2,0,'drive']); }
   // gravel driveway from the road to the carport and the forecourt
-  if(typeof paveArea==='function'){ paveArea(scene,[[-657,124.5],[-657,137],[-676.8,137],[-676.8,124.5]],'gravel',{tile:5}); EXTRA_PARK.push([-670.5,130.5,0,'drive']); }
+  if(typeof paveArea==='function'){ paveArea(scene,[[-657,123.5],[-657,137],[-684.3,131.2],[-684.3,123.8]],'gravel',{tile:5}); }
   // fruit orchard and flowers between the house and the road are planted in pristavaTrees()
   { const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+648,p[1]-136)<4)); if(rd){ const RP=smoothCorners(rd.P,8,2); for(let k=0;k<40;k++){ const q=[-652-k*0.9,140+k*0.95]; const n=nearOnPoly(RP,q[0],q[1]); const dx=q[0]-n.x, dz=q[1]-n.z, l=Math.hypot(dx,dz)||1; const x=n.x+dx/l*(rd.w/2+2.4), z=n.z+dz/l*(rd.w/2+2.4); lathe(Hd,frame(x,z,k,getHeight(x,z)),[[0.3,0],[0.24,0.32],[0,0.42]],6,lin(k%3===0?'#e2672e':k%3===1?'#d8344a':'#527f36')); } } } /* flower bed along the road edge (photo) */ }
 function pristavaTrees(){ const R=mulberry32(8282); let n=0; for(let x=-684;x<=-656;x+=6.5) for(let z=141;z<=170;z+=6.5){ const px=x+(R()-0.5)*2.5, pz=z+(R()-0.5)*2.5; if(!roadClear(px,pz,3)||BHASH.hit(px,pz,3)) continue; const h=3.6+R()*1.6; addTree(px,pz,h,h*0.95,colJ(new THREE.Color(R()<0.5?0x6d8f3e:0x5f8436),0.15),0); n++; } TREES.n=TREES.x.length; return n; }
+
+/* ===================== tractor: a proper Zagorje tractor (red, IMT/Zetor style) with a plough =====================
+   Built from parts (no cartoon pack): long hood with grille and side vents, exhaust stack, glazed cab with a white roof,
+   big lugged rear tyres under mudguards, small front tyres, steps, lights, a 3-point hitch and a three-share plough.
+   On farmland the plough drops and the tractor turns the soil: brown furrows are laid behind it and you earn a little. */
+const TRACT={furrow:null,n:0,cap:6000,last:null,acc:0,paid:0,dust:0};
+function tractorFurrowTex(){ const c=cvs(256,256), g=c.getContext('2d'); g.fillStyle='#5a3f2b'; g.fillRect(0,0,256,256); const R=mulberry32(31);
+  for(let i=0;i<6;i++){ const x=i*42+4; const gr=g.createLinearGradient(x,0,x+42,0); gr.addColorStop(0,'#3e2a1b'); gr.addColorStop(0.35,'#6e4f36'); gr.addColorStop(0.7,'#5d4130'); gr.addColorStop(1,'#33231a'); g.fillStyle=gr; g.fillRect(x,0,42,256); }
+  for(let i=0;i<2500;i++){ const v=R(); g.fillStyle=`rgba(${v<0.5?30:120},${v<0.5?20:90},${v<0.5?12:60},${0.15+R()*0.25})`; g.fillRect(R()*256,R()*256,1+R()*3,1+R()*2); } return mkTex(c); }
+makeTractor=function(){ const g=new THREE.Group(); const M=(c,r=0.55,m=0.15)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+  const RED=M(0xb51f1a,0.42,0.25), RED2=M(0x8e1712,0.5,0.2), WH=M(0xefefea,0.5,0.1), BLK=M(0x1d1e20,0.8,0.1), DARK=M(0x2c2d30,0.6,0.4), CHR=M(0xc9ccd0,0.25,0.9), RIM=M(0xe0b81e,0.45,0.3), GL=new THREE.MeshStandardMaterial({color:0x8fa6b4,roughness:0.05,metalness:0.1,transparent:true,opacity:0.38}), LMP=new THREE.MeshStandardMaterial({color:0xfff4d0,emissive:0xfff0c0,emissiveIntensity:0.3});
+  const box=(w,h,d,mat,x,y,z,ry=0,rz=0)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.rotation.set(0,ry,rz); m.castShadow=true; m.receiveShadow=true; g.add(m); return m; };
+  const cyl=(rt,rb,h,mat,x,y,z,ax='y',seg=14)=>{ const geo=new THREE.CylinderGeometry(rt,rb,h,seg); if(ax==='z') geo.rotateX(Math.PI/2); if(ax==='x') geo.rotateZ(Math.PI/2); const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; g.add(m); return m; };
+  // frame, engine block and long hood (front = +x)
+  box(3.0,0.32,0.62,DARK,0.35,0.62,0); box(1.75,0.62,0.86,RED,1.05,1.12,0); box(1.75,0.08,0.9,RED2,1.05,1.46,0);
+  { const geo=new THREE.CylinderGeometry(0.43,0.43,1.75,16,1,false,0,Math.PI); geo.rotateZ(Math.PI/2); geo.rotateX(Math.PI/2); const m=new THREE.Mesh(geo,RED); m.position.set(1.05,1.42,0); m.scale.set(1,0.18,1); m.castShadow=true; g.add(m); }
+  box(0.08,0.66,0.8,BLK,1.95,1.1,0); for(let k=0;k<6;k++) box(0.09,0.03,0.74,CHR,1.97,0.86+k*0.1,0); box(0.1,0.12,0.86,WH,1.97,1.48,0); // grille + badge band
+  for(const s of [-1,1]){ for(let k=0;k<5;k++) box(0.5,0.025,0.02,BLK,1.1,1.0+k*0.07,s*0.435); box(0.13,0.11,0.06,LMP,1.9,1.32,s*0.36); } // side vents, headlights
+  cyl(0.055,0.055,1.05,CHR,1.45,1.95,-0.25); cyl(0.07,0.055,0.12,BLK,1.45,2.5,-0.25); // exhaust stack
+  // cab: posts, glass, white roof, seat and wheel inside
+  const cx0=-0.95, cx1=0.25, cw=0.62; for(const [x,z] of [[cx0,cw],[cx0,-cw],[cx1,cw],[cx1,-cw]]) box(0.07,1.45,0.07,BLK,x,1.95,z);
+  box(cx1-cx0,1.3,0.02,GL,(cx0+cx1)/2,1.9,cw); box(cx1-cx0,1.3,0.02,GL,(cx0+cx1)/2,1.9,-cw); box(0.02,1.3,2*cw,GL,cx1,1.9,0); box(0.02,1.3,2*cw,GL,cx0,1.9,0);
+  box(cx1-cx0+0.22,0.09,2*cw+0.22,WH,(cx0+cx1)/2,2.7,0); box(cx1-cx0+0.1,0.05,2*cw+0.1,RED2,(cx0+cx1)/2,2.63,0); box(1.15,0.08,1.3,DARK,(cx0+cx1)/2,1.22,0);
+  box(0.42,0.08,0.44,BLK,-0.55,1.62,0); box(0.07,0.5,0.44,BLK,-0.78,1.88,0); cyl(0.19,0.19,0.03,BLK,0.0,1.95,0,'y',16).rotation.z=0.9; cyl(0.02,0.02,0.45,DARK,0.12,1.75,0).rotation.z=0.9;
+  for(const s of [-1,1]){ box(0.5,0.04,0.22,DARK,-0.35,0.95,s*0.78); box(0.5,0.04,0.22,DARK,-0.35,0.62,s*0.78); box(0.1,0.12,0.06,M(0xd62a1a,0.4),cx0-0.05,2.45,s*0.6); }
+  // mudguards over the rear wheels
+  for(const s of [-1,1]){ box(1.05,0.05,0.56,RED,-0.85,1.68,s*0.95); box(0.32,0.05,0.56,RED,-0.27,1.5,s*0.95,0,0.95); box(0.32,0.05,0.56,RED,-1.43,1.5,s*0.95,0,-0.95); box(1.1,0.75,0.04,RED2,-0.85,1.2,s*0.7); } /* flat mudguards over the rear wheels */
+  // 3-point hitch and the plough (rear = -x)
+  const pl=new THREE.Group(); pl.position.set(-1.75,0.9,0); g.add(pl); const pbox=(w,h,d,mat,x,y,z,ry=0,rx=0)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.rotation.set(rx,ry,0); m.castShadow=true; pl.add(m); return m; };
+  box(0.6,0.08,0.08,DARK,-1.5,0.85,0.35); box(0.6,0.08,0.08,DARK,-1.5,0.85,-0.35); box(0.5,0.08,0.08,DARK,-1.5,1.35,0);
+  pbox(0.12,0.12,1.9,M(0x2b4c8f,0.5,0.3),-0.3,0,0,0.5); for(let k=0;k<3;k++){ const z=-0.65+k*0.65, x=-0.3-k*0.28; pbox(0.08,0.7,0.08,M(0x2b4c8f,0.5,0.3),x,-0.38,z); pbox(0.55,0.32,0.05,CHR,x-0.2,-0.78,z+0.12,0.6,-0.25); pbox(0.3,0.05,0.12,DARK,x-0.05,-0.92,z); }
+  // wheels: big lugged rears, small fronts (spin about z like the cars)
+  const wheels=[]; const mk=(x,z,r,w,front)=>{ const wg=new THREE.Group(); wg.position.set(x,r,z); const sp=new THREE.Group(); wg.add(sp); g.add(wg);
+    const tg=new THREE.CylinderGeometry(r*0.93,r*0.93,w,24); tg.rotateX(Math.PI/2); const t=new THREE.Mesh(tg,BLK); t.castShadow=true; sp.add(t);
+    const n=front?14:20; for(let k=0;k<n;k++){ const a=k/n*TAU; for(const sd of [-1,1]){ const lug=new THREE.Mesh(new THREE.BoxGeometry(r*0.12,r*0.1,w*0.52),BLK); lug.position.set(Math.cos(a)*r*0.95,Math.sin(a)*r*0.95,sd*w*0.25); lug.rotation.set(sd*0.5,0,a); sp.add(lug); } }
+    const rg=new THREE.CylinderGeometry(r*0.55,r*0.55,w+0.02,16); rg.rotateX(Math.PI/2); sp.add(new THREE.Mesh(rg,RIM)); const hg=new THREE.CylinderGeometry(r*0.18,r*0.18,w+0.06,10); hg.rotateX(Math.PI/2); sp.add(new THREE.Mesh(hg,DARK));
+    for(let k=0;k<6;k++){ const b=new THREE.Mesh(new THREE.BoxGeometry(r*0.08,r*0.08,w+0.04),DARK); const a=k/6*TAU; b.position.set(Math.cos(a)*r*0.38,Math.sin(a)*r*0.38,0); sp.add(b); }
+    wheels.push({w:wg,spin:sp,front}); };
+  for(const s of [-1,1]){ mk(-0.85,s*0.95,0.8,0.46,false); mk(1.45,s*0.78,0.44,0.24,true); }
+  return {group:g,wheels,wb:2.3,track:1.9,len:4.1,wid:2.2,r:0.8,paint:null,col:'#b51f1a',halfL:2.05,label:'Traktor',tractor:true,plough:pl,roofY:2.75,seatY:1.2,eyeH:2.25,phys:{maxV:10.5,rev:-4,acc:3.0,brake:9,maxSteer:0.6,sv:6}}; };
+// ploughing: furrows behind the tractor on farmland
+function furrowInit(){ const n=TRACT.cap; const pos=new Float32Array(n*4*3), uv=new Float32Array(n*4*2), idx=new Uint32Array(n*6); for(let i=0;i<n;i++){ const b=i*4; idx.set([b,b+2,b+1,b+1,b+2,b+3],i*6); }
+  const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('uv',new THREE.BufferAttribute(uv,2)); geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.setDrawRange(0,0); geo.computeBoundingSphere(); geo.boundingSphere.radius=1e5;
+  const mat=new THREE.MeshStandardMaterial({map:tractorFurrowTex(),roughness:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-6}); const m=new THREE.Mesh(geo,mat); m.receiveShadow=true; m.frustumCulled=false; GAME.scene.add(m); TRACT.furrow=m; }
+function furrowAdd(a,b){ if(!TRACT.furrow) furrowInit(); const i=TRACT.n%TRACT.cap; TRACT.n++; const geo=TRACT.furrow.geometry, P=geo.attributes.position.array, U=geo.attributes.uv.array; const dx=b[0]-a[0], dz=b[1]-a[1], l=Math.hypot(dx,dz)||1; const nx=-dz/l*1.15, nz=dx/l*1.15; const v0=TRACT.n*0.6;
+  const q=[[a[0]-nx,a[1]-nz],[a[0]+nx,a[1]+nz],[b[0]-nx,b[1]-nz],[b[0]+nx,b[1]+nz]]; q.forEach((p,k)=>{ P[(i*4+k)*3]=p[0]; P[(i*4+k)*3+1]=getHeight(p[0],p[1])+0.04; P[(i*4+k)*3+2]=p[1]; U[(i*4+k)*2]=k%2; U[(i*4+k)*2+1]=v0+(k>1?0.6:0); });
+  geo.attributes.position.needsUpdate=true; geo.attributes.uv.needsUpdate=true; geo.setDrawRange(0,Math.min(TRACT.n,TRACT.cap)*6); geo.computeVertexNormals(); }
+function tractorTick(dt){ const v=PLAYER.driving; for(const o of DRIVE){ if(o.plough&&o!==v) o.plough.rotation.z+=(-0.3-o.plough.rotation.z)*Math.min(1,dt*4); }
+  if(!v||!v.tractor||!v.plough){ TRACT.last=null; return; } const s=v.st; const fx=-Math.sin(s.yaw), fz=-Math.cos(s.yaw); const hx=s.x-fx*2.6, hz=s.z-fz*2.6;
+  const field=typeof inFarmland==='function'&&inFarmland(hx,hz); const down=field&&Math.abs(s.v)>0.6&&s.v>0; v.plough.rotation.z+=((down?0:-0.3)-v.plough.rotation.z)*Math.min(1,dt*4);
+  if(!down){ TRACT.last=null; return; } if(!TRACT.last){ TRACT.last=[hx,hz]; return; } const d=Math.hypot(hx-TRACT.last[0],hz-TRACT.last[1]); if(d<1.1) return;
+  furrowAdd(TRACT.last,[hx,hz]); TRACT.last=[hx,hz]; TRACT.acc+=d; if(Math.random()<0.5) try{ puff(new THREE.Vector3(hx,getHeight(hx,hz)+0.4,hz),1.2,0x7a5a3c); }catch(e){}
+  if(TRACT.acc>60){ TRACT.acc-=60; try{ money(6,'oranje'); }catch(e){} if(!TRACT.told){ TRACT.told=true; UI.toast('🚜 Oreš njivu — svakih 60 m brazde 6 €'); } } }
 
 document.addEventListener('DOMContentLoaded',()=>{});
 (function(){ const tm=document.getElementById('tmap'), tu=document.getElementById('tmenu'); if(tm) tm.addEventListener('pointerdown',(e)=>{ e.preventDefault(); if(!GAME.started) return; openMap(!UI.mapOpen); if(!UI.mapOpen) resumeGame(); }); if(tu) tu.addEventListener('pointerdown',(e)=>{ e.preventDefault(); if(!GAME.started) return; togglePause(!GAME.paused); }); const tf=document.getElementById('tfs'); if(tf) tf.addEventListener('pointerdown',(e)=>{ e.preventDefault(); toggleFullscreen(); }); const fb=document.getElementById('fsbtn'); if(fb) fb.addEventListener('click',()=>toggleFullscreen()); const cb=document.getElementById('carbtn'); if(cb) cb.addEventListener('touchstart',e=>{ e.preventDefault(); useCarKey(); },{passive:false}); const eb=document.getElementById('exitbtn'); if(eb) eb.addEventListener('touchstart',e=>{ e.preventDefault(); if(PLAYER.heli) exitHeli(); else if(PLAYER.riding) exitRide(); else exitCar(); },{passive:false}); const pn=document.getElementById('pname'); if(pn){ try{ pn.value=localStorage.getItem('tuhelj_name')||''; }catch(e){} pn.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'&&!document.getElementById('go').disabled) startGame(); }); } const $$=(id)=>document.getElementById(id);

@@ -39,7 +39,7 @@ function pristavaHouse(cs,scene,b){ const [cx,cz]=b.rect; const ang=0; const F=f
     rail(x1,z0+1.2,x1,z1); rail(x0,z1,x1,z1); localCollider(F,ang,x1-0.05,x1+0.05,z0+1.2,z1,ty-1,ty+1); localCollider(F,ang,x0,x1,z1-0.05,z1+0.05,ty-1,ty+1);
     for(let k=0;k<3;k++) St.box(F,x0+0.2,x0+1.3,yb,ty-0.17*k,z0-0.35*(k+1),z0-0.35*k,lin('#cfc9bf')); }
   // red-roofed wing behind (west, toward the barn)
-  { const wc=F(-hl+2.0,0,-hw-2.6); const wa=ang+Math.PI/2; const wf=frame(wc[0],wc[2],wa); const whl=2.8, whw=2.6, we=y0+3.0;
+  { const wc=F(-hl-2.75,0,hw-2.2); const wa=ang+Math.PI/2; const wf=frame(wc[0],wc[2],wa); const whl=2.8, whw=2.6, we=y0+3.0;
     emitWalls(cs,wf,wa,whl,whw,yb,we,'gable',38,PINK,'wall'); emitRoof(cs,wf,wa,whl,whw,we,'gable',38,0.5,0.45,lin('#b5523a'),SOF); localCollider(wf,wa,-whl,whl,-whw,whw,yb-1,we+2); }
   // flower bed along the long side, air-conditioner on the gable
   for(let k=0;k<18;k++){ const p=F(hl-0.5-k*0.45,0,-hw-0.55); lathe(Hd,frame(p[0],p[2],k,getHeight(p[0],p[2])),[[0.2,0],[0.16,0.25],[0,0.32]],6,lin(k%3===0?'#d8344a':k%3===1?'#e98a2a':'#4f7d34')); }
@@ -48,9 +48,9 @@ function pristavaHouse(cs,scene,b){ const [cx,cz]=b.rect; const ang=0; const F=f
 function pristavaYard(cs,scene,F,y0){ const g=(k)=>cs.get(k,PRIST.H[0],PRIST.H[1]); const Wd=g('wood'), G=g('wall'), Hd=g('hedge'), St=g('stonem');
   // the long low garage east of the house, off the uphill side road (Street View "83 Pristava"): hipped tile roof,
   // toward the main road a timber part (lattice above, brown boards below), a white block wall with a window, boards at the end
-  { const cx=-679.6, cz=127.6, a=Math.PI/2; const f=frame(cx,cz,a,0); const hl=4.8, hw=2.5; let y=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y=Math.min(y,getHeight(p[0],p[2])); } const ye=y+2.55;
+  { const cx=-689.6, cz=126.6, a=0; /* behind, in line with the house front; gable to the main road, long side to the uphill road */ const f=frame(cx,cz,a,0); const hl=4.8, hw=2.5; let y=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y=Math.min(y,getHeight(p[0],p[2])); } const ye=y+2.55;
     const BLK=lin('#e4e2dc'), WOOD=lin('#8f5a3c'), WOOD2=lin('#b07650'), DARK=lin('#5a4232'), T=g('trim'), Gs=g('glassW');
-    G.box(f,-hl,hl,y-0.6,ye,hw-0.22,hw,BLK,0.7); G.box(f,-hl,-hl+0.22,y-0.6,ye,-hw,hw,BLK,0.7); G.box(f,hl-0.22,hl,y-0.6,ye,-hw,hw,BLK,0.7); G.box(f,-hl,hl,y-0.6,y+0.02,-hw,hw,lin('#bdb9b0'),0.7);
+    G.box(f,-hl,hl,y-0.6,ye,hw-0.22,hw,BLK,0.7); G.box(f,-hl,-hl+0.22,y-0.6,ye,-hw,hw,BLK,0.7); G.box(f,hl-0.5,hl,y-0.6,ye,-0.5,0.5,BLK,0.7); for(const zz of [-hw+0.1,hw-0.1]) Wd.box(f,hl-0.2,hl,y,ye,zz-0.1,zz+0.1,lin('#7c2e22')); { const top=ye+hw*Math.tan(24*Math.PI/180); for(let z=-hw;z<hw;z+=0.2){ const h0=top-Math.abs(z+0.1)*Math.tan(24*Math.PI/180); Wd.box(f,hl-0.06,hl,ye-0.25,h0,z,z+0.19,((z+hw)/0.2|0)%2?lin('#7c2e22'):lin('#8e3a2a')); } } /* open bays with a block pillar, dark-red timber gable (photo 82) */ G.box(f,-hl,hl,y-0.6,y+0.02,-hw,hw,lin('#bdb9b0'),0.7);
     // east face (local z=-hw): boards at the north end, block wall with a window, timber with lattice toward the house
     for(let x=-hl;x<-3.5;x+=0.2) Wd.box(f,x,x+0.19,y,ye,-hw,-hw+0.06,((x+hl)/0.2|0)%2?WOOD:WOOD2,0.8);
     G.box(f,-3.5,0.35,y-0.6,ye,-hw,-hw+0.25,BLK,0.7); T.box(f,-2.25,-0.95,y+1.05,y+2.05,-hw-0.05,-hw+0.02,lin('#f6f6f2')); Gs.box(f,-2.15,-1.05,y+1.12,y+1.98,-hw-0.06,-hw-0.03,WHITE);
@@ -58,10 +58,10 @@ function pristavaYard(cs,scene,F,y0){ const g=(k)=>cs.get(k,PRIST.H[0],PRIST.H[1
     for(const x of [0.35,2.55,hl-0.08]) Wd.box(f,x-0.08,x+0.08,y,ye,-hw-0.02,-hw+0.12,WOOD);
     Wd.box(f,0.35,hl,y+1.12,y+1.22,-hw-0.02,-hw+0.08,WOOD); Wd.box(f,0.35,hl,ye-0.2,ye,-hw-0.02,-hw+0.1,WOOD);
     for(let k=-12;k<=18;k++){ const x0=0.35+k*0.32; for(const sd of [1,-1]){ const ax=x0, bx=x0+sd*1.1; const cl=(v)=>Math.max(0.42,Math.min(hl-0.1,v)); const A=[cl(ax),y+1.22], B=[cl(bx),ye-0.2]; if(Math.abs(A[0]-B[0])<0.05) continue; beam(Wd,f(A[0],A[1],-hw+0.02),f(B[0],B[1],-hw-0.01),0.03,WOOD2); } }
-    emitRoof(cs,f,a,hl,hw,ye,'hip',24,0.5,0.55,lin('#9a5a3c'),lin('#5a3b2a'));
-    localCollider(f,a,-hl,hl,-hw,hw,y-1,ye+1.5); }
+    emitRoof(cs,f,a,hl,hw,ye,'gable',24,0.5,0.55,lin('#9a5a3c'),lin('#5a3b2a'));
+    localCollider(f,a,-hl,hl-1.5,hw-0.25,hw,y-1,ye+1.5); localCollider(f,a,-hl,hl-1.5,-hw,-hw+0.3,y-1,ye+1.5); localCollider(f,a,-hl,-hl+0.25,-hw,hw,y-1,ye+1.5); EXTRA_PARK.push([cx+2.0,cz+1.2,0,'drive']); }
   // gravel driveway from the road to the carport and the forecourt
-  if(typeof paveArea==='function'){ paveArea(scene,[[-657,124.5],[-657,137],[-676.8,137],[-676.8,124.5]],'gravel',{tile:5}); EXTRA_PARK.push([-670.5,130.5,0,'drive']); }
+  if(typeof paveArea==='function'){ paveArea(scene,[[-657,123.5],[-657,137],[-684.3,131.2],[-684.3,123.8]],'gravel',{tile:5}); }
   // fruit orchard and flowers between the house and the road are planted in pristavaTrees()
   { const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+648,p[1]-136)<4)); if(rd){ const RP=smoothCorners(rd.P,8,2); for(let k=0;k<40;k++){ const q=[-652-k*0.9,140+k*0.95]; const n=nearOnPoly(RP,q[0],q[1]); const dx=q[0]-n.x, dz=q[1]-n.z, l=Math.hypot(dx,dz)||1; const x=n.x+dx/l*(rd.w/2+2.4), z=n.z+dz/l*(rd.w/2+2.4); lathe(Hd,frame(x,z,k,getHeight(x,z)),[[0.3,0],[0.24,0.32],[0,0.42]],6,lin(k%3===0?'#e2672e':k%3===1?'#d8344a':'#527f36')); } } } /* flower bed along the road edge (photo) */ }
 function pristavaTrees(){ const R=mulberry32(8282); let n=0; for(let x=-684;x<=-656;x+=6.5) for(let z=141;z<=170;z+=6.5){ const px=x+(R()-0.5)*2.5, pz=z+(R()-0.5)*2.5; if(!roadClear(px,pz,3)||BHASH.hit(px,pz,3)) continue; const h=3.6+R()*1.6; addTree(px,pz,h,h*0.95,colJ(new THREE.Color(R()<0.5?0x6d8f3e:0x5f8436),0.15),0); n++; } TREES.n=TREES.x.length; return n; }
