@@ -8482,7 +8482,7 @@ function buildCars(scene){
   spawnBikes(scene);
   // the family's cars on the gravel in front of the house: grey Golf V and black Passat
   if(PHOTO.F&&PHOTO.b){ const F=PHOTO.F, hw=5; for(const [x,type,col,lab] of [[-5.4,'hatch','#8e9296','Golf V'],[-0.6,'sedan','#15171a','Passat']]){ const q=F(x,0,hw+3.15), d=F(x+1,0,hw+3.15); const v=makeCarGroup(type,col); v.label=lab; placeVehicle(scene,v,q[0],q[2],faceYaw(d[0]-q[0],d[2]-q[2])); } }
-  if(LANDMARKS.aptF){ const {F,ang}=LANDMARKS.aptF; const q=F(-8.7,0,0.6), d=F(-8.7,0,-4); const v=makeCarGroup('troc','#e4e5e3','#686b6f'); /* the grey-and-white T-Roc parked in the pub yard */ v.label='T-Roc'; placeVehicle(scene,v,q[0],q[2],faceYaw(d[0]-q[0],d[2]-q[2])); }
+  if(LANDMARKS.aptF){ const {F,ang}=LANDMARKS.aptF; let q=F(-8.7,0,0.6), d=F(-8.7,0,-4); if(PUBYARD.troc){ q=[PUBYARD.troc[0][0],0,PUBYARD.troc[0][1]]; d=[PUBYARD.troc[1][0],0,PUBYARD.troc[1][1]]; } const v=makeCarGroup('troc','#e4e5e3','#686b6f'); /* the grey-and-white T-Roc parked in the pub yard */ v.label='T-Roc'; placeVehicle(scene,v,q[0],q[2],faceYaw(d[0]-q[0],d[2]-q[2])); }
   const fire=findB(b=>b.k==='fire'); if(fire && LANDMARKS.fire){ const Lf=LANDMARKS.fire; const dx=fire.rect[0]-Lf.x, dz=fire.rect[1]-Lf.z; const dl=Math.hypot(dx,dz); const ux=dx/dl, uz=dz/dl; const px=Lf.x+ux*5.5+(-uz)*6.0, pz=Lf.z+uz*5.5+ux*6.0; const yaw=Math.atan2(ux,uz); const v=makeFireTruck(); placeVehicle(scene,v,px,pz,yaw); }
   try{ if(typeof placeTractors==='function') placeTractors(scene); }catch(e){ console.warn('traktori',e); }
   for(const v of DRIVE){ freeSpot(v); poseVehicle(v); }
@@ -10351,17 +10351,18 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   // drop OSM houses between that lane and the meadow
   { const lane=ROADS.find(r=>r.t==='unclassified'&&r.P.some(p=>Math.hypot(p[0]+434,p[1]+119)<12)); if(lane){ const laneZ=(x)=>{ let best=null,bd=1e9; for(let i=0;i<lane.P.length-1;i++){ const a=lane.P[i], b=lane.P[i+1]; if((x-a[0])*(x-b[0])<=0){ const t=(x-a[0])/((b[0]-a[0])||1e-6); return a[1]+(b[1]-a[1])*t; } const d=Math.min(Math.abs(x-a[0]),Math.abs(x-b[0])); if(d<bd){ bd=d; best=Math.abs(x-a[0])<Math.abs(x-b[0])?a[1]:b[1]; } } return best; };
       for(let i=D.bld.length-1;i>=0;i--){ const q=D.bld[i]; if(q.n) continue; const r0=q.r[0]; if(r0[0]<-445||r0[0]>-280) continue; const lz=laneZ(r0[0]); if(lz===null) continue; if(r0[1]>lz+4&&r0[1]<lz+70) D.bld.splice(i,1); } } }
-  // Kafić Putniku (Mapillary 296128785453428 from the north, 924510798093512 from the bus stop, Street View "6/28/38 Tuhelj"):
-  // the white two-storey house stands with its long side on the road from the north (awnings over the ground-floor windows),
-  // its north gable (diamond window) toward the walled yard, its south gable toward the junction; the grey arcaded annex
-  // wraps the south end and runs east along the main road to the gravel lot with the bus stop.
-  { const c=D.bld.find(q=>q.k==='cafe'); if(c){ const r=c.r[0]; let cx=-241.35, cz=-54.7; const A=Math.PI/2, ca=Math.cos(A), sa=Math.sin(A);
-      // keep every corner of the house and the arcade off the carriageway and its pavement
-      const LOC=[[-10.5,-5.25],[-10.5,4.25],[3.6,4.25],[8.4,4.0],[10.4,2.0],[10.4,-15.6],[3.6,-15.6],[0,4.25],[10.4,-6],[10.4,-11]]; const RS=ROADS.filter(q=>q.t==='secondary'&&q.P.some(p=>Math.hypot(p[0]+245,p[1]+50)<40)).map(q=>({P:smoothCorners(q.P,8,2),w:q.w}));
-      const bad=(x0,z0)=>{ let J=0; for(const [lx,lz] of LOC){ const x=x0+ca*lx-sa*lz, z=z0+sa*lx+ca*lz; for(const R of RS){ const d=nearOnPoly(R.P,x,z).d; const need=R.w/2+1.9; if(d<need) J+=(need-d)**2; } } return J; };
-      let best=[cx,cz], bj=bad(cx,cz); for(let dx=0;dx<=8;dx+=0.25) for(let dz=-8;dz<=2;dz+=0.25){ const j=bad(cx+dx,cz+dz)+0.002*(dx*dx+dz*dz); if(j<bj){ bj=j; best=[cx+dx,cz+dz]; } }
-      cx=best[0]; cz=best[1]; c.r=[[cx,cz,A,r[3],r[4],r[5]||15]]; if(c.dw) c.dw=[cx+11,cz+14]; PHOTO.cafeFit={fixed:true,cx,cz,J:bj}; PUBYARD.cafeShift=[cx+241.35,cz+54.7]; }
-    const sh=PUBYARD.cafeShift||[0,0]; PUBYARD.apt=[-233.2+sh[0],-73.2+sh[1]]; PUBYARD.aptA=Math.PI/2; PUBYARD.gate=[-247.6,-68.2]; }
+  // Kafić Putniku: long side on the road from the north, arcaded annex along the main road — placed and turned so the whole
+  // building hugs the bend with just the pavement between it and the carriageway (search over turn + shift)
+  { const c=D.bld.find(q=>q.k==='cafe'); if(c){ const r=c.r[0]; const RS=ROADS.filter(q=>q.t==='secondary'&&q.P.some(p=>Math.hypot(p[0]+245,p[1]+50)<40)).map(q=>({P:smoothCorners(q.P,8,2),w:q.w}));
+      const HUG=[[-10.5,4.25],[-4,4.25],[3.6,4.25],[8.4,4.0],[10.4,2.0],[10.4,-6],[10.4,-11],[10.4,-15.6]];
+      const dist=(x,z)=>{ let d=1e9, need=5; for(const R of RS){ const q=nearOnPoly(R.P,x,z).d; if(q<d){ d=q; need=R.w/2+1.9; } } return [d,need]; };
+      const cost=(A,cx,cz)=>{ const ca=Math.cos(A), sa=Math.sin(A); let J=0; for(const [lx,lz] of HUG){ const [d,need]=dist(cx+ca*lx-sa*lz, cz+sa*lx+ca*lz); J+= d<need?300*(need-d)**2:(d-need)**2; } return J; };
+      let best=[Math.PI/2,-237.6,-57.2], bj=1e18; for(let A=Math.PI/2-0.6;A<=Math.PI/2+0.3;A+=0.03) for(let dx=-8;dx<=8;dx+=0.5) for(let dz=-8;dz<=8;dz+=0.5){ const j=cost(A,-237.6+dx,-57.2+dz); if(j<bj){ bj=j; best=[A,-237.6+dx,-57.2+dz]; } }
+      { const b0=best.slice(); for(let A=b0[0]-0.03;A<=b0[0]+0.03;A+=0.01) for(let dx=-0.5;dx<=0.5;dx+=0.125) for(let dz=-0.5;dz<=0.5;dz+=0.125){ const j=cost(A,b0[1]+dx,b0[2]+dz); if(j<bj){ bj=j; best=[A,b0[1]+dx,b0[2]+dz]; } } }
+      const [A,cx,cz]=best; c.r=[[cx,cz,A,r[3],r[4],r[5]||15]]; const ca=Math.cos(A), sa=Math.sin(A); const L=(lx,lz)=>[cx+ca*lx-sa*lz, cz+sa*lx+ca*lz];
+      if(c.dw) c.dw=L(14,-10); PHOTO.cafeFit={A,cx,cz,J:bj};
+      // the little yard right behind the pub: apartment balcony toward the gate, the grey-and-white T-Roc beside it
+      PUBYARD.apt=L(-16.5,-3.0); PUBYARD.aptA=A; PUBYARD.gate=L(-12,5.5); PUBYARD.troc=[L(-17.6,-12.7),L(-13,-12.7)]; } }
   // Street View (Oct 2026): the house beside the church does not exist — its plot is a car park
   for(let i=D.bld.length-1;i>=0;i--){ const r=D.bld[i].r[0]; if(D.bld[i].k==='house'&&Math.hypot(r[0]+309.8,r[1]+22)<3){ PHOTO.churchPark=r.slice(); D.bld.splice(i,1); } }
   // "Kod Ruže" stands inside the pub's walled yard, just behind the café (Street View "38 Tuhelj"); the gate opens to the road from Lovrečan
@@ -10748,9 +10749,10 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
     for(let k=0;k<n;k++){ const t0=k*L/n, t1=(k+1)*L/n; const mx=a[0]+dx*(t0+t1)/2/L, mz=a[1]+dz*(t0+t1)/2/L; const y=getHeight(mx,mz); const ff=frame(mx,mz,an,y); const hl=(t1-t0)/2;
       Mt.box(ff,-hl,-hl+0.06,0,h,-0.03,0.03,GRN); Mt.box(ff,-hl,hl,h-0.04,h,-0.02,0.02,GRN); Mt.box(ff,-hl,hl,0.05,0.09,-0.02,0.02,GRN); for(let x=-hl+0.1;x<hl;x+=0.1) Mt.box(ff,x-0.006,x+0.006,0.07,h-0.02,-0.006,0.006,GRN); addCollider(mx,mz,an,t1-t0,0.15,y-1,y+h); } };
   // yard north of the house: the white wall stands on the back of the pavement of the road from the north, in line with the house front
-  const NWc=L2(-10.5,4.25), R0=onWall(NWc), R1=onWall(L2(-26.5,4.25)), NE=L2(-26.5,-11.5), SE=L2(-10.5,-11.5);
-  paveArea(scene,[NWc,R0,R1,NE,SE,L2(-10.5,-5.25)],'concrete',{tile:6,roads:false}); NOHEDGE.push([(R0[0]+NE[0])/2,(R0[1]+NE[1])/2,18]);
-  const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[1.2,5.0]; if(Math.hypot(R0[0]-NWc[0],R0[1]-NWc[1])>0.3) wall(NWc,R0,1.75); wall(R0,R1,1.75,[gt,[LR-1.5,LR]]); fence(R1,NE,1.6); fence(NE,SE,1.6);
+  const NWc=L2(-10.5,4.25), R0=onWall(NWc), R1=onWall(L2(-21.5,4.25)), NE=L2(-21.5,-15.6), SE=L2(3.6,-15.6);
+  // all of it asphalt: the yard and the strip behind the house up to the arcade (no grass, photo)
+  paveArea(scene,[NWc,R0,R1,NE,SE,L2(3.6,-5.25),L2(-10.5,-5.25)],'asphalt',{tile:4,roads:false}); NOHEDGE.push([(R0[0]+NE[0])/2,(R0[1]+NE[1])/2,18]);
+  const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[1.2,5.0]; if(Math.hypot(R0[0]-NWc[0],R0[1]-NWc[1])>0.3) wall(NWc,R0,1.75); wall(R0,R1,1.75,[gt,[LR-1.5,LR]]); fence(R1,NE,1.6); fence(NE,SE,1.6); fence(SE,L2(3.6,-15.75),1.6);
   // gate wing slid open (photo "38 Tuhelj") and the blue garden gate at the north end (Mapillary)
   { const an=Math.atan2(R1[1]-R0[1],R1[0]-R0[0]); const P=(t)=>[R0[0]+(R1[0]-R0[0])*t/LR,R0[1]+(R1[1]-R0[1])*t/LR];
     for(const t of gt){ const [x,z]=P(t); const y=getHeight(x,z); const pf=frame(x,z,an,y); G.box(pf,-0.2,0.2,-0.5,1.95,-0.2,0.2,WALL); Tl.box(pf,-0.24,0.24,1.95,2.05,-0.24,0.24,CAP); addCollider(x,z,an,0.4,0.4,y-1,y+2); }
@@ -10760,12 +10762,12 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
     for(const t of [7.5,9.0]){ const [x,z]=P(t); const y=getHeight(x,z); const tf=frame(x,z,an,y); Wd.box(tf,-0.45,0.45,0,0.38,-0.75,-0.4,lin('#c46a45')); for(let k=0;k<4;k++) lathe(cs.get('hedge',x,z),frame(...(()=>{ const q=tf(-0.3+k*0.2,0,-0.58); return [q[0],q[2]]; })(),k,y+0.36),[[0.12,0],[0.09,0.22],[0,0.3]],6,lin(k%2?'#7a9a5a':'#9a7ac0')); }
     { const [x,z]=P(8.25); const y=getHeight(x,z); const bf=frame(x,z,an,y); Mt.box(bf,-0.3,0.3,0,1.0,-0.95,-0.35,lin('#1f6fd0')); Mt.box(bf,-0.33,0.33,1.0,1.06,-0.98,-0.32,lin('#1a5fb5')); } }
   // firewood stacked in front of the little white house (photo)
-  { const p=L2(-16.2,-1.2); const y=getHeight(p[0],p[1]); const lm=new THREE.MeshStandardMaterial({map:logTex(),roughness:0.95}); lm.map.repeat.set(4,1); const box=new THREE.Mesh(new THREE.BoxGeometry(0.9,1.25,5.2),lm); box.position.set(p[0],y+0.6,p[1]); box.rotation.y=-ang+Math.PI/2; box.castShadow=true; box.receiveShadow=true; scene.add(box); addCollider(p[0],p[1],ang-Math.PI/2,0.95,5.3,y-1,y+1.3); }
+  { const p=L2(-11.9,-3.0); const y=getHeight(p[0],p[1]); const lm=new THREE.MeshStandardMaterial({map:logTex(),roughness:0.95}); lm.map.repeat.set(4,1); const box=new THREE.Mesh(new THREE.BoxGeometry(0.9,1.25,4.6),lm); box.position.set(p[0],y+0.6,p[1]); box.rotation.y=-ang; box.castShadow=true; box.receiveShadow=true; scene.add(box); addCollider(p[0],p[1],ang,0.95,4.7,y-1,y+1.3); }
   // Desinić / Zagreb signpost on the house's north-west corner
   { const q=onWall(L2(-9.6,4.25)); const sx=q[0], sz=q[1]; const y=getHeight(sx,sz); const look=-Math.PI/2+0.25; Mt.cyl(frame(sx,sz,0,y),0.04,0.04,0,3.2,8,lin('#9ba0a4'),1,false); addCollider(sx,sz,0,0.15,0.15,y-1,y+3);
     const plate=(tex,w,h,yy,o)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:tex,transparent:true,alphaTest:0.3,side:THREE.DoubleSide,roughness:0.6})); m.position.set(sx+Math.cos(look)*o,y+yy,sz-Math.sin(look)*o); m.rotation.y=look; scene.add(m); };
     plate(arrowSignTex('Desinić'),1.25,0.31,2.42,0.45); plate(arrowSignTex('Zagreb'),1.25,0.31,2.05,0.45); plate(signTex(['VENTEK'],{w:384,h:128,bg:'#7a3b1e',fg:'#ffffff',border:'#ffffff',bw:6,size:64}),0.62,0.22,1.7,0); }
-  pubBackAnnex(cs,scene,cafeB,f); kodRuzeRow(cs,scene); }
+  pubBackAnnex(cs,scene,cafeB,f); }
 // "Kod Ruže": the long low white building with the red tiled roof, wooden windows and the brown door, behind the bus stop
 // on the north side of the gravel lot east of the arcade (Street View "7 Tuhelj")
 function kodRuzeRow(cs,scene){ const sh=PUBYARD.cafeShift||[0,0]; const cx=-215.8+Math.max(0,sh[0]), cz=-50.6+Math.min(0,sh[1]), ang=0.32; const f=frame(cx,cz,ang); const hl=9.0, hw=3.4; let y0=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y0=Math.min(y0,getHeight(p[0],p[2])); } y0+=0.12; const e=y0+2.75;
@@ -10819,7 +10821,7 @@ function pubFrontArcade(cs,scene,b,f,RPs,rw){ const [cx,cz,ang]=b.rect; const y0
    level meadow → bank down → water → bank up → level again. getHeight() follows the channel (you walk and drive
    into it smoothly), the coarse terrain is cut away under it by a mask, and road crossings become real bridges. */
 const CREEK={on:false,T:2.25,Bh:0.5,Dp:1.35,Wc:2.85,cell:8,cross:[]};
-const CREEK_FIX=[[-530,-52],[-500,-67],[-465,-79],[-430,-90],[-395,-100],[-360,-107],[-330,-110],[-300,-111.5],[-275,-111.8],[-262,-111.5],[-250,-111],[-240,-110.2],[-228,-109.6],[-216,-110.6],[-205,-114],[-190,-121]]; // the bridge ~12 m past the bus stop, then between the white house with the balcony and the long barn (Street View)
+const CREEK_FIX=[[-530,-52],[-500,-67],[-465,-79],[-430,-88],[-395,-95],[-360,-99],[-330,-101],[-300,-102],[-275,-101.5],[-262,-101],[-253,-101.5],[-246,-104.5],[-240,-108.5],[-232,-110.5],[-222,-111],[-212,-112.5],[-202,-116],[-190,-121]]; // the bridge ~23 m south of the bus stop and the outdoor gym, then between the house and the barn // the bridge ~12 m past the bus stop, then between the white house with the balcony and the long barn (Street View)
 function creekDP(xa,xb,za,zb,penF){ const SX=6, SZ=3; const zc=(za!==null?za:zb), Z1=zc-180, Z2=zc+180, nz=Math.round((Z2-Z1)/SZ)+1;
   const BL=[].concat(...D.bld.map(b=>b.r)); const pen=(x,z)=>{ let p=0; for(const r of BL){ const dx=x-r[0], dz=z-r[1]; if(Math.abs(dx)>30||Math.abs(dz)>30) continue; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=Math.abs(dx*c+dz*sn)-r[3]/2, lz=Math.abs(-dx*sn+dz*c)-r[4]/2; const d=Math.hypot(Math.max(lx,0),Math.max(lz,0)); if(d<7) p+=80*(1-d/7); } return p; };
   const FL=LAND.filter(l=>l.t==='farmland').map(l=>({P:l.P,bb:polyBBox(l.P)})); const field=(x,z)=>{ for(const f of FL){ if(x<f.bb[0]||x>f.bb[1]||z<f.bb[2]||z>f.bb[3]) continue; if(pointInPoly(x,z,f.P)) return 22; } return 0; }; /* keep the creek on meadows and field edges, not across ploughed land */

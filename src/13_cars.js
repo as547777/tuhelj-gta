@@ -193,7 +193,7 @@ function buildCars(scene){
   spawnBikes(scene);
   // the family's cars on the gravel in front of the house: grey Golf V and black Passat
   if(PHOTO.F&&PHOTO.b){ const F=PHOTO.F, hw=5; for(const [x,type,col,lab] of [[-5.4,'hatch','#8e9296','Golf V'],[-0.6,'sedan','#15171a','Passat']]){ const q=F(x,0,hw+3.15), d=F(x+1,0,hw+3.15); const v=makeCarGroup(type,col); v.label=lab; placeVehicle(scene,v,q[0],q[2],faceYaw(d[0]-q[0],d[2]-q[2])); } }
-  if(LANDMARKS.aptF){ const {F,ang}=LANDMARKS.aptF; const q=F(-8.7,0,0.6), d=F(-8.7,0,-4); const v=makeCarGroup('troc','#e4e5e3','#686b6f'); /* the grey-and-white T-Roc parked in the pub yard */ v.label='T-Roc'; placeVehicle(scene,v,q[0],q[2],faceYaw(d[0]-q[0],d[2]-q[2])); }
+  if(LANDMARKS.aptF){ const {F,ang}=LANDMARKS.aptF; let q=F(-8.7,0,0.6), d=F(-8.7,0,-4); if(PUBYARD.troc){ q=[PUBYARD.troc[0][0],0,PUBYARD.troc[0][1]]; d=[PUBYARD.troc[1][0],0,PUBYARD.troc[1][1]]; } const v=makeCarGroup('troc','#e4e5e3','#686b6f'); /* the grey-and-white T-Roc parked in the pub yard */ v.label='T-Roc'; placeVehicle(scene,v,q[0],q[2],faceYaw(d[0]-q[0],d[2]-q[2])); }
   const fire=findB(b=>b.k==='fire'); if(fire && LANDMARKS.fire){ const Lf=LANDMARKS.fire; const dx=fire.rect[0]-Lf.x, dz=fire.rect[1]-Lf.z; const dl=Math.hypot(dx,dz); const ux=dx/dl, uz=dz/dl; const px=Lf.x+ux*5.5+(-uz)*6.0, pz=Lf.z+uz*5.5+ux*6.0; const yaw=Math.atan2(ux,uz); const v=makeFireTruck(); placeVehicle(scene,v,px,pz,yaw); }
   try{ if(typeof placeTractors==='function') placeTractors(scene); }catch(e){ console.warn('traktori',e); }
   for(const v of DRIVE){ freeSpot(v); poseVehicle(v); }
