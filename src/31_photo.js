@@ -47,10 +47,10 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   // Kafić Putniku: long side on the road from the north, arcaded annex along the main road — placed and turned so the whole
   // building hugs the bend with just the pavement between it and the carriageway (search over turn + shift)
   { const c=D.bld.find(q=>q.k==='cafe'); if(c){ const r=c.r[0]; const RS=ROADS.filter(q=>q.t==='secondary'&&q.P.some(p=>Math.hypot(p[0]+245,p[1]+50)<40)).map(q=>({P:smoothCorners(q.P,8,2),w:q.w}));
-      const HUG=[[-10.5,4.25],[-4,4.25],[3.6,4.25],[8.4,4.0],[10.4,2.0],[10.4,-6],[10.4,-11],[10.4,-15.6]];
+      const HUG=[[-10.5,4.25],[-4,4.25],[3.6,4.25]], KEEP=[[8.4,4.0],[10.4,2.0],[10.4,-6],[10.4,-11],[10.4,-15.6]];
       const dist=(x,z)=>{ let d=1e9, need=5; for(const R of RS){ const q=nearOnPoly(R.P,x,z).d; if(q<d){ d=q; need=R.w/2+1.9; } } return [d,need]; };
-      const cost=(A,cx,cz)=>{ const ca=Math.cos(A), sa=Math.sin(A); let J=0; for(const [lx,lz] of HUG){ const [d,need]=dist(cx+ca*lx-sa*lz, cz+sa*lx+ca*lz); J+= d<need?300*(need-d)**2:(d-need)**2; } return J; };
-      let best=[Math.PI/2,-237.6,-57.2], bj=1e18; for(let A=Math.PI/2-0.6;A<=Math.PI/2+0.3;A+=0.03) for(let dx=-8;dx<=8;dx+=0.5) for(let dz=-8;dz<=8;dz+=0.5){ const j=cost(A,-237.6+dx,-57.2+dz); if(j<bj){ bj=j; best=[A,-237.6+dx,-57.2+dz]; } }
+      const cost=(A,cx,cz)=>{ const ca=Math.cos(A), sa=Math.sin(A); let J=0; for(const [lx,lz] of HUG){ const [d,need]=dist(cx+ca*lx-sa*lz, cz+sa*lx+ca*lz); J+= d<need?300*(need-d)**2:(d-need)**2; } for(const [lx,lz] of KEEP){ const [d,need]=dist(cx+ca*lx-sa*lz, cz+sa*lx+ca*lz); if(d<need) J+=300*(need-d)**2; } return J; }; /* the long front parallel to the road from the north, the arcade just kept off the carriageway */
+      let best=[Math.PI/2,-237.6,-57.2], bj=1e18; const RD=Math.atan2(16,3); for(let A=RD-0.06;A<=RD+0.06;A+=0.02) for(let dx=-8;dx<=8;dx+=0.5) for(let dz=-8;dz<=8;dz+=0.5){ const j=cost(A,-237.6+dx,-57.2+dz); if(j<bj){ bj=j; best=[A,-237.6+dx,-57.2+dz]; } }
       { const b0=best.slice(); for(let A=b0[0]-0.03;A<=b0[0]+0.03;A+=0.01) for(let dx=-0.5;dx<=0.5;dx+=0.125) for(let dz=-0.5;dz<=0.5;dz+=0.125){ const j=cost(A,b0[1]+dx,b0[2]+dz); if(j<bj){ bj=j; best=[A,b0[1]+dx,b0[2]+dz]; } } }
       const [A,cx,cz]=best; c.r=[[cx,cz,A,r[3],r[4],r[5]||15]]; const ca=Math.cos(A), sa=Math.sin(A); const L=(lx,lz)=>[cx+ca*lx-sa*lz, cz+sa*lx+ca*lz];
       if(c.dw) c.dw=L(14,-10); PHOTO.cafeFit={A,cx,cz,J:bj};

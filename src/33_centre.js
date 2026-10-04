@@ -52,18 +52,21 @@ function photoPaving(cs,scene){
   // 2) the church car park (Street View "35 Tuhelj"): on the grass between the church paving and Ultra, entered from the church road —
   //    an asphalt lane with a strip of granite setts beside it, cars nose-in, granite kerbs, green mesh fence, street lamps; church on the other side
   { const ch=BLD.find(b=>b.k==='church'); const sv=ROADS.find(r=>r.t==='service'&&r.P.some(q=>Math.hypot(q[0]+273,q[1]+11)<2)); if(ch&&sv){
-      const zL=-24.5, xE=nearOnPoly(sv.P,-266,zL).x+1.0, xW=-303; const a=0; const LW=5.0, PD=5.2; const skip=(x,z)=>(PHOTO.churchPave&&pointInPoly(x,z,PHOTO.churchPave))||bigHit(x,z,0.3);
+      const zL=-24.5, xE=nearOnPoly(sv.P,-266,zL).x-sv.w/2-0.05, xW=-303; /* the lane stops at the edge of the church road */ const a=0; const LW=5.0, PD=5.2; const skip=(x,z)=>(PHOTO.churchPave&&pointInPoly(x,z,PHOTO.churchPave))||bigHit(x,z,0.3);
       paveArea(scene,[[xE,zL-LW/2],[xW,zL-LW/2],[xW,zL+LW/2],[xE,zL+LW/2]],'asphalt',{tile:4,roads:true,skip});
-      const z0=zL+LW/2, z1=z0+PD; paveArea(scene,[[xE-4,z0],[xW+1,z0],[xW+1,z1],[xE-4,z1]],'setts',{tile:3,roads:true,lift:0.06,skip});
+      const z0=zL+LW/2, z1=z0+PD; paveArea(scene,[[xE-4,z0],[xW+7,z0],[xW+7,z1],[xE-4,z1]],'setts',{tile:3,roads:true,lift:0.06,skip});
       const K=cs.get('curb',-285,-24), Mt=cs.get('metal',-285,-24), Hd=cs.get('hedge',-285,-24); const KC=lin('#d6d3cc'), FG=lin('#2f6b45');
       const LM=new THREE.MeshStandardMaterial({color:0xe9e9e4,roughness:0.7,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-8}); let k=0;
-      for(let x=xE-4;x>=xW+1;x-=2.6){ groundLine(scene,LM,x,z0+0.3,x,z1-0.2,0.1); const y=getHeight(x,z1+0.15); K.box(frame(x-1.3,z1+0.15,0,y),-1.3,1.3,-0.2,0.18,-0.12,0.12,KC,0.8);
+      for(let x=xE-4;x>=xW+9.6;x-=2.6){ groundLine(scene,LM,x,z0+0.3,x,z1-0.2,0.1); const y=getHeight(x,z1+0.15); K.box(frame(x-1.3,z1+0.15,0,y),-1.3,1.3,-0.2,0.18,-0.12,0.12,KC,0.8);
         const fy=getHeight(x-1.3,z1+1.1); Mt.box(frame(x-1.3,z1+1.1,0,fy),-1.3,1.3,0.05,1.45,-0.006,0.006,lin('#3b7a52')); Mt.box(frame(x,z1+1.1,0,fy),-0.03,0.03,0,1.5,-0.03,0.03,FG); addCollider(x-1.3,z1+1.1,0,2.6,0.1,fy-1,fy+1.5);
-        if(x-1.3>xW+1&&(k++)%3!==1) EXTRA_PARK.push([x-1.3,z0+2.6,Math.PI/2,'']); }
+        if(x-1.3>xW+7&&(k++)%3!==1) EXTRA_PARK.push([x-1.3,z0+2.6,Math.PI/2,'']); }
       // kerb along the church side of the lane, lamps on both sides, grass island with the sign at the entrance
-      for(let x=xE;x>=xW;x-=1.6){ const y=getHeight(x,zL-LW/2-0.12); if(!skip(x,zL-LW/2-0.12)) K.box(frame(x-0.8,zL-LW/2-0.12,0,y),-0.8,0.8,-0.2,0.16,-0.12,0.12,KC,0.8); }
+      for(let x=xE-0.9;x>=xW+3;x-=1.6){ const y=getHeight(x,zL-LW/2-0.12); if(!skip(x,zL-LW/2-0.12)) K.box(frame(x-0.8,zL-LW/2-0.12,0,y),-0.8,0.8,-0.2,0.16,-0.12,0.12,KC,0.8); }
       for(let x=xE-6;x>=xW+2;x-=13){ for(const z of [zL-LW/2-1.0,z1+2.0]){ if(skip(x,z)) continue; const ly=getHeight(x,z); Mt.cyl(frame(x,z,0,ly),0.06,0.05,0,6.2,8,lin('#a7acaf'),1,false); Mt.box(frame(x,z,0,ly),-0.05,0.05,6.1,6.2,-0.05,0.05,lin('#a7acaf')); addCollider(x,z,0,0.25,0.25,ly-1,ly+6); if(typeof LAMPS!=='undefined') LAMPS.push({x,y:ly+6.1,z,a:0}); } }
       { const c=[xE-1.6,z0+2.6]; const y=getHeight(c[0],c[1]); const f=frame(c[0],c[1],0,y); K.box(f,-1.6,1.6,-0.2,0.16,-2.4,2.4,KC,0.8); Hd.box(f,-1.45,1.45,0.1,0.18,-2.25,2.25,lin('#6d8f45'),0.7); Mt.cyl(frame(c[0],c[1],0,y),0.035,0.035,0,2.4,8,lin('#a7acaf'),1,false); }
+      // the lane goes on to the main road: an asphalt link from its west end
+      { const mr=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+323,q[1]+31)<3)); if(mr){ const RP=smoothCorners(mr.P,8,2); const n=nearOnPoly(RP,xW-6,zL-8); const ex=n.x, ez=n.z; const dx=ex-(xW+2.5), dz=ez-zL, l=Math.hypot(dx,dz)||1; const px=-dz/l*2.5, pz=dx/l*2.5;
+        paveArea(scene,[[xW+5,zL-LW/2],[ex+px*1.2,ez+pz*1.2],[ex-px*1.2,ez-pz*1.2],[xW+5,zL+LW/2]],'asphalt',{tile:4,roads:true,skip:(x,z)=>PHOTO.churchPave&&pointInPoly(x,z,PHOTO.churchPave)}); PHOTO.churchLink=[ex,ez]; } }
       NOHEDGE.push([(xE+xW)/2,zL+3,24]); PHOTO.churchStrip=true; } }
   // the old plot beside the church stays grass (the car park is the strip along the road)
   // 3) gravel lot with the bus stop between the café arcade and the next house
