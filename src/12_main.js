@@ -2,7 +2,7 @@
 const GAME={perf:{ema:16,t:0},basePR:1,started:false,paused:false,time:0,hour:16.5,q:1,touch:('ontouchstart' in window)&&matchMedia('(pointer:coarse)').matches,dragLook:false};
 const START={x:-395,z:6,look:[-300,-2]};
 const GRASSN=[16000,34000,60000];
-function detectQuality(){ if(!GAME.touch) return 2; if(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)) return 0; /* iOS Safari kills tabs that use too much memory */ const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
+function detectQuality(){ if(!GAME.touch) return 2;  const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
 function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?(GAME.touch?Math.min(devicePixelRatio,1.0):Math.min(devicePixelRatio,1)*0.85):q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(innerWidth,innerHeight);
   GAME.basePR=r.getPixelRatio(); SKY.setShadowQuality(q); { const mts=Math.min(r.capabilities.maxTextureSize||4096,GAME.ios?2048:8192); if(SKY.sun.shadow.mapSize.x>mts){ SKY.sun.shadow.mapSize.set(mts,mts); } } if(q>=1) setupPost(r); else { disposePost(); POST.enabled=false; } if(VEG.grass) VEG.grass.geometry.instanceCount=GRASSN[q]; for(const m of VEG.far){ m.count=Math.max(1,Math.floor(m.userData.full*[0.6,0.85,1][q])); } VEG.uniforms.uLodR.value=[80,110,145][q]; VEG.lastRebuild.set(1e9,0,1e9); }
 async function main(){
@@ -19,7 +19,7 @@ async function main(){
   const renderer=new THREE.WebGLRenderer({antialias:!GAME.touch,powerPreference:GAME.touch?'default':'high-performance',stencil:false});
   renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.92;
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.25)); renderer.setSize(innerWidth,innerHeight); $('view').appendChild(renderer.domElement);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.25)); renderer.setSize(innerWidth,innerHeight); $('view').appendChild(renderer.domElement); renderer.domElement.addEventListener('webglcontextlost',e=>e.preventDefault(),false); /* let the browser give the context back (iOS drops it when the tab is in the background) */
   ANISO=Math.min(8,renderer.capabilities.getMaxAnisotropy()); GAME.renderer=renderer;
   const scene=new THREE.Scene(); GAME.scene=scene; const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.15,7000); GAME.camera=camera;
   await step(0.03,'Učitavam teren…'); decodeHeights();
@@ -72,7 +72,7 @@ async function main(){
     TEX.waterN.offset.set(GAME.time*0.012,GAME.time*0.03);
     renderFrame(renderer,scene,camera);
     if(GAME.started){ UI.updateHUD(dt); if(fr%4===0) UI.drawMini(); if(UI.mapOpen && fr%6===0) drawMap(); }
-    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>2.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?Math.min(GAME.basePR,1.5):0.8; let np=cur; if(P2.ema>30 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.ema<17 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
+    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>2.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?0.7:0.8; /* phones may drop resolution when the frame rate sags */ let np=cur; if(P2.ema>30 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.ema<17 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
   };
   const loop=(t)=>{ requestAnimationFrame(loop); GAME.frame(t); };
   if(!window.__NOLOOP) requestAnimationFrame(loop);

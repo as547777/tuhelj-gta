@@ -5758,7 +5758,7 @@ class ChunkSet {
   get(matKey, x, z){ const k=matKey+'|'+Math.floor(x/this.tile)+'|'+Math.floor(z/this.tile); let g=this.map.get(k); if(!g){ g=new GB(); g.matKey=matKey; this.map.set(k,g);} return g; }
   meshes(mats, opts={}){
     const out=[];
-    for(const [k,g] of this.map){ if(g.count===0) continue; const geo=g.geometry(); if(typeof GAME!=='undefined'&&GAME.touch){ for(const at of Object.values(geo.attributes)) at.onUpload(function(){ this.array=new this.array.constructor(this.itemSize); }); } /* phones: static meshes live on the GPU only */ const m=new THREE.Mesh(geo, mats[g.matKey]); m.castShadow = opts.cast!==undefined? (typeof opts.cast==='function'?opts.cast(g.matKey):opts.cast) : true; m.receiveShadow=true; m.matrixAutoUpdate=false; m.updateMatrix(); out.push(m); }
+    for(const [k,g] of this.map){ if(g.count===0) continue; const geo=g.geometry(); const m=new THREE.Mesh(geo, mats[g.matKey]); m.castShadow = opts.cast!==undefined? (typeof opts.cast==='function'?opts.cast(g.matKey):opts.cast) : true; m.receiveShadow=true; m.matrixAutoUpdate=false; m.updateMatrix(); out.push(m); }
     return out;
   }
 }
@@ -8198,7 +8198,7 @@ function fmtHour(h){ const H=Math.floor(h), m=Math.round((h-H)*60); return H+':'
 const GAME={perf:{ema:16,t:0},basePR:1,started:false,paused:false,time:0,hour:16.5,q:1,touch:('ontouchstart' in window)&&matchMedia('(pointer:coarse)').matches,dragLook:false};
 const START={x:-395,z:6,look:[-300,-2]};
 const GRASSN=[16000,34000,60000];
-function detectQuality(){ if(!GAME.touch) return 2; if(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)) return 0; /* iOS Safari kills tabs that use too much memory */ const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
+function detectQuality(){ if(!GAME.touch) return 2;  const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
 function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?(GAME.touch?Math.min(devicePixelRatio,1.0):Math.min(devicePixelRatio,1)*0.85):q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(innerWidth,innerHeight);
   GAME.basePR=r.getPixelRatio(); SKY.setShadowQuality(q); { const mts=Math.min(r.capabilities.maxTextureSize||4096,GAME.ios?2048:8192); if(SKY.sun.shadow.mapSize.x>mts){ SKY.sun.shadow.mapSize.set(mts,mts); } } if(q>=1) setupPost(r); else { disposePost(); POST.enabled=false; } if(VEG.grass) VEG.grass.geometry.instanceCount=GRASSN[q]; for(const m of VEG.far){ m.count=Math.max(1,Math.floor(m.userData.full*[0.6,0.85,1][q])); } VEG.uniforms.uLodR.value=[80,110,145][q]; VEG.lastRebuild.set(1e9,0,1e9); }
 async function main(){
@@ -8215,7 +8215,7 @@ async function main(){
   const renderer=new THREE.WebGLRenderer({antialias:!GAME.touch,powerPreference:GAME.touch?'default':'high-performance',stencil:false});
   renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.92;
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.25)); renderer.setSize(innerWidth,innerHeight); $('view').appendChild(renderer.domElement);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.25)); renderer.setSize(innerWidth,innerHeight); $('view').appendChild(renderer.domElement); renderer.domElement.addEventListener('webglcontextlost',e=>e.preventDefault(),false); /* let the browser give the context back (iOS drops it when the tab is in the background) */
   ANISO=Math.min(8,renderer.capabilities.getMaxAnisotropy()); GAME.renderer=renderer;
   const scene=new THREE.Scene(); GAME.scene=scene; const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.15,7000); GAME.camera=camera;
   await step(0.03,'Učitavam teren…'); decodeHeights();
@@ -8268,7 +8268,7 @@ async function main(){
     TEX.waterN.offset.set(GAME.time*0.012,GAME.time*0.03);
     renderFrame(renderer,scene,camera);
     if(GAME.started){ UI.updateHUD(dt); if(fr%4===0) UI.drawMini(); if(UI.mapOpen && fr%6===0) drawMap(); }
-    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>2.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?Math.min(GAME.basePR,1.5):0.8; let np=cur; if(P2.ema>30 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.ema<17 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
+    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>2.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?0.7:0.8; /* phones may drop resolution when the frame rate sags */ let np=cur; if(P2.ema>30 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.ema<17 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
   };
   const loop=(t)=>{ requestAnimationFrame(loop); GAME.frame(t); };
   if(!window.__NOLOOP) requestAnimationFrame(loop);
@@ -10959,13 +10959,13 @@ function lightsInit(scene){ if(NL.on) return; NL.on=true; const n=LAMPS.length;
     const pg=new THREE.PlaneGeometry(1,1); pg.rotateX(-Math.PI/2); const pm=new THREE.MeshBasicMaterial({map:poolTex(),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-6,polygonOffsetUnits:-6}); const pools=new THREE.InstancedMesh(pg,pm,n);
     const m4=new THREE.Matrix4(), q=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0); for(let i=0;i<n;i++){ const L=LAMPS[i]; q.setFromAxisAngle(up,-L.a); m4.compose(new THREE.Vector3(L.x,L.y-0.03,L.z),q,new THREE.Vector3(1,1,1)); lens.setMatrixAt(i,m4); const gy=getHeight(L.x,L.z)+0.09; m4.compose(new THREE.Vector3(L.x,gy,L.z),new THREE.Quaternion(),new THREE.Vector3(15,1,15)); pools.setMatrixAt(i,m4); }
     lens.frustumCulled=false; pools.frustumCulled=false; pools.renderOrder=3; scene.add(lens); scene.add(pools); NL.lens=lm; NL.pool=pm; }
-  for(let i=0;i<(GAME.touch?3:8);i++){ const l=new THREE.PointLight(0xffcf96,0,26,1.7); l.position.set(0,-500,0); scene.add(l); NL.pts.push(l); }
-  const hl=new THREE.SpotLight(0xfff2dc,0,70,0.55,0.55,1.3); hl.position.set(0,-500,0); scene.add(hl); scene.add(hl.target); NL.head=hl; }
+  for(let i=0;i<(GAME.touch?0:8);i++){ const l=new THREE.PointLight(0xffcf96,0,26,1.7); l.position.set(0,-500,0); scene.add(l); NL.pts.push(l); }
+  if(!GAME.touch){ const hl=new THREE.SpotLight(0xfff2dc,0,70,0.55,0.55,1.3); hl.position.set(0,-500,0); scene.add(hl); scene.add(hl.target); NL.head=hl; } } /* phones: no real lights (every extra light is paid for on every pixel) — lamp glow and light pools only */
 function lightsTick(){ if(!NL.on) return; const n=(typeof SKY!=='undefined'&&SKY.night)||0; const k=smooth(0.15,0.6,n); if(typeof TREEFILL!=='undefined') TREEFILL.value=0.36*(1-0.85*n);
   if(NL.lens){ NL.lens.emissiveIntensity=k*4.5; NL.pool.opacity=k*0.42; }
   const cam=GAME.camera.position; if(k>0.01&&LAMPS.length){ const near=[]; for(const L of LAMPS){ const d=(L.x-cam.x)**2+(L.z-cam.z)**2; if(d<160*160) near.push([d,L]); } near.sort((a,b)=>a[0]-b[0]);
     for(let i=0;i<NL.pts.length;i++){ const l=NL.pts[i], e=near[i]; if(e){ l.position.set(e[1].x,e[1].y-0.25,e[1].z); l.intensity=k*55; } else l.intensity=0; } } else for(const l of NL.pts) l.intensity=0;
-  const v=PLAYER.driving; if(v&&k>0.05&&!v.bike){ const s=v.st; const fx=-Math.sin(s.yaw), fz=-Math.cos(s.yaw); NL.head.position.set(s.x+fx*(v.len*0.5),s.y+0.75,s.z+fz*(v.len*0.5)); NL.head.target.position.set(s.x+fx*30,s.y-0.6,s.z+fz*30); NL.head.target.updateMatrixWorld(); NL.head.intensity=k*260; } else NL.head.intensity=0; }
+  const v=PLAYER.driving; if(!NL.head) return; if(v&&k>0.05&&!v.bike){ const s=v.st; const fx=-Math.sin(s.yaw), fz=-Math.cos(s.yaw); NL.head.position.set(s.x+fx*(v.len*0.5),s.y+0.75,s.z+fz*(v.len*0.5)); NL.head.target.position.set(s.x+fx*30,s.y-0.6,s.z+fz*30); NL.head.target.updateMatrixWorld(); NL.head.intensity=k*260; } else NL.head.intensity=0; }
 
 /* ===================== car radio =====================
    Stations are synthesised live with WebAudio (no copyrighted music, nothing to download):

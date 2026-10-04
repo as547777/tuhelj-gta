@@ -97,7 +97,7 @@ class ChunkSet {
   get(matKey, x, z){ const k=matKey+'|'+Math.floor(x/this.tile)+'|'+Math.floor(z/this.tile); let g=this.map.get(k); if(!g){ g=new GB(); g.matKey=matKey; this.map.set(k,g);} return g; }
   meshes(mats, opts={}){
     const out=[];
-    for(const [k,g] of this.map){ if(g.count===0) continue; const geo=g.geometry(); if(typeof GAME!=='undefined'&&GAME.touch){ for(const at of Object.values(geo.attributes)) at.onUpload(function(){ this.array=new this.array.constructor(this.itemSize); }); } /* phones: static meshes live on the GPU only */ const m=new THREE.Mesh(geo, mats[g.matKey]); m.castShadow = opts.cast!==undefined? (typeof opts.cast==='function'?opts.cast(g.matKey):opts.cast) : true; m.receiveShadow=true; m.matrixAutoUpdate=false; m.updateMatrix(); out.push(m); }
+    for(const [k,g] of this.map){ if(g.count===0) continue; const geo=g.geometry(); const m=new THREE.Mesh(geo, mats[g.matKey]); m.castShadow = opts.cast!==undefined? (typeof opts.cast==='function'?opts.cast(g.matKey):opts.cast) : true; m.receiveShadow=true; m.matrixAutoUpdate=false; m.updateMatrix(); out.push(m); }
     return out;
   }
 }
