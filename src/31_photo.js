@@ -49,7 +49,7 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   { const c=D.bld.find(q=>q.k==='cafe'); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+232,p[1]+36)<15)&&r.P.some(p=>Math.hypot(p[0]+250,p[1]+83)<8)); if(c&&rd){ const RP=smoothCorners(rd.P,8,2).filter(p=>p[0]>-300&&p[0]<-150&&p[1]>-120&&p[1]<0); const o=c.r[0]; const cx=o[0], cz=o[1], a0=o[2];
       const LOC={WN:[-10.5,-5.25],WS:[-10.5,4.25],F1:[-3.5,4.25],F2:[3.6,4.25],A1:[8.4,4.0],A2:[10.4,2.0]}; const want=5.7; const dist=(x,z)=>nearOnPoly(RP,x,z).d;
       const cost=(d,tx,tz)=>{ const cc=Math.cos(a0+d), ss=Math.sin(a0+d); let J=0; const D2={}; for(const k in LOC){ const [lx,lz]=LOC[k]; const x=cx+tx+cc*lx-ss*lz, z=cz+tz+ss*lx+cc*lz; const dd=dist(x,z); D2[k]=dd; if(dd<want-0.4) J+=200*(want-0.4-dd)**2; }
-        J+=(D2.WN-want)**2*0.6+(D2.WS-want)**2+(D2.F1-want)**2+(D2.F2-want)**2+(D2.A1-want)**2*0.8+(D2.A2-want)**2*0.4; return J; }; /* the front (and the arcade) right on the main road, the yard wall follows the side road by itself */ /* the gable hugs the road from the north (photo), the front follows the bend as far as it can */
+        J+=(D2.WN-want)**2*3+(D2.WS-want)**2*1.5+(D2.F1-want)**2*0.15+(D2.F2-want)**2*0.1; return J; }; /* gable on the pavement of the side road (photo "38 Tuhelj"); the arcade in front reaches the main road (pubFrontArcade) */ /* the front (and the arcade) right on the main road, the yard wall follows the side road by itself */ /* the gable hugs the road from the north (photo), the front follows the bend as far as it can */
       let best=[0,0,0], bj=1e18; for(let d=-0.8;d<=0.35;d+=0.04) for(let tx=-14;tx<=14;tx+=1) for(let tz=-14;tz<=14;tz+=1){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } }
       { const b0=best.slice(); for(let d=b0[0]-0.04;d<=b0[0]+0.04;d+=0.01) for(let tx=b0[1]-1;tx<=b0[1]+1;tx+=0.25) for(let tz=b0[2]-1;tz<=b0[2]+1;tz+=0.25){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } } }
       const [rot,mx,mz]=best; const cr=Math.cos(rot), sr=Math.sin(rot); for(const r of c.r){ const dx=r[0]-cx, dz=r[1]-cz; r[0]=cx+mx+dx*cr-dz*sr; r[1]=cz+mz+dx*sr+dz*cr; r[2]+=rot; }
@@ -213,7 +213,7 @@ function homeIntInit(){ if(HOME.intDone||!INTS.length||!PHOTO.door) return; HOME
     hello(){ UI.toast('🏡 Doma si'); }}); }
 /* ---- doors you just walk through (no E): step into the green ring to go in, walk into the exit to leave ---- */
 const DOORW={away:true,cool:0};
-function doorWalkTick(){ if(!GAME.started||PLAYER.driving||PLAYER.riding||PLAYER.heli||COMBAT.dead||GTA.dlg||COMBAT.menuOpen||!INTS.length) return;
+function doorWalkTick(){ return; /* back to E at the door (player's wish) */ if(!GAME.started||PLAYER.driving||PLAYER.riding||PLAYER.heli||COMBAT.dead||GTA.dlg||COMBAT.menuOpen||!INTS.length) return;
   const P=PLAYER.pos, v=PLAYER.vel, sp=Math.hypot(v.x,v.z); if(GAME.time<DOORW.cool) return;
   const pts=[]; if(!INSIDE){ for(const I of INTS){ const d=I.door(); if(d) pts.push({x:d[0],z:d[1],r:1.25,go:()=>intEnter(I)}); } }
   else { const R=INSIDE.room; for(const s of INSIDE.spots) if(/Izađi/.test(s.t)) pts.push({x:R.x+s.x,z:R.z+s.z,r:1.0,go:()=>intExit()}); }

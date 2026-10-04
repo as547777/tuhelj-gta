@@ -83,7 +83,7 @@ function updateDriving(dt){ const v=PLAYER.driving; if(!v) return; const s=v.st;
 function carCamera(cam,dt){ const v=PLAYER.driving||PLAYER.riding; const s=v.st;
   if(!CARCAM.init||CARCAM.sy===undefined) CARCAM.sy=s.yaw; let dyw=s.yaw-CARCAM.sy; while(dyw>Math.PI) dyw-=TAU; while(dyw<-Math.PI) dyw+=TAU; CARCAM.sy+=dyw*(1-Math.exp(-dt*3.2));
   // first person = hood camera (the old box cockpit looked dark and blocky); the car body stays visible
-  const hood=CARCAM.first&&!v.bike&&!v.formula&&!v.truck&&!v.tractor;
+  const hood=false; /* V = view from the driver seat, inside the car (wheel, dash, mirrors) */
   if(!hood&&CARCAM.first&&!v.interior&&!v.formula&&!v.bike&&!v.tractor) buildCockpit(v); for(const o of DRIVE){ if(o.interior) o.interior.visible=(o===v&&CARCAM.first&&!hood); if(o.exterior){ const hide=(o===v&&CARCAM.first&&!hood); for(const m of o.exterior) if(m!==o.interior) m.visible=!hide; } }
   if(hood){ const cfx=-Math.sin(s.yaw), cfz=-Math.cos(s.yaw); const fo=(v.halfL||2.2)*0.32, eh=(v.roofY||1.45)*0.86+0.05;
     cam.position.set(s.x+cfx*fo, s.y+eh, s.z+cfz*fo); cam.rotation.set(-0.05+s.pitch*0.85+CARCAM.pitchFP, s.yaw+CARCAM.orbit, -s.roll*0.5, 'YXZ'); const f=70+Math.min(12,Math.abs(s.v||0)*0.35); if(Math.abs(cam.fov-f)>0.3){ cam.fov=f; cam.updateProjectionMatrix(); } CARCAM.init=true; if(CARCAM.t>0.7) CARCAM.pitchFP*=Math.exp(-dt*3); if(ME_AV) ME_AV.group.visible=false; return; } if(v.wheelG) v.wheelG.rotation.x=-s.steer*4.5; if(v.speedNeedle){ const kmh=Math.abs(s.v||0)*3.6; v.speedNeedle.rotation.x=-2.36+Math.min(1,kmh/220)*4.71; v.rpmNeedle.rotation.x=-2.36+Math.min(1,0.12+(kmh%40)/40*0.5+kmh/400)*4.71; }

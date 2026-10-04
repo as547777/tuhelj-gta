@@ -119,3 +119,11 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - krošnje: blago "svjetlo kroz lišće" (TREEFILL), noću slabi; garaža = otvorena drvena nadstrešnica
 - zid dvorišta brtije: stražnji zid brtije produžen ravno do pločnika (PUBYARD.corner), pa zid uz cestu — čisti pravi kut
 - drveće: daleke krošnje imaju deblo (nema lebdećih lopti); stabla čija krošnja ulazi u zgradu/garažu se uklanjaju (bigHit)
+
+## Runda: brtija po "38 Tuhelj", ulaz na E, kokpit (listopad 2026, 4)
+- vrata zgrada opet na E (doorWalkTick isključen, intPrompt pokazuje "uđi — ime")
+- V u autu = pogled iznutra (buildCockpit: volan, ruke, ploča, stupovi, retrovizor) umjesto haube
+- most/potok ~12 m dalje od stanice, između "bijele kuće s balkonom" (OSM barn -231,-120) i duge kuće (-239,-100)
+- brtija: zabat paralelan sa sporednom cestom na pločniku (cafeFit: WN×3, WS×1.5), zid u ravnini zabata;
+  ispred kuće arkada (pubFrontArcade) koja seže do pločnika glavne ceste i prati zavoj
+- krošnje svjetlije (TREEFILL 0.36)

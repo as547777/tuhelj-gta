@@ -5,7 +5,7 @@
    level meadow → bank down → water → bank up → level again. getHeight() follows the channel (you walk and drive
    into it smoothly), the coarse terrain is cut away under it by a mask, and road crossings become real bridges. */
 const CREEK={on:false,T:2.25,Bh:0.5,Dp:1.35,Wc:2.85,cell:8,cross:[]};
-const CREEK_FIX=[[-530,-52],[-500,-67],[-465,-79],[-430,-90],[-395,-100],[-360,-110],[-330,-116],[-300,-119],[-275,-119.5],[-262,-118.6],[-250,-117.7],[-243.2,-118.3],[-239.8,-121],[-239.1,-126],[-236.6,-130.2],[-231,-131.8],[-220,-132.5],[-205,-134],[-190,-137]];
+const CREEK_FIX=[[-530,-52],[-500,-67],[-465,-79],[-430,-90],[-395,-100],[-360,-107],[-330,-110],[-300,-111.5],[-275,-111.8],[-262,-111.5],[-250,-111],[-240,-110.2],[-228,-109.6],[-216,-110.6],[-205,-114],[-190,-121]]; // the bridge ~12 m past the bus stop, then between the white house with the balcony and the long barn (Street View)
 function creekDP(xa,xb,za,zb,penF){ const SX=6, SZ=3; const zc=(za!==null?za:zb), Z1=zc-180, Z2=zc+180, nz=Math.round((Z2-Z1)/SZ)+1;
   const BL=[].concat(...D.bld.map(b=>b.r)); const pen=(x,z)=>{ let p=0; for(const r of BL){ const dx=x-r[0], dz=z-r[1]; if(Math.abs(dx)>30||Math.abs(dz)>30) continue; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=Math.abs(dx*c+dz*sn)-r[3]/2, lz=Math.abs(-dx*sn+dz*c)-r[4]/2; const d=Math.hypot(Math.max(lx,0),Math.max(lz,0)); if(d<7) p+=80*(1-d/7); } return p; };
   const FL=LAND.filter(l=>l.t==='farmland').map(l=>({P:l.P,bb:polyBBox(l.P)})); const field=(x,z)=>{ for(const f of FL){ if(x<f.bb[0]||x>f.bb[1]||z<f.bb[2]||z>f.bb[3]) continue; if(pointInPoly(x,z,f.P)) return 22; } return 0; }; /* keep the creek on meadows and field edges, not across ploughed land */

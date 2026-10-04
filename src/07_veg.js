@@ -174,7 +174,7 @@ vBH=bh; vTint=texture(uAlb,suv).rgb; float cv=fract(aOff.z*7.31); vTint*= cv<0.1
   const m=new THREE.Mesh(g,mat); m.frustumCulled=false; m.castShadow=false; m.receiveShadow=true; scene.add(m); VEG.grass=m; return m;
 }
 
-const TREEFILL={value:0.2};
+const TREEFILL={value:0.36};
 function foliageFill(m){ const prev=m.onBeforeCompile; const key=m.customProgramCacheKey?m.customProgramCacheKey.bind(m):null;
   m.onBeforeCompile=(sh,r)=>{ if(prev) prev(sh,r); sh.uniforms.uFill=TREEFILL; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uFill;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*uFill;'); };
   m.customProgramCacheKey=()=>(key?key():'')+'|fill'; m.needsUpdate=true; }

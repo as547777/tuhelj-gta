@@ -7716,7 +7716,7 @@ vBH=bh; vTint=texture(uAlb,suv).rgb; float cv=fract(aOff.z*7.31); vTint*= cv<0.1
   const m=new THREE.Mesh(g,mat); m.frustumCulled=false; m.castShadow=false; m.receiveShadow=true; scene.add(m); VEG.grass=m; return m;
 }
 
-const TREEFILL={value:0.2};
+const TREEFILL={value:0.36};
 function foliageFill(m){ const prev=m.onBeforeCompile; const key=m.customProgramCacheKey?m.customProgramCacheKey.bind(m):null;
   m.onBeforeCompile=(sh,r)=>{ if(prev) prev(sh,r); sh.uniforms.uFill=TREEFILL; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uFill;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*uFill;'); };
   m.customProgramCacheKey=()=>(key?key():'')+'|fill'; m.needsUpdate=true; }
@@ -8372,7 +8372,7 @@ function updateDriving(dt){ const v=PLAYER.driving; if(!v) return; const s=v.st;
 function carCamera(cam,dt){ const v=PLAYER.driving||PLAYER.riding; const s=v.st;
   if(!CARCAM.init||CARCAM.sy===undefined) CARCAM.sy=s.yaw; let dyw=s.yaw-CARCAM.sy; while(dyw>Math.PI) dyw-=TAU; while(dyw<-Math.PI) dyw+=TAU; CARCAM.sy+=dyw*(1-Math.exp(-dt*3.2));
   // first person = hood camera (the old box cockpit looked dark and blocky); the car body stays visible
-  const hood=CARCAM.first&&!v.bike&&!v.formula&&!v.truck&&!v.tractor;
+  const hood=false; /* V = view from the driver seat, inside the car (wheel, dash, mirrors) */
   if(!hood&&CARCAM.first&&!v.interior&&!v.formula&&!v.bike&&!v.tractor) buildCockpit(v); for(const o of DRIVE){ if(o.interior) o.interior.visible=(o===v&&CARCAM.first&&!hood); if(o.exterior){ const hide=(o===v&&CARCAM.first&&!hood); for(const m of o.exterior) if(m!==o.interior) m.visible=!hide; } }
   if(hood){ const cfx=-Math.sin(s.yaw), cfz=-Math.cos(s.yaw); const fo=(v.halfL||2.2)*0.32, eh=(v.roofY||1.45)*0.86+0.05;
     cam.position.set(s.x+cfx*fo, s.y+eh, s.z+cfz*fo); cam.rotation.set(-0.05+s.pitch*0.85+CARCAM.pitchFP, s.yaw+CARCAM.orbit, -s.roll*0.5, 'YXZ'); const f=70+Math.min(12,Math.abs(s.v||0)*0.35); if(Math.abs(cam.fov-f)>0.3){ cam.fov=f; cam.updateProjectionMatrix(); } CARCAM.init=true; if(CARCAM.t>0.7) CARCAM.pitchFP*=Math.exp(-dt*3); if(ME_AV) ME_AV.group.visible=false; return; } if(v.wheelG) v.wheelG.rotation.x=-s.steer*4.5; if(v.speedNeedle){ const kmh=Math.abs(s.v||0)*3.6; v.speedNeedle.rotation.x=-2.36+Math.min(1,kmh/220)*4.71; v.rpmNeedle.rotation.x=-2.36+Math.min(1,0.12+(kmh%40)/40*0.5+kmh/400)*4.71; }
@@ -9771,7 +9771,7 @@ function intExit(){ try{ blip('door'); }catch(e){} const I=INSIDE; INSIDE=null; 
 function intSpot(){ const I=INSIDE; if(!I) return null; const dx=PLAYER.pos.x-I.room.x, dz=PLAYER.pos.z-I.room.z; for(const s of I.spots) if(Math.hypot(dx-s.x,dz-s.z)<s.r) return s; return null; }
 function intNearDoor(){ intInit(); if(INSIDE||PLAYER.driving||PLAYER.riding||PLAYER.heli) return null; for(const I of INTS){ const d=I.door(); if(d&&Math.hypot(PLAYER.pos.x-d[0],PLAYER.pos.z-d[1])<I.r) return I; } return null; }
 function intUse(){ const s=intSpot(); if(s){ s.fn(); return true; } const I=intNearDoor(); if(I){ intEnter(I); return true; } return false; }
-function intPrompt(){ if(INSIDE){ const s=intSpot(); return s&&!/Izađi/.test(s.t)?s.t:''; } return ''; } /* doors: just walk through them (doorWalkTick) */
+function intPrompt(){ if(INSIDE){ const s=intSpot(); return s?s.t:''; } const I=intNearDoor(); return I?'uđi — '+I.name:''; } /* doors open with E (walking through them made the game hitch) */
 function intIcons(){ intInit(); return INTS.filter(I=>I.id!=='pz').map(I=>[I.door(),I.ico]); }
 /* ---- building blocks ---- */
 const INT_BOX=[]; // room boxes, so the third-person camera stays inside
@@ -10356,7 +10356,7 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   { const c=D.bld.find(q=>q.k==='cafe'); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+232,p[1]+36)<15)&&r.P.some(p=>Math.hypot(p[0]+250,p[1]+83)<8)); if(c&&rd){ const RP=smoothCorners(rd.P,8,2).filter(p=>p[0]>-300&&p[0]<-150&&p[1]>-120&&p[1]<0); const o=c.r[0]; const cx=o[0], cz=o[1], a0=o[2];
       const LOC={WN:[-10.5,-5.25],WS:[-10.5,4.25],F1:[-3.5,4.25],F2:[3.6,4.25],A1:[8.4,4.0],A2:[10.4,2.0]}; const want=5.7; const dist=(x,z)=>nearOnPoly(RP,x,z).d;
       const cost=(d,tx,tz)=>{ const cc=Math.cos(a0+d), ss=Math.sin(a0+d); let J=0; const D2={}; for(const k in LOC){ const [lx,lz]=LOC[k]; const x=cx+tx+cc*lx-ss*lz, z=cz+tz+ss*lx+cc*lz; const dd=dist(x,z); D2[k]=dd; if(dd<want-0.4) J+=200*(want-0.4-dd)**2; }
-        J+=(D2.WN-want)**2*0.6+(D2.WS-want)**2+(D2.F1-want)**2+(D2.F2-want)**2+(D2.A1-want)**2*0.8+(D2.A2-want)**2*0.4; return J; }; /* the front (and the arcade) right on the main road, the yard wall follows the side road by itself */ /* the gable hugs the road from the north (photo), the front follows the bend as far as it can */
+        J+=(D2.WN-want)**2*3+(D2.WS-want)**2*1.5+(D2.F1-want)**2*0.15+(D2.F2-want)**2*0.1; return J; }; /* gable on the pavement of the side road (photo "38 Tuhelj"); the arcade in front reaches the main road (pubFrontArcade) */ /* the front (and the arcade) right on the main road, the yard wall follows the side road by itself */ /* the gable hugs the road from the north (photo), the front follows the bend as far as it can */
       let best=[0,0,0], bj=1e18; for(let d=-0.8;d<=0.35;d+=0.04) for(let tx=-14;tx<=14;tx+=1) for(let tz=-14;tz<=14;tz+=1){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } }
       { const b0=best.slice(); for(let d=b0[0]-0.04;d<=b0[0]+0.04;d+=0.01) for(let tx=b0[1]-1;tx<=b0[1]+1;tx+=0.25) for(let tz=b0[2]-1;tz<=b0[2]+1;tz+=0.25){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } } }
       const [rot,mx,mz]=best; const cr=Math.cos(rot), sr=Math.sin(rot); for(const r of c.r){ const dx=r[0]-cx, dz=r[1]-cz; r[0]=cx+mx+dx*cr-dz*sr; r[1]=cz+mz+dx*sr+dz*cr; r[2]+=rot; }
@@ -10520,7 +10520,7 @@ function homeIntInit(){ if(HOME.intDone||!INTS.length||!PHOTO.door) return; HOME
     hello(){ UI.toast('🏡 Doma si'); }}); }
 /* ---- doors you just walk through (no E): step into the green ring to go in, walk into the exit to leave ---- */
 const DOORW={away:true,cool:0};
-function doorWalkTick(){ if(!GAME.started||PLAYER.driving||PLAYER.riding||PLAYER.heli||COMBAT.dead||GTA.dlg||COMBAT.menuOpen||!INTS.length) return;
+function doorWalkTick(){ return; /* back to E at the door (player's wish) */ if(!GAME.started||PLAYER.driving||PLAYER.riding||PLAYER.heli||COMBAT.dead||GTA.dlg||COMBAT.menuOpen||!INTS.length) return;
   const P=PLAYER.pos, v=PLAYER.vel, sp=Math.hypot(v.x,v.z); if(GAME.time<DOORW.cool) return;
   const pts=[]; if(!INSIDE){ for(const I of INTS){ const d=I.door(); if(d) pts.push({x:d[0],z:d[1],r:1.25,go:()=>intEnter(I)}); } }
   else { const R=INSIDE.room; for(const s of INSIDE.spots) if(/Izađi/.test(s.t)) pts.push({x:R.x+s.x,z:R.z+s.z,r:1.0,go:()=>intExit()}); }
@@ -10745,7 +10745,7 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
   // white wall from the house corner to the pavement, then along the road with the gate
   const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[LR*0.33,LR*0.33+3.8];
   if(Math.hypot(R0[0]-WNc[0],R0[1]-WNc[1])>0.4) wall(WNc,R0,1.75); wall(R0,R1,1.75,[gt]); fence(R1,NE,1.6); fence(NE,BEc,1.6);
-  pubBackAnnex(cs,scene,cafeB,f);
+  pubBackAnnex(cs,scene,cafeB,f); try{ pubFrontArcade(cs,scene,cafeB,f,RPs,rd.w); }catch(e){ console.warn('arkada',e); }
   // gate: white pillars with red caps, one wing slid open (photo)
   { const an=Math.atan2(R1[1]-R0[1],R1[0]-R0[0]); for(const t of gt){ const x=R0[0]+(R1[0]-R0[0])*t/LR, z=R0[1]+(R1[1]-R0[1])*t/LR; const y=getHeight(x,z); const pf=frame(x,z,an,y); G.box(pf,-0.2,0.2,-0.5,1.95,-0.2,0.2,WALL); Tl.box(pf,-0.24,0.24,1.95,2.05,-0.24,0.24,CAP); addCollider(x,z,an,0.4,0.4,y-1,y+2); }
     const t=gt[1]+0.3, x=R0[0]+(R1[0]-R0[0])*t/LR, z=R0[1]+(R1[1]-R0[1])*t/LR; const y=getHeight(x,z); const lf=frame(x,z,an,y); const RUST=lin('#8a4a2c');
@@ -10780,6 +10780,24 @@ function pubBackAnnex(cs,scene,b,f){ const [cx,cz,ang]=b.rect; const y0=b.y0||ge
   const yA=y0+5.7, yB=y0+5.1, zA=z1, zB=z0-0.35, cx1=-3.8; Gs.quad(f(x0-0.2,yA,zA),f(cx1,yA,zA),f(cx1,yB,zB),f(x0-0.2,yB,zB),[0,0],[1,0],[1,1],[0,1],WHITE,[0,1,0]);
   for(let x=x0-0.2;x<=cx1+0.01;x+=1.15) beam(Mt,f(x,yA,zA),f(x,yB,zB),0.035,STEEL); beam(Mt,f(x0-0.2,yB,zB),f(cx1,yB,zB),0.05,STEEL); }
 
+// the arcade in front of the pub reaches out to the pavement of the main road and follows its bend (Street View at the bus stop):
+// grey walls with white arched windows, a glazed door at the end, red tiled hip roof
+function pubFrontArcade(cs,scene,b,f,RPs,rw){ const [cx,cz,ang]=b.rect; const y0=b.y0||getHeight(cx,cz); const yb=y0-1.2, ea=y0+3.3; const c=Math.cos(ang), s2=Math.sin(ang);
+  const toL=(x,z)=>{ const dx=x-cx, dz=z-cz; return [dx*c+dz*s2,-dx*s2+dz*c]; }; const off=rw/2+2.25;
+  const outer=(lx)=>{ const p=f(lx,0,4.25); const n=nearOnPoly(RPs,p[0],p[2]); const dx=p[0]-n.x, dz=p[2]-n.z, l=Math.hypot(dx,dz)||1; const q=[n.x+dx/l*off,n.z+dz/l*off]; return toL(q[0],q[1]); };
+  const xs=[-6.5,-2.5,1.5,5.5,10.4]; const O=xs.map(x=>{ const q=outer(x); return [x,Math.max(4.25+1.6,q[1])]; }); if(O.every(q=>q[1]<4.25+1.7)) return;
+  const H=heroGroups(cs,cx,cz); const G=H.wall, T=H.trim; const AWALL=lin('#a3a8ad'), AREV=lin('#d4d6d8'), TRIMC=lin('#f6f6f2'), FRM=lin('#c3c6ca');
+  const seg=(A,B,kind)=>{ const m=segMap(f,ang,A,B); const L=m.L; let holes=[];
+    if(kind==='arches'){ const n=Math.max(1,Math.floor(L/2.7)); for(let k=0;k<n;k++){ const cc=L*(k+0.5)/n; holes.push(holeArch(cc-0.72,cc+0.72,y0+0.45,y0+2.75,12)); } }
+    if(kind==='door'){ const cc=L*0.5; holes=[holeArch(cc-0.6,cc+0.6,y0,y0+2.5,10)]; }
+    facadeSeg(G,m,[[0,yb],[L,yb],[L,ea],[0,ea]],holes,AWALL); holes.forEach(h=>{ archWindow(H,m,h,{wc:AWALL,rc:AREV,fc:TRIMC,dep:0.25,fw:0.09}); surround(T,m,h,0.12,0.04,FRM); });
+    plinthSeg(H.plinth,m,yb,y0+0.35,kind==='door'?[[L*0.5-0.6,L*0.5+0.6]]:[],lin('#8a8f94')); T.box(m.T,-0.02,L+0.02,ea-0.2,ea,-0.02,0.06,lin('#b0b4b8'),1,0x3f^8);
+    if(kind!=='door') segCollider(f,ang,A[0],A[1],B[0],B[1],0.3,y0-3,y0+5); };
+  // end wall with the glazed door (left, toward the bend), the arched front along the road, end wall on the right
+  seg([xs[0],4.25],O[0],'door'); for(let i=0;i<O.length-1;i++) seg(O[i],O[i+1],'arches'); seg(O[O.length-1],[xs[xs.length-1],2.0],'plain');
+  const roofP=O.concat([[xs[xs.length-1],2.0],[xs[0],4.25]]); hipRoofOver(cs,f,ang,roofP,ea,28,0.5,{mat:'roofK',color:lin('#f6ece6'),soffit:lin('#8a5c3c'),fascia:lin('#6a4630'),skipEave:(a,b2)=>Math.abs(a[1]-4.25)<0.01&&Math.abs(b2[1]-4.25)<0.01});
+  addFloor(f,ang,xs[0],xs[xs.length-1],4.25,Math.min(...O.map(q=>q[1])),y0); }
+
 /* ===================== Pristavčica — the creek where the player drew it =====================
    Across the meadow from the west, under the blue-railed bridge by the bus stop / workout park (Street View
    "41 Tuhelj"), on between the house and the long barn, and away east to the Horvatska.
@@ -10787,7 +10805,7 @@ function pubBackAnnex(cs,scene,b,f){ const [cx,cz,ang]=b.rect; const y0=b.y0||ge
    level meadow → bank down → water → bank up → level again. getHeight() follows the channel (you walk and drive
    into it smoothly), the coarse terrain is cut away under it by a mask, and road crossings become real bridges. */
 const CREEK={on:false,T:2.25,Bh:0.5,Dp:1.35,Wc:2.85,cell:8,cross:[]};
-const CREEK_FIX=[[-530,-52],[-500,-67],[-465,-79],[-430,-90],[-395,-100],[-360,-110],[-330,-116],[-300,-119],[-275,-119.5],[-262,-118.6],[-250,-117.7],[-243.2,-118.3],[-239.8,-121],[-239.1,-126],[-236.6,-130.2],[-231,-131.8],[-220,-132.5],[-205,-134],[-190,-137]];
+const CREEK_FIX=[[-530,-52],[-500,-67],[-465,-79],[-430,-90],[-395,-100],[-360,-107],[-330,-110],[-300,-111.5],[-275,-111.8],[-262,-111.5],[-250,-111],[-240,-110.2],[-228,-109.6],[-216,-110.6],[-205,-114],[-190,-121]]; // the bridge ~12 m past the bus stop, then between the white house with the balcony and the long barn (Street View)
 function creekDP(xa,xb,za,zb,penF){ const SX=6, SZ=3; const zc=(za!==null?za:zb), Z1=zc-180, Z2=zc+180, nz=Math.round((Z2-Z1)/SZ)+1;
   const BL=[].concat(...D.bld.map(b=>b.r)); const pen=(x,z)=>{ let p=0; for(const r of BL){ const dx=x-r[0], dz=z-r[1]; if(Math.abs(dx)>30||Math.abs(dz)>30) continue; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=Math.abs(dx*c+dz*sn)-r[3]/2, lz=Math.abs(-dx*sn+dz*c)-r[4]/2; const d=Math.hypot(Math.max(lx,0),Math.max(lz,0)); if(d<7) p+=80*(1-d/7); } return p; };
   const FL=LAND.filter(l=>l.t==='farmland').map(l=>({P:l.P,bb:polyBBox(l.P)})); const field=(x,z)=>{ for(const f of FL){ if(x<f.bb[0]||x>f.bb[1]||z<f.bb[2]||z>f.bb[3]) continue; if(pointInPoly(x,z,f.P)) return 22; } return 0; }; /* keep the creek on meadows and field edges, not across ploughed land */
@@ -10931,7 +10949,7 @@ function lightsInit(scene){ if(NL.on) return; NL.on=true; const n=LAMPS.length;
     lens.frustumCulled=false; pools.frustumCulled=false; pools.renderOrder=3; scene.add(lens); scene.add(pools); NL.lens=lm; NL.pool=pm; }
   for(let i=0;i<(GAME.touch?3:8);i++){ const l=new THREE.PointLight(0xffcf96,0,26,1.7); l.position.set(0,-500,0); scene.add(l); NL.pts.push(l); }
   const hl=new THREE.SpotLight(0xfff2dc,0,70,0.55,0.55,1.3); hl.position.set(0,-500,0); scene.add(hl); scene.add(hl.target); NL.head=hl; }
-function lightsTick(){ if(!NL.on) return; const n=(typeof SKY!=='undefined'&&SKY.night)||0; const k=smooth(0.15,0.6,n); if(typeof TREEFILL!=='undefined') TREEFILL.value=0.2*(1-0.85*n);
+function lightsTick(){ if(!NL.on) return; const n=(typeof SKY!=='undefined'&&SKY.night)||0; const k=smooth(0.15,0.6,n); if(typeof TREEFILL!=='undefined') TREEFILL.value=0.36*(1-0.85*n);
   if(NL.lens){ NL.lens.emissiveIntensity=k*4.5; NL.pool.opacity=k*0.42; }
   const cam=GAME.camera.position; if(k>0.01&&LAMPS.length){ const near=[]; for(const L of LAMPS){ const d=(L.x-cam.x)**2+(L.z-cam.z)**2; if(d<160*160) near.push([d,L]); } near.sort((a,b)=>a[0]-b[0]);
     for(let i=0;i<NL.pts.length;i++){ const l=NL.pts[i], e=near[i]; if(e){ l.position.set(e[1].x,e[1].y-0.25,e[1].z); l.intensity=k*55; } else l.intensity=0; } } else for(const l of NL.pts) l.intensity=0;

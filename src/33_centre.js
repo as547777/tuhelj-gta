@@ -90,7 +90,7 @@ function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.
   // white wall from the house corner to the pavement, then along the road with the gate
   const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[LR*0.33,LR*0.33+3.8];
   if(Math.hypot(R0[0]-WNc[0],R0[1]-WNc[1])>0.4) wall(WNc,R0,1.75); wall(R0,R1,1.75,[gt]); fence(R1,NE,1.6); fence(NE,BEc,1.6);
-  pubBackAnnex(cs,scene,cafeB,f);
+  pubBackAnnex(cs,scene,cafeB,f); try{ pubFrontArcade(cs,scene,cafeB,f,RPs,rd.w); }catch(e){ console.warn('arkada',e); }
   // gate: white pillars with red caps, one wing slid open (photo)
   { const an=Math.atan2(R1[1]-R0[1],R1[0]-R0[0]); for(const t of gt){ const x=R0[0]+(R1[0]-R0[0])*t/LR, z=R0[1]+(R1[1]-R0[1])*t/LR; const y=getHeight(x,z); const pf=frame(x,z,an,y); G.box(pf,-0.2,0.2,-0.5,1.95,-0.2,0.2,WALL); Tl.box(pf,-0.24,0.24,1.95,2.05,-0.24,0.24,CAP); addCollider(x,z,an,0.4,0.4,y-1,y+2); }
     const t=gt[1]+0.3, x=R0[0]+(R1[0]-R0[0])*t/LR, z=R0[1]+(R1[1]-R0[1])*t/LR; const y=getHeight(x,z); const lf=frame(x,z,an,y); const RUST=lin('#8a4a2c');
@@ -124,3 +124,21 @@ function pubBackAnnex(cs,scene,b,f){ const [cx,cz,ang]=b.rect; const y0=b.y0||ge
   for(const [px,pz,yb] of [[x0+0.1,z0+0.1,y0+h+0.16],[-4.0,z0+0.1,y0-0.1]]) Mt.box(f,px-0.05,px+0.05,yb,y0+5.15,pz-0.05,pz+0.05,STEEL);
   const yA=y0+5.7, yB=y0+5.1, zA=z1, zB=z0-0.35, cx1=-3.8; Gs.quad(f(x0-0.2,yA,zA),f(cx1,yA,zA),f(cx1,yB,zB),f(x0-0.2,yB,zB),[0,0],[1,0],[1,1],[0,1],WHITE,[0,1,0]);
   for(let x=x0-0.2;x<=cx1+0.01;x+=1.15) beam(Mt,f(x,yA,zA),f(x,yB,zB),0.035,STEEL); beam(Mt,f(x0-0.2,yB,zB),f(cx1,yB,zB),0.05,STEEL); }
+
+// the arcade in front of the pub reaches out to the pavement of the main road and follows its bend (Street View at the bus stop):
+// grey walls with white arched windows, a glazed door at the end, red tiled hip roof
+function pubFrontArcade(cs,scene,b,f,RPs,rw){ const [cx,cz,ang]=b.rect; const y0=b.y0||getHeight(cx,cz); const yb=y0-1.2, ea=y0+3.3; const c=Math.cos(ang), s2=Math.sin(ang);
+  const toL=(x,z)=>{ const dx=x-cx, dz=z-cz; return [dx*c+dz*s2,-dx*s2+dz*c]; }; const off=rw/2+2.25;
+  const outer=(lx)=>{ const p=f(lx,0,4.25); const n=nearOnPoly(RPs,p[0],p[2]); const dx=p[0]-n.x, dz=p[2]-n.z, l=Math.hypot(dx,dz)||1; const q=[n.x+dx/l*off,n.z+dz/l*off]; return toL(q[0],q[1]); };
+  const xs=[-6.5,-2.5,1.5,5.5,10.4]; const O=xs.map(x=>{ const q=outer(x); return [x,Math.max(4.25+1.6,q[1])]; }); if(O.every(q=>q[1]<4.25+1.7)) return;
+  const H=heroGroups(cs,cx,cz); const G=H.wall, T=H.trim; const AWALL=lin('#a3a8ad'), AREV=lin('#d4d6d8'), TRIMC=lin('#f6f6f2'), FRM=lin('#c3c6ca');
+  const seg=(A,B,kind)=>{ const m=segMap(f,ang,A,B); const L=m.L; let holes=[];
+    if(kind==='arches'){ const n=Math.max(1,Math.floor(L/2.7)); for(let k=0;k<n;k++){ const cc=L*(k+0.5)/n; holes.push(holeArch(cc-0.72,cc+0.72,y0+0.45,y0+2.75,12)); } }
+    if(kind==='door'){ const cc=L*0.5; holes=[holeArch(cc-0.6,cc+0.6,y0,y0+2.5,10)]; }
+    facadeSeg(G,m,[[0,yb],[L,yb],[L,ea],[0,ea]],holes,AWALL); holes.forEach(h=>{ archWindow(H,m,h,{wc:AWALL,rc:AREV,fc:TRIMC,dep:0.25,fw:0.09}); surround(T,m,h,0.12,0.04,FRM); });
+    plinthSeg(H.plinth,m,yb,y0+0.35,kind==='door'?[[L*0.5-0.6,L*0.5+0.6]]:[],lin('#8a8f94')); T.box(m.T,-0.02,L+0.02,ea-0.2,ea,-0.02,0.06,lin('#b0b4b8'),1,0x3f^8);
+    if(kind!=='door') segCollider(f,ang,A[0],A[1],B[0],B[1],0.3,y0-3,y0+5); };
+  // end wall with the glazed door (left, toward the bend), the arched front along the road, end wall on the right
+  seg([xs[0],4.25],O[0],'door'); for(let i=0;i<O.length-1;i++) seg(O[i],O[i+1],'arches'); seg(O[O.length-1],[xs[xs.length-1],2.0],'plain');
+  const roofP=O.concat([[xs[xs.length-1],2.0],[xs[0],4.25]]); hipRoofOver(cs,f,ang,roofP,ea,28,0.5,{mat:'roofK',color:lin('#f6ece6'),soffit:lin('#8a5c3c'),fascia:lin('#6a4630'),skipEave:(a,b2)=>Math.abs(a[1]-4.25)<0.01&&Math.abs(b2[1]-4.25)<0.01});
+  addFloor(f,ang,xs[0],xs[xs.length-1],4.25,Math.min(...O.map(q=>q[1])),y0); }
