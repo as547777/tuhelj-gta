@@ -44,19 +44,12 @@ function photoLand(){ const A=PHOTO.axis; if(!A) return;
   // drop OSM houses between that lane and the meadow
   { const lane=ROADS.find(r=>r.t==='unclassified'&&r.P.some(p=>Math.hypot(p[0]+434,p[1]+119)<12)); if(lane){ const laneZ=(x)=>{ let best=null,bd=1e9; for(let i=0;i<lane.P.length-1;i++){ const a=lane.P[i], b=lane.P[i+1]; if((x-a[0])*(x-b[0])<=0){ const t=(x-a[0])/((b[0]-a[0])||1e-6); return a[1]+(b[1]-a[1])*t; } const d=Math.min(Math.abs(x-a[0]),Math.abs(x-b[0])); if(d<bd){ bd=d; best=Math.abs(x-a[0])<Math.abs(x-b[0])?a[1]:b[1]; } } return best; };
       for(let i=D.bld.length-1;i>=0;i--){ const q=D.bld[i]; if(q.n) continue; const r0=q.r[0]; if(r0[0]<-445||r0[0]>-280) continue; const lz=laneZ(r0[0]); if(lz===null) continue; if(r0[1]>lz+4&&r0[1]<lz+70) D.bld.splice(i,1); } } }
-  // Kafić Putniku sits right on the bend (Street View "38 Tuhelj"): its gable on the pavement of the road from the north,
-  // its long front and the arcade along the main road. Found by a small search over turn + shift.
-  { const c=D.bld.find(q=>q.k==='cafe'); const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(p=>Math.hypot(p[0]+232,p[1]+36)<15)&&r.P.some(p=>Math.hypot(p[0]+250,p[1]+83)<8)); if(c&&rd){ const RP=smoothCorners(rd.P,8,2).filter(p=>p[0]>-300&&p[0]<-150&&p[1]>-120&&p[1]<0); const o=c.r[0]; const cx=o[0], cz=o[1], a0=o[2];
-      const LOC={WN:[-10.5,-5.25],WS:[-10.5,4.25],F1:[-3.5,4.25],F2:[3.6,4.25],A1:[8.4,4.0],A2:[10.4,2.0]}; const want=5.7; const dist=(x,z)=>nearOnPoly(RP,x,z).d;
-      const cost=(d,tx,tz)=>{ const cc=Math.cos(a0+d), ss=Math.sin(a0+d); let J=0; const D2={}; for(const k in LOC){ const [lx,lz]=LOC[k]; const x=cx+tx+cc*lx-ss*lz, z=cz+tz+ss*lx+cc*lz; const dd=dist(x,z); D2[k]=dd; if(dd<want-0.4) J+=200*(want-0.4-dd)**2; }
-        J+=(D2.WN-want)**2*3+(D2.WS-want)**2*1.5+(D2.F1-want)**2*0.15+(D2.F2-want)**2*0.1; return J; }; /* gable on the pavement of the side road (photo "38 Tuhelj"); the arcade in front reaches the main road (pubFrontArcade) */ /* the front (and the arcade) right on the main road, the yard wall follows the side road by itself */ /* the gable hugs the road from the north (photo), the front follows the bend as far as it can */
-      let best=[0,0,0], bj=1e18; for(let d=-0.8;d<=0.35;d+=0.04) for(let tx=-14;tx<=14;tx+=1) for(let tz=-14;tz<=14;tz+=1){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } }
-      { const b0=best.slice(); for(let d=b0[0]-0.04;d<=b0[0]+0.04;d+=0.01) for(let tx=b0[1]-1;tx<=b0[1]+1;tx+=0.25) for(let tz=b0[2]-1;tz<=b0[2]+1;tz+=0.25){ const J=cost(d,tx,tz); if(J<bj){ bj=J; best=[d,tx,tz]; } } }
-      const [rot,mx,mz]=best; const cr=Math.cos(rot), sr=Math.sin(rot); for(const r of c.r){ const dx=r[0]-cx, dz=r[1]-cz; r[0]=cx+mx+dx*cr-dz*sr; r[1]=cz+mz+dx*sr+dz*cr; r[2]+=rot; }
-      if(c.dw){ c.dw=[c.dw[0]+mx,c.dw[1]+mz]; } PHOTO.cafeFit={rot,mx,mz,J:bj};
-      // the apartment stands in the yard behind the house, its gable (balcony) facing the gate
-      const A=c.r[0], ca=Math.cos(A[2]), sa=Math.sin(A[2]); const lp=(lx,lz)=>[A[0]+ca*lx-sa*lz, A[1]+sa*lx+ca*lz]; const toL=(x,z)=>{ const dx=x-A[0], dz=z-A[1]; return [dx*ca+dz*sa,-dx*sa+dz*ca]; }; let xr=-22; { const pts=RP.map(p=>toL(p[0],p[1])); for(let i=0;i<pts.length-1;i++){ const a=pts[i], b=pts[i+1]; if((a[1]+13.6)*(b[1]+13.6)<=0&&a[0]<0){ const t=(-13.6-a[1])/((b[1]-a[1])||1e-6); xr=a[0]+(b[0]-a[0])*t; } } }
-      const wallX=xr+rd.w/2+2.05; PUBYARD.wallX=wallX; PUBYARD.apt=lp(Math.min(1.5,Math.max(-20,wallX+11.3)),-13.6); PUBYARD.aptA=A[2]+Math.PI/2; PUBYARD.gate=lp(wallX+0.3,-11.0); } }
+  // Kafić Putniku (Mapillary 296128785453428 from the north, 924510798093512 from the bus stop, Street View "6/28/38 Tuhelj"):
+  // the white two-storey house stands with its long side on the road from the north (awnings over the ground-floor windows),
+  // its north gable (diamond window) toward the walled yard, its south gable toward the junction; the grey arcaded annex
+  // wraps the south end and runs east along the main road to the gravel lot with the bus stop.
+  { const c=D.bld.find(q=>q.k==='cafe'); if(c){ const r=c.r[0]; c.r=[[-241.35,-54.7,Math.PI/2,r[3],r[4],r[5]||15]]; if(c.dw) c.dw=[-230,-40]; PHOTO.cafeFit={fixed:true}; }
+    PUBYARD.apt=[-233.2,-73.2]; PUBYARD.aptA=Math.PI/2; PUBYARD.gate=[-247.6,-68.2]; }
   // Street View (Oct 2026): the house beside the church does not exist — its plot is a car park
   for(let i=D.bld.length-1;i>=0;i--){ const r=D.bld[i].r[0]; if(D.bld[i].k==='house'&&Math.hypot(r[0]+309.8,r[1]+22)<3){ PHOTO.churchPark=r.slice(); D.bld.splice(i,1); } }
   // "Kod Ruže" stands inside the pub's walled yard, just behind the café (Street View "38 Tuhelj"); the gate opens to the road from Lovrečan

@@ -48,25 +48,22 @@ function photoPaving(cs,scene){
     paveArea(scene,P,'red',{ang,tile:3,skip:(x,z)=>nearWater(x,z,2.6)}); PHOTO.churchPave=P;
     // granite kerb round the paving
     const K=cs.get('curb',cx,cz); const KC=lin('#b9b6ae'); for(let i=0;i<4;i++){ const a=P[i], b=P[(i+1)%4]; const dl=Math.hypot(b[0]-a[0],b[1]-a[1]); for(let t=0;t<dl;t+=1){ const x=a[0]+(b[0]-a[0])*t/dl, z=a[1]+(b[1]-a[1])*t/dl; if(onRoadOrWalk(x,z)||nearWater(x,z,2.6)) continue; const kf=frame(x,z,Math.atan2(b[1]-a[1],b[0]-a[0]),getHeight(x,z)); K.box(kf,0,Math.min(1,dl-t),-0.06,0.1,-0.09,0.09,KC); } } }
-  // 2) the church car park (Street View "35 Tuhelj"): a strip of grey granite setts along the church road, on the side away from
-  //    the church — cars nose-in, granite kerbs, a grass island with a sign where it starts, street lamps, green mesh fence behind
-  { const rd=ROADS.find(r=>r.t==='service'&&r.P.some(q=>Math.hypot(q[0]+273,q[1]+11)<2)); const ch=BLD.find(b=>b.k==='church'); if(rd&&rd.S&&ch){
-      const S=rd.S, T=rd.T; const near=(x,z)=>{ let bi=0,bd=1e9; for(let i=0;i<S.length;i++){ const d=Math.hypot(S[i][0]-x,S[i][1]-z); if(d<bd){ bd=d; bi=i; } } return bi; };
-      const i0=near(-262.5,-33), i1=near(-276,-1); const mid=Math.floor((i0+i1)/2); const sideOf=(i)=>{ const nx=-T[i][1], nz=T[i][0]; return ((ch.rect[0]-S[i][0])*nx+(ch.rect[1]-S[i][1])*nz)>0?-1:1; }; const sd=sideOf(mid);
-      const w0=rd.w/2+0.15, w1=w0+5.2; const P=[]; for(let i=i0;i<=i1;i++){ const nx=-T[i][1]*sd, nz=T[i][0]*sd; P.push([S[i][0]+nx*w0,S[i][1]+nz*w0]); } for(let i=i1;i>=i0;i--){ const nx=-T[i][1]*sd, nz=T[i][0]*sd; P.push([S[i][0]+nx*w1,S[i][1]+nz*w1]); }
-      paveArea(scene,P,'setts',{tile:3,roads:true,lift:0.06}); NOHEDGE.push([S[mid][0],S[mid][1],22]);
-      const K=cs.get('curb',S[mid][0],S[mid][1]), Mt=cs.get('metal',S[mid][0],S[mid][1]), Hd=cs.get('hedge',S[mid][0],S[mid][1]); const KC=lin('#d6d3cc'), FG=lin('#2f6b45');
+  // 2) the church car park (Street View "35 Tuhelj"): on the grass between the church paving and Ultra, entered from the church road —
+  //    an asphalt lane with a strip of granite setts beside it, cars nose-in, granite kerbs, green mesh fence, street lamps; church on the other side
+  { const ch=BLD.find(b=>b.k==='church'); const sv=ROADS.find(r=>r.t==='service'&&r.P.some(q=>Math.hypot(q[0]+273,q[1]+11)<2)); if(ch&&sv){
+      const zL=-24.5, xE=nearOnPoly(sv.P,-266,zL).x+1.0, xW=-303; const a=0; const LW=5.0, PD=5.2; const skip=(x,z)=>(PHOTO.churchPave&&pointInPoly(x,z,PHOTO.churchPave))||bigHit(x,z,0.3);
+      paveArea(scene,[[xE,zL-LW/2],[xW,zL-LW/2],[xW,zL+LW/2],[xE,zL+LW/2]],'asphalt',{tile:4,roads:true,skip});
+      const z0=zL+LW/2, z1=z0+PD; paveArea(scene,[[xE-4,z0],[xW+1,z0],[xW+1,z1],[xE-4,z1]],'setts',{tile:3,roads:true,lift:0.06,skip});
+      const K=cs.get('curb',-285,-24), Mt=cs.get('metal',-285,-24), Hd=cs.get('hedge',-285,-24); const KC=lin('#d6d3cc'), FG=lin('#2f6b45');
       const LM=new THREE.MeshStandardMaterial({color:0xe9e9e4,roughness:0.7,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-8}); let k=0;
-      for(let i=i0;i<=i1;i++){ const nx=-T[i][1]*sd, nz=T[i][0]*sd, a=Math.atan2(T[i][1],T[i][0]); const back=[S[i][0]+nx*(w1+0.15),S[i][1]+nz*(w1+0.15)]; const y=getHeight(back[0],back[1]);
-        K.box(frame(back[0],back[1],a,y),-0.8,0.8,-0.2,0.18,-0.12,0.12,KC,0.8); // kerb behind the bays
-        if(i%2===0){ const f=frame(back[0]+nx*1.2,back[1]+nz*1.2,a,getHeight(back[0]+nx*1.2,back[1]+nz*1.2)); Mt.box(f,-0.03,0.03,0,1.5,-0.03,0.03,FG); Mt.box(f,-0.75,0.75,0.05,1.45,-0.006,0.006,lin('#3b7a52')); addCollider(back[0]+nx*1.2,back[1]+nz*1.2,a,1.5,0.1,y-1,y+1.5); }
-        if((i-i0)%2===0){ const a0=[S[i][0]+nx*(w0+0.4),S[i][1]+nz*(w0+0.4)], a1=[S[i][0]+nx*(w1-0.2),S[i][1]+nz*(w1-0.2)]; groundLine(scene,LM,a0[0],a0[1],a1[0],a1[1],0.1); }
-        if((i-i0)%2===1&&(k++)%3!==1){ const c=[S[i][0]+nx*(w0+2.6),S[i][1]+nz*(w0+2.6)]; EXTRA_PARK.push([c[0],c[1],Math.atan2(nz,nx),'']); }
-        if((i-i0)%9===4){ for(const o of [w1+0.7,-(rd.w/2+1.2)]){ const lx=S[i][0]+nx*o, lz=S[i][1]+nz*o; const ly=getHeight(lx,lz); const lf=frame(lx,lz,Math.atan2(-nz,-nx)*0+a,ly); Mt.cyl(lf,0.06,0.05,0,6.2,8,lin('#a7acaf'),1,false); Mt.box(lf,-0.05,0.05,6.1,6.2,-0.05,0.05,lin('#a7acaf')); addCollider(lx,lz,0,0.25,0.25,ly-1,ly+6); if(typeof LAMPS!=='undefined') LAMPS.push({x:lx,y:ly+6.1,z:lz,a}); } } }
-      // grass island with a kerb and the give-way sign where the strip starts
-      { const i=i0, nx=-T[i][1]*sd, nz=T[i][0]*sd, a=Math.atan2(T[i][1],T[i][0]); const c=[S[i][0]-T[i][0]*3.5+nx*(w0+2.5),S[i][1]-T[i][1]*3.5+nz*(w0+2.5)]; const y=getHeight(c[0],c[1]); const f=frame(c[0],c[1],a,y);
-        K.box(f,-2.8,2.8,-0.2,0.16,-2.4,2.4,KC,0.8); Hd.box(f,-2.65,2.65,0.1,0.18,-2.25,2.25,lin('#6d8f45'),0.7); Mt.cyl(frame(c[0],c[1],0,y),0.035,0.035,0,2.4,8,lin('#a7acaf'),1,false); }
-      PHOTO.churchStrip=P; } }
+      for(let x=xE-4;x>=xW+1;x-=2.6){ groundLine(scene,LM,x,z0+0.3,x,z1-0.2,0.1); const y=getHeight(x,z1+0.15); K.box(frame(x-1.3,z1+0.15,0,y),-1.3,1.3,-0.2,0.18,-0.12,0.12,KC,0.8);
+        const fy=getHeight(x-1.3,z1+1.1); Mt.box(frame(x-1.3,z1+1.1,0,fy),-1.3,1.3,0.05,1.45,-0.006,0.006,lin('#3b7a52')); Mt.box(frame(x,z1+1.1,0,fy),-0.03,0.03,0,1.5,-0.03,0.03,FG); addCollider(x-1.3,z1+1.1,0,2.6,0.1,fy-1,fy+1.5);
+        if(x-1.3>xW+1&&(k++)%3!==1) EXTRA_PARK.push([x-1.3,z0+2.6,Math.PI/2,'']); }
+      // kerb along the church side of the lane, lamps on both sides, grass island with the sign at the entrance
+      for(let x=xE;x>=xW;x-=1.6){ const y=getHeight(x,zL-LW/2-0.12); if(!skip(x,zL-LW/2-0.12)) K.box(frame(x-0.8,zL-LW/2-0.12,0,y),-0.8,0.8,-0.2,0.16,-0.12,0.12,KC,0.8); }
+      for(let x=xE-6;x>=xW+2;x-=13){ for(const z of [zL-LW/2-1.0,z1+2.0]){ if(skip(x,z)) continue; const ly=getHeight(x,z); Mt.cyl(frame(x,z,0,ly),0.06,0.05,0,6.2,8,lin('#a7acaf'),1,false); Mt.box(frame(x,z,0,ly),-0.05,0.05,6.1,6.2,-0.05,0.05,lin('#a7acaf')); addCollider(x,z,0,0.25,0.25,ly-1,ly+6); if(typeof LAMPS!=='undefined') LAMPS.push({x,y:ly+6.1,z,a:0}); } }
+      { const c=[xE-1.6,z0+2.6]; const y=getHeight(c[0],c[1]); const f=frame(c[0],c[1],0,y); K.box(f,-1.6,1.6,-0.2,0.16,-2.4,2.4,KC,0.8); Hd.box(f,-1.45,1.45,0.1,0.18,-2.25,2.25,lin('#6d8f45'),0.7); Mt.cyl(frame(c[0],c[1],0,y),0.035,0.035,0,2.4,8,lin('#a7acaf'),1,false); }
+      NOHEDGE.push([(xE+xW)/2,zL+3,24]); PHOTO.churchStrip=true; } }
   // the old plot beside the church stays grass (the car park is the strip along the road)
   // 3) gravel lot with the bus stop between the café arcade and the next house
   { const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+213,q[1]+30)<12)); if(rd){ const n=nearOnPoly(rd.P,-211,-33); const a=Math.atan2(n.tz,n.tx); const f=frame(n.x,n.z,a);
@@ -84,45 +81,47 @@ function logTex(){ const S=512, c=cvs(S,S), g=c.getContext('2d'); g.fillStyle='#
   return mkTex(c); }
 function arrowSignTex(txt){ const c=cvs(512,128), g=c.getContext('2d'); g.clearRect(0,0,512,128); g.fillStyle='#f2c22e'; g.strokeStyle='#2b2b2b'; g.lineWidth=5; g.beginPath(); g.moveTo(6,8); g.lineTo(440,8); g.lineTo(504,64); g.lineTo(440,120); g.lineTo(6,120); g.closePath(); g.fill(); g.stroke();
   g.fillStyle='#262626'; g.font='800 78px "Arial Narrow", Arial, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(txt,225,68); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
-function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.find(b=>b.k==='apt'); if(!cafeB||!apt) return;
-  const [cx,cz,ang]=cafeB.rect; const f=frame(cx,cz,ang); const WN=f(-10.5,0,-5.25), BE=f(3.6,0,-6.0), WS=f(-10.5,0,4.25);
-  const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+250,q[1]+83)<6)); if(!rd) return;
-  // the yard is laid out in the café's own frame: the road wall continues the gable plane (it stands on the pavement, photo)
-  const L2=(x,z)=>{ const p=f(x,0,z); return [p[0],p[2]]; }; const RPs=smoothCorners(rd.P,8,2); const off=rd.w/2+2.05; const onWall=(q)=>{ const n=nearOnPoly(RPs,q[0],q[1]); const dx=q[0]-n.x, dz=q[1]-n.z, l=Math.hypot(dx,dz)||1; return [n.x+dx/l*off,n.z+dz/l*off]; };
-  // the road wall stands on the back of the pavement (photo): it follows the road, the house corner joins it
-  const WNc=L2(-10.5,-5.25), R1=onWall(L2(-10.5,-21)), NE=L2(11.2,-21), BEc=L2(10.6,-6.0); let R0=onWall(WNc);
-  // run the road wall straight on until it meets the pub's gable, so it joins the house flush (no dog-leg)
-  { const toL=(q)=>{ const dx=q[0]-cx, dz=q[1]-cz, c=Math.cos(ang), s2=Math.sin(ang); return [dx*c+dz*s2,-dx*s2+dz*c]; }; const a=toL(R1), b=toL(R0); if(Math.abs(b[1]-a[1])>1e-3){ const t=(-5.25-a[1])/(b[1]-a[1]); const lx=a[0]+(b[0]-a[0])*t; if(t>0.2&&t<3&&lx<-10.4){ R0=[R1[0]+(R0[0]-R1[0])*t,R1[1]+(R0[1]-R1[1])*t]; PUBYARD.corner=true; } } /* the pub's back wall line carried straight out to the pavement: a clean right-angled corner */ }
-  const yard=[WNc,R0,R1,NE,BEc,L2(3.6,-6.0),L2(3.6,-5.25)]; paveArea(scene,[L2(-10.4,4.4),L2(-10.4,-20.5),L2(-17,-20.5),L2(-17,4.4)],'concrete',{tile:5}); /* pavement right up to the gable (photo) */ paveArea(scene,yard,'concrete',{tile:6,roads:false});
-  NOHEDGE.push([(R0[0]+NE[0])/2,(R0[1]+NE[1])/2,16]);
+function photoPubYard(cs,scene){ const cafeB=BLD.find(b=>b.k==='cafe'), apt=BLD.find(b=>b.k==='apt'); if(!cafeB) return;
+  const [cx,cz,ang]=cafeB.rect; const f=frame(cx,cz,ang); const L2=(x,z)=>{ const p=f(x,0,z); return [p[0],p[2]]; };
+  const rd=ROADS.find(r=>r.t==='secondary'&&r.P.some(q=>Math.hypot(q[0]+250,q[1]+83)<6)); if(!rd) return; const RPs=smoothCorners(rd.P,8,2);
+  const off=rd.w/2+1.9; const onWall=(q)=>{ const n=nearOnPoly(RPs,q[0],q[1]); const dx=q[0]-n.x, dz=q[1]-n.z, l=Math.hypot(dx,dz)||1; return [n.x+dx/l*off,n.z+dz/l*off]; };
   const G=cs.get('wall',cx,cz), Tl=cs.get('roof',cx,cz), Mt=cs.get('metal',cx,cz), Wd=cs.get('wood',cx,cz); const WALL=lin('#f1f1ee'), CAP=lin('#a9452c'), GRN=lin('#2b2f2c');
   const wall=(a,b,h,gaps=[])=>{ const dx=b[0]-a[0], dz=b[1]-a[1], L=Math.hypot(dx,dz); const an=Math.atan2(dz,dx); const n=Math.ceil(L/1.5);
     for(let k=0;k<n;k++){ const t0=k*L/n, t1=(k+1)*L/n; if(gaps.some(g=>t1>g[0]&&t0<g[1])) continue; const mx=a[0]+dx*(t0+t1)/2/L, mz=a[1]+dz*(t0+t1)/2/L; const y=getHeight(mx,mz); const wf=frame(mx,mz,an,y); const hl=(t1-t0)/2+0.01;
       G.box(wf,-hl,hl,-0.5,h,-0.12,0.12,WALL,1.2); Tl.quad(wf(-hl,h+0.16,0),wf(hl,h+0.16,0),wf(hl,h,0.2),wf(-hl,h,0.2),[0,0],[1,0],[1,1],[0,1],CAP,[0,1,0]); Tl.quad(wf(hl,h+0.16,0),wf(-hl,h+0.16,0),wf(-hl,h,-0.2),wf(hl,h,-0.2),[0,0],[1,0],[1,1],[0,1],CAP,[0,1,0]); addCollider(mx,mz,an,t1-t0,0.3,y-1,y+h+0.2); } };
   const fence=(a,b,h)=>{ const dx=b[0]-a[0], dz=b[1]-a[1], L=Math.hypot(dx,dz); const an=Math.atan2(dz,dx); const n=Math.ceil(L/2.5);
     for(let k=0;k<n;k++){ const t0=k*L/n, t1=(k+1)*L/n; const mx=a[0]+dx*(t0+t1)/2/L, mz=a[1]+dz*(t0+t1)/2/L; const y=getHeight(mx,mz); const ff=frame(mx,mz,an,y); const hl=(t1-t0)/2;
-      Mt.box(ff,-hl,-hl+0.06,0,h,-0.03,0.03,GRN); Mt.box(ff,-hl,hl,h-0.04,h,-0.02,0.02,GRN); Mt.box(ff,-hl,hl,0.05,0.09,-0.02,0.02,GRN); for(let x=-hl+0.1;x<hl;x+=0.1) Mt.box(ff,x-0.006,x+0.006,0.07,h-0.02,-0.006,0.006,GRN); for(let yy=0.25;yy<h;yy+=0.2) Mt.box(ff,-hl,hl,yy-0.006,yy+0.006,-0.008,0.008,GRN); addCollider(mx,mz,an,t1-t0,0.15,y-1,y+h); } };
-  // white wall from the house corner to the pavement, then along the road with the gate
-  const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[LR*0.33,LR*0.33+3.8];
-  if(Math.hypot(R0[0]-WNc[0],R0[1]-WNc[1])>0.4) wall(WNc,R0,1.75); wall(R0,R1,1.75,[gt]); fence(R1,NE,1.6); fence(NE,BEc,1.6);
-  pubBackAnnex(cs,scene,cafeB,f); try{ pubFrontArcade(cs,scene,cafeB,f,RPs,rd.w); }catch(e){ console.warn('arkada',e); }
-  // gate: white pillars with red caps, one wing slid open (photo)
-  { const an=Math.atan2(R1[1]-R0[1],R1[0]-R0[0]); for(const t of gt){ const x=R0[0]+(R1[0]-R0[0])*t/LR, z=R0[1]+(R1[1]-R0[1])*t/LR; const y=getHeight(x,z); const pf=frame(x,z,an,y); G.box(pf,-0.2,0.2,-0.5,1.95,-0.2,0.2,WALL); Tl.box(pf,-0.24,0.24,1.95,2.05,-0.24,0.24,CAP); addCollider(x,z,an,0.4,0.4,y-1,y+2); }
-    const t=gt[1]+0.3, x=R0[0]+(R1[0]-R0[0])*t/LR, z=R0[1]+(R1[1]-R0[1])*t/LR; const y=getHeight(x,z); const lf=frame(x,z,an,y); const RUST=lin('#8a4a2c');
-    Mt.box(lf,0,3.4,0.05,1.55,0.26,0.3,lin('#f4f4f2')); for(const yy of [0.05,1.5]) Mt.box(lf,0,3.4,yy,yy+0.06,0.25,0.31,RUST); for(const xx of [0,3.35]) Mt.box(lf,xx,xx+0.06,0.05,1.55,0.25,0.31,RUST); addCollider(...(()=>{ const q=lf(1.7,0,0.28); return [q[0],q[2]]; })(),an,3.4,0.12,y-1,y+1.6); }
-  // firewood stacked in front of the apartment's gable, with flower pots on top
-  { const [ax,az,aa]=apt.rect; const F=frame(ax,az,aa-Math.PI/2); const lm=new THREE.MeshStandardMaterial({map:logTex(),roughness:0.95}); lm.map.repeat.set(4,1);
-    const p=F(-7.1,0,-0.6); const y=getHeight(p[0],p[2]); const box=new THREE.Mesh(new THREE.BoxGeometry(0.85,1.3,5.6),lm); box.position.set(p[0],y+0.62,p[2]); box.rotation.y=-(aa-Math.PI/2); box.castShadow=true; box.receiveShadow=true; scene.add(box); addCollider(p[0],p[2],aa-Math.PI/2,0.9,5.7,y-1,y+1.3);
-    const Cl=cs.get('cloth',ax,az), Hd=cs.get('hedge',ax,az); for(const zz of [-2.4,0.2,1.9]){ const q=F(-7.1,0,zz); const pf=frame(q[0],q[2],0,y+1.27); lathe(Cl,pf,[[0.16,0],[0.24,0.22],[0,0.22]],12,lin('#a85c34')); for(let k=0;k<6;k++) lathe(Hd,frame(q[0]+rnd(-0.15,0.15),q[2]+rnd(-0.15,0.15),0,y+1.48),[[0.08,0],[0.06,0.12],[0,0.14]],6,lin(k%2?'#d8344a':'#4f7d34')); }
-    // blue bin by the wall and a tall potted yucca by the house door (photo)
-    { const q0=onWall(L2(-10.5,-15.6)); const n0=nearOnPoly(RPs,q0[0],q0[1]); const q=[q0[0]+(n0.x-q0[0])*0.25,q0[1]+(n0.z-q0[1])*0.25]; const bf=frame(q[0],q[1],ang,getHeight(q[0],q[1])); Mt.box(bf,-0.3,0.3,0,1.0,-0.35,0.35,lin('#1f6fd0')); Mt.box(bf,-0.33,0.33,1.0,1.06,-0.38,0.38,lin('#1a5fb5')); } }
-  // Desinić / Zagreb signpost on the corner of the house (Street View "38 Tuhelj")
-  { const n=nearOnPoly(rd.P,WS[0],WS[2]); const dx=WS[0]-n.x, dz=WS[2]-n.z, dl=Math.hypot(dx,dz)||1; const sx=n.x+dx/dl*4.7, sz=n.z+dz/dl*4.7; const y=getHeight(sx,sz);
-    const look=Math.atan2(PUBYARD.gate[0]-6-sx,PUBYARD.gate[1]-6-sz); const pf=frame(sx,sz,0,y); Mt.cyl(pf,0.04,0.04,0,3.2,8,lin('#9ba0a4'),1,false); addCollider(sx,sz,0,0.15,0.15,y-1,y+3);
-    const plate=(tex,w,h,yy)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:tex,transparent:true,alphaTest:0.3,side:THREE.DoubleSide,roughness:0.6})); m.position.set(sx+Math.sin(look)*0.06+Math.cos(look)*w*0.42,y+yy,sz+Math.cos(look)*0.06-Math.sin(look)*w*0.42); m.rotation.y=look; scene.add(m); };
-    plate(arrowSignTex('Desinić'),1.25,0.31,2.42); plate(arrowSignTex('Zagreb'),1.25,0.31,2.05);
-    const vt=signTex(['VENTEK'],{w:384,h:128,bg:'#7a3b1e',fg:'#ffffff',border:'#ffffff',bw:6,size:64}); plate(vt,0.62,0.22,1.7);
-    const bt=signTex([''],{w:256,h:192,bg:'#f4f4f2',fg:'#000',border:'#c8161d',bw:14,size:10}); const bm=new THREE.Mesh(new THREE.PlaneGeometry(0.85,0.62),new THREE.MeshStandardMaterial({map:bt,side:THREE.DoubleSide})); bm.position.set(sx+Math.sin(look)*0.06,y+2.95,sz+Math.cos(look)*0.06); bm.rotation.y=look; scene.add(bm); } }
+      Mt.box(ff,-hl,-hl+0.06,0,h,-0.03,0.03,GRN); Mt.box(ff,-hl,hl,h-0.04,h,-0.02,0.02,GRN); Mt.box(ff,-hl,hl,0.05,0.09,-0.02,0.02,GRN); for(let x=-hl+0.1;x<hl;x+=0.1) Mt.box(ff,x-0.006,x+0.006,0.07,h-0.02,-0.006,0.006,GRN); addCollider(mx,mz,an,t1-t0,0.15,y-1,y+h); } };
+  // yard north of the house: the white wall stands on the back of the pavement of the road from the north, in line with the house front
+  const NWc=L2(-10.5,4.25), R0=onWall(NWc), R1=onWall(L2(-26.5,4.25)), NE=L2(-26.5,-11.5), SE=L2(-10.5,-11.5);
+  paveArea(scene,[NWc,R0,R1,NE,SE,L2(-10.5,-5.25)],'concrete',{tile:6,roads:false}); NOHEDGE.push([(R0[0]+NE[0])/2,(R0[1]+NE[1])/2,18]);
+  const LR=Math.hypot(R1[0]-R0[0],R1[1]-R0[1]); const gt=[1.2,5.0]; if(Math.hypot(R0[0]-NWc[0],R0[1]-NWc[1])>0.3) wall(NWc,R0,1.75); wall(R0,R1,1.75,[gt,[LR-1.5,LR]]); fence(R1,NE,1.6); fence(NE,SE,1.6);
+  // gate wing slid open (photo "38 Tuhelj") and the blue garden gate at the north end (Mapillary)
+  { const an=Math.atan2(R1[1]-R0[1],R1[0]-R0[0]); const P=(t)=>[R0[0]+(R1[0]-R0[0])*t/LR,R0[1]+(R1[1]-R0[1])*t/LR];
+    for(const t of gt){ const [x,z]=P(t); const y=getHeight(x,z); const pf=frame(x,z,an,y); G.box(pf,-0.2,0.2,-0.5,1.95,-0.2,0.2,WALL); Tl.box(pf,-0.24,0.24,1.95,2.05,-0.24,0.24,CAP); addCollider(x,z,an,0.4,0.4,y-1,y+2); }
+    { const [x,z]=P(gt[1]+0.3); const y=getHeight(x,z); const lf=frame(x,z,an,y); Mt.box(lf,0,3.4,0.05,1.55,0.26,0.3,lin('#f4f4f2')); Mt.box(lf,0,3.4,1.5,1.56,0.25,0.31,lin('#8a4a2c')); }
+    { const [x,z]=P(LR-0.75); const y=getHeight(x,z); const bf=frame(x,z,an,y); Wd.box(bf,-0.75,0.75,0,1.7,-0.05,0.05,lin('#2f8fd0')); addCollider(x,z,an,1.5,0.12,y-1,y+1.7); }
+    // flower troughs and the blue bin on the pavement in front of the wall
+    for(const t of [7.5,9.0]){ const [x,z]=P(t); const y=getHeight(x,z); const tf=frame(x,z,an,y); Wd.box(tf,-0.45,0.45,0,0.38,-0.75,-0.4,lin('#c46a45')); for(let k=0;k<4;k++) lathe(cs.get('hedge',x,z),frame(...(()=>{ const q=tf(-0.3+k*0.2,0,-0.58); return [q[0],q[2]]; })(),k,y+0.36),[[0.12,0],[0.09,0.22],[0,0.3]],6,lin(k%2?'#7a9a5a':'#9a7ac0')); }
+    { const [x,z]=P(8.25); const y=getHeight(x,z); const bf=frame(x,z,an,y); Mt.box(bf,-0.3,0.3,0,1.0,-0.95,-0.35,lin('#1f6fd0')); Mt.box(bf,-0.33,0.33,1.0,1.06,-0.98,-0.32,lin('#1a5fb5')); } }
+  // firewood stacked in front of the little white house (photo)
+  { const p=L2(-16.2,-1.2); const y=getHeight(p[0],p[1]); const lm=new THREE.MeshStandardMaterial({map:logTex(),roughness:0.95}); lm.map.repeat.set(4,1); const box=new THREE.Mesh(new THREE.BoxGeometry(0.9,1.25,5.2),lm); box.position.set(p[0],y+0.6,p[1]); box.rotation.y=-ang+Math.PI/2; box.castShadow=true; box.receiveShadow=true; scene.add(box); addCollider(p[0],p[1],ang-Math.PI/2,0.95,5.3,y-1,y+1.3); }
+  // Desinić / Zagreb signpost on the house's north-west corner
+  { const q=onWall(L2(-9.6,4.25)); const sx=q[0], sz=q[1]; const y=getHeight(sx,sz); const look=-Math.PI/2+0.25; Mt.cyl(frame(sx,sz,0,y),0.04,0.04,0,3.2,8,lin('#9ba0a4'),1,false); addCollider(sx,sz,0,0.15,0.15,y-1,y+3);
+    const plate=(tex,w,h,yy,o)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:tex,transparent:true,alphaTest:0.3,side:THREE.DoubleSide,roughness:0.6})); m.position.set(sx+Math.cos(look)*o,y+yy,sz-Math.sin(look)*o); m.rotation.y=look; scene.add(m); };
+    plate(arrowSignTex('Desinić'),1.25,0.31,2.42,0.45); plate(arrowSignTex('Zagreb'),1.25,0.31,2.05,0.45); plate(signTex(['VENTEK'],{w:384,h:128,bg:'#7a3b1e',fg:'#ffffff',border:'#ffffff',bw:6,size:64}),0.62,0.22,1.7,0); }
+  pubBackAnnex(cs,scene,cafeB,f); kodRuzeRow(cs,scene); }
+// "Kod Ruže": the long low white building with the red tiled roof, wooden windows and the brown door, behind the bus stop
+// on the north side of the gravel lot east of the arcade (Street View "7 Tuhelj")
+function kodRuzeRow(cs,scene){ const cx=-215.8, cz=-50.6, ang=0.32; const f=frame(cx,cz,ang); const hl=9.0, hw=3.4; let y0=1e9; for(const [x,z] of [[-hl,-hw],[hl,-hw],[-hl,hw],[hl,hw]]){ const p=f(x,0,z); y0=Math.min(y0,getHeight(p[0],p[2])); } y0+=0.12; const e=y0+2.75;
+  const G=cs.get('wall',cx,cz), T=cs.get('trim',cx,cz), Wd=cs.get('wood',cx,cz), Gs=cs.get('glassW',cx,cz); const WH=lin('#efefea'), WOOD=lin('#8a4f2a');
+  emitWalls(cs,f,ang,hl,hw,y0-0.8,e,'gable',22,WH,'wall'); emitPlinth(cs,f,ang,hl,hw,y0-0.8,y0+0.35,lin('#b9b4aa')); emitRoof(cs,f,ang,hl,hw,e,'gable',22,0.55,0.5,lin('#b05a38'),lin('#6e4a30'));
+  for(const [s0,w,door] of [[-6.5,1.2,false],[-3.8,1.2,false],[0.6,1.1,false],[2.6,1.1,false],[5.2,1.0,true],[7.3,1.0,false]]){ const zz=hw+0.02; if(door){ Wd.box(f,s0-0.5,s0+0.5,y0,y0+2.15,zz-0.05,zz+0.04,WOOD); for(const xx of [s0-0.3,s0+0.3]) Wd.box(f,xx-0.03,xx+0.03,y0+0.2,y0+2.0,zz+0.04,zz+0.06,lin('#6e3e22')); continue; }
+    Wd.box(f,s0-w/2,s0+w/2,y0+0.95,y0+2.05,zz-0.03,zz+0.04,WOOD); Gs.box(f,s0-w/2+0.08,s0+w/2-0.08,y0+1.03,y0+1.97,zz+0.04,zz+0.05,WHITE); Wd.box(f,s0-0.03,s0+0.03,y0+1.0,y0+2.0,zz+0.05,zz+0.07,WOOD); }
+  // little porch roof over the door, the "Kod Ruže" sign and a lamp
+  { const pc=f(5.2,0,hw+0.55); emitRoof(cs,frame(pc[0],pc[2],ang),ang,0.9,0.55,y0+2.35,'shed',20,0.1,0.1,lin('#b05a38'),lin('#6e4a30'),'roof',4); }
+  { const p=f(3.9,0,hw+0.06); signMesh(scene,kodRuzeTex(),1.0,0.42,p[0],y0+2.1,p[2],-ang); }
+  localCollider(f,ang,-hl,hl,-hw,hw,y0-1,e+2); NOHEDGE.push([cx,cz+hw+3,12]); }
 
 // the low annex on the yard side of the pub with the glass-railed terrace and the steel-and-glass canopy above (Street View "38 Tuhelj")
 function pubBackAnnex(cs,scene,b,f){ const [cx,cz,ang]=b.rect; const y0=b.y0||getHeight(cx,cz); const G=cs.get('wall',cx,cz), Mt=cs.get('metal',cx,cz), Gs=cs.get('glassW',cx,cz), T=cs.get('trim',cx,cz);

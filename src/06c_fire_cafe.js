@@ -133,12 +133,12 @@ function cafe(cs,scene,b){ CAFE_CTX={};
   for(const x of [-5.5,-1.0]){ const p=mb(x,0,0); const af=frame(p[0],p[2],ang+0.4,0); Mt.cyl(af,0.03,0.025,rt-0.2,rt+2.6,5,lin('#9da2a6'),1,false); Mt.box(af,-0.9,0.9,rt+2.2,rt+2.24,-0.02,0.02,lin('#9da2a6')); for(let k=-4;k<=4;k++) Mt.box(af,k*0.2-0.012,k*0.2+0.012,rt+2.2,rt+2.24,-0.35+Math.abs(k)*0.03,0.35-Math.abs(k)*0.03,lin('#9da2a6')); Mt.box(af,-0.02,0.02,rt+1.4,rt+1.43,-0.45,0.45,lin('#9da2a6')); }
   // ---- covered terrace (the only entrance): long room along the main block, arched windows, chamfered corner ----
   { const ea=y0+3.3; const AWALL=lin('#8f959b'), AREV=lin('#cfd2d5'), FRM=lin('#b9bdc1');
-    const pts=[[3.6,4.0],[8.4,4.0],[10.4,2.0],[10.4,-6.0],[3.6,-6.0],[3.6,-5.25]]; const annexHoles=[];
+    const pts=[[3.6,4.0],[8.4,4.0],[10.4,2.0],[10.4,-15.6],[3.6,-15.6],[3.6,-5.25]]; /* the annex runs on east along the main road (photos) */ const annexHoles=[];
     const arch=(s0,s1)=>holeArch(s0,s1,y0+0.45,y0+2.75,12);
     for(let i=0;i<pts.length-1;i++){ const m=segMap(f,ang,pts[i],pts[i+1]); const Ls=m.L; let holes=[], gaps=[];
       if(i===0){ holes=[holeRect(0.15,2.45,y0,y0+2.45)]; gaps=[[0.13,2.47]]; }
       else if(i===1){ holes=[arch(0.42,Ls-0.42)]; }
-      else if(i===2){ holes=[1.6,4.1,6.6].map(c=>arch(c-0.75,c+0.75)); }
+      else if(i===2){ const n=Math.floor((Ls-1.2)/2.45); holes=Array.from({length:n},(_,k)=>0.6+(Ls-1.2)*(k+0.5)/n).map(c=>arch(c-0.75,c+0.75)); } else if(i===3){ holes=[arch(1.2,2.6),arch(4.2,5.6)]; }
       else if(i===3){ holes=[arch(0.6,1.9)]; }
       annexHoles.push(holes);
       facadeSeg(G,m,[[0,yb],[Ls,yb],[Ls,ea],[0,ea]],holes,AWALL);
@@ -149,13 +149,13 @@ function cafe(cs,scene,b){ CAFE_CTX={};
         else { archWindow(H,m,h,{wc:AWALL,rc:AREV,fc:TRIMC,dep:0.25,fw:0.09}); surround(T,m,h,0.14,0.045,FRM); } });
       if(i===0){ segCollider(f,ang,pts[0][0],pts[0][1],pts[0][0]+0.15,pts[0][1],0.3,y0-3,y0+6); segCollider(f,ang,pts[0][0]+2.45,pts[0][1],pts[1][0],pts[1][1],0.3,y0-3,y0+6); } else segCollider(f,ang,pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],0.3,y0-3,y0+6);
       plinthSeg(H.plinth,m,yb,y0+0.35,gaps,lin('#8a8f94')); T.box(m.T,-0.02,Ls+0.02,ea-0.2,ea,-0.02,0.06,lin('#a3a8ad'),1,0x3f^8);
-      if(i===0) T.box(m.T,2.95,3.45,y0+0.35,ea-0.2,-0.02,0.08,FRM); if(i===2){ for(const c of [0.3,2.85,5.35,7.8]) T.box(m.T,c-0.2,c+0.2,y0+0.35,ea-0.2,-0.02,0.06,FRM); } }
+      if(i===0) T.box(m.T,2.95,3.45,y0+0.35,ea-0.2,-0.02,0.08,FRM); if(i===2){ const n=Math.floor((Ls-1.2)/2.45); for(let k=0;k<=n;k++){ const c=0.6+(Ls-1.2)*k/n-(k===0?0.3:k===n?-0.3:0); T.box(m.T,c-0.2,c+0.2,y0+0.35,ea-0.2,-0.02,0.06,FRM); } } }
     // hipped roof with barrel tiles over the real (chamfered) footprint, wooden soffit + fascia + grey gutter, rafter tails
-    const roofP=[[3.6,4.0],[8.4,4.0],[10.4,2.0],[10.4,-6.0],[3.6,-6.0]];
+    const roofP=[[3.6,4.0],[8.4,4.0],[10.4,2.0],[10.4,-15.6],[3.6,-15.6]];
     const RR=hipRoofOver(cs,f,ang,roofP,ea,30,0.55,{mat:'roofK',color:lin('#f6ece6'),soffit:lin('#8a5c3c'),fascia:lin('#6a4630'),skipEave:(a,b)=>Math.abs(a[0]-b[0])<0.01&&a[0]<3.6});
     { const Wd=cs.get('wood',cx,cz); const tn=Math.tan(30*Math.PI/180); for(let i=0;i<4;i++){ const a=roofP[i], b=roofP[i+1]; const L2=Math.hypot(b[0]-a[0],b[1]-a[1]); const ux=(b[0]-a[0])/L2, uz=(b[1]-a[1])/L2; const E=RR.E[i]; const ox=-E.nIn[0], oz=-E.nIn[1];
       for(let t=0.3;t<L2-0.1;t+=0.62){ const px=a[0]+ux*t, pz=a[1]+uz*t; beam(Wd,f(px,ea-0.2,pz),f(px+ox*0.46,ea-0.2-0.46*tn,pz+oz*0.46),0.045,lin('#6a4630')); } } }
-    { const dp=f(10.4+0.62,0,-6.0-0.62); Mt.box(frame(dp[0],dp[2],ang,0),-0.05,0.05,y0-0.3,ea-0.5,-0.05,0.05,lin('#5d6166')); }
+    { const dp=f(10.4+0.62,0,-15.6-0.62); Mt.box(frame(dp[0],dp[2],ang,0),-0.05,0.05,y0-0.3,ea-0.5,-0.05,0.05,lin('#5d6166')); }
     Object.assign(CAFE_CTX,{pts,annexHoles,ea,roofP});
     { const p=f(11.2,0,-2.0); const y=getHeight(p[0],p[2]); const bf=frame(p[0],p[2],ang+Math.PI/2,y); const R=lin('#b32b26'); const Wd2=cs.get('wood',cx,cz); Wd2.box(bf,-0.9,0.9,0.42,0.47,-0.22,0.22,R); Wd2.box(bf,-0.9,0.9,0.55,0.85,0.2,0.24,R); for(const xx of [-0.75,0.75]) Mt.box(bf,xx-0.03,xx+0.03,0,0.45,-0.2,0.2,lin('#333333')); addCollider(p[0],p[2],ang+Math.PI/2,1.9,0.6,y-1,y+1); }
   }

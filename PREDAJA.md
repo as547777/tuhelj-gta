@@ -127,3 +127,9 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - brtija: zabat paralelan sa sporednom cestom na pločniku (cafeFit: WN×3, WS×1.5), zid u ravnini zabata;
   ispred kuće arkada (pubFrontArcade) koja seže do pločnika glavne ceste i prati zavoj
 - krošnje svjetlije (TREEFILL 0.36)
+
+## Runda: brtija iz Mapillary 296128785453428 / 924510798093512 (listopad 2026, 5)
+- brtija fiksno: rect [-241.35,-54.7,π/2] — duga strana uz cestu sa sjevera, S zabat na raskrižje, aneks s lukovima produžen na istok (local z do -15.6)
+- dvorište sjeverno od kuće (photoPubYard, okvir kafića), zid na pločniku, kapija, plava vrtna vrata, apartman [-233.2,-73.2] balkonom na zapad
+- kodRuzeRow: duga niska zgrada "Kod Ruže" iza stanice
+- parking kod crkve: travnjak između popločenja crkve i Ultre, ulaz s crkvene ceste (traka + kocke + ograda + lampe)
