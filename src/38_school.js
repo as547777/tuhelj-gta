@@ -3,11 +3,11 @@
    roofs, the big sports hall with the white-panelled gable, the fenced court (red-orange posts, nets, concrete
    tribune). The access road runs DOWN to the car park and the kindergarten (white, flat roof, green fence), which sit
    on a lower level than the school, not up the hill. */
-const SCH={old:[-233.5,-235,0,13,21],wing:[-204,-257,0,30,12],wing2:[-206,-246,0,22,8],hall:[-163,-240,Math.PI/2,32,22],court:[-199.5,-230,38,20],kinder:[-116,-146,0.05,30,11]};
+const SCH={old:[-233.5,-235,0,13,21],wing:[-201,-257,0,54,12],wing2:[-208,-246.5,0,26,7],hall:[-163,-240,Math.PI/2,32,22],court:[-199.5,-230,38,20],kinder:[-116,-146,0.05,30,11]};
 const SCH_LV={top:173.9,court:173.7,low:170.8};
 function schoolTerrain(){ const sb=D.bld.find(b=>b.k==='school'); if(sb){ sb.r=[SCH.old,SCH.wing,SCH.wing2,SCH.hall].map(r=>[r[0],r[1],r[2],Math.max(r[3],r[4]),Math.min(r[3],r[4]),15].map((v,i)=>i===2&&r[4]>r[3]?r[2]+Math.PI/2:v)); sb.st='school2'; }
   if(!D.bld.some(b=>b.st==='kinder')) D.bld.push({k:'house',st:'kinder',n:'Dječji vrtić',lv:1,f:2,r:[[SCH.kinder[0],SCH.kinder[1],SCH.kinder[2],SCH.kinder[3],SCH.kinder[4],15]]});
-  NOHEDGE.push([-120,-165,48],[-200,-240,40]);
+  NOHEDGE.push([-120,-165,48],[-200,-240,40],[-232,-208,14],[-200,-216,24]);
   for(const l of LAND){ if(l.t==='pitch'){ const c=polyCentroid(l.P); if(Math.hypot(c[0]+195,c[1]+225)<30) l.t='schoolpitch'; } }
   const Z=[{x0:-243,x1:-148,z0:-282,z1:-238,h:SCH_LV.top,bl:16},{x0:-178,x1:-148,z0:-260,z1:-218,h:SCH_LV.top,bl:12},{x0:-221,x1:-174,z0:-242,z1:-214,h:SCH_LV.court,bl:10},{x0:-243,x1:-219,z0:-250,z1:-221,h:SCH_LV.top,bl:10},{x0:-160,x1:-72,z0:-206,z1:-126,h:SCH_LV.low,bl:46}];
   for(let iz=0;iz<NZ;iz++) for(let ix=0;ix<NX;ix++){ const x=X0+ix*CELL, z=Z0+iz*CELL; if(x<-300||x>0||z<-340||z>-70) continue; const k=iz*NX+ix; let h=HEI[k];
@@ -60,9 +60,40 @@ school=function(cs,scene,b){ const y0=SCH_LV.top+0.15; b.y0=y0; const T=cs.get('
     for(let k=0;k<8;k++){ const x=-150+k*8.2; for(const z of [-190.5,-157.5]){ if((k+(z>-170?1:0))%3===0) continue; EXTRA_PARK.push([x,z,Math.PI/2,'']); } }
     const ps=signTex(['P'],{w:256,h:256,bg:'#1f5fbf',fg:'#ffffff',border:'#ffffff',bw:14,size:190}); for(const [x,z] of [[-154,-158],[-118,-195],[-160,-188]]){ const y=getHeight(x,z); Mt.cyl(frame(x,z,0,y),0.04,0.04,0,2.6,8,lin('#a8adb0'),1,false); signMesh(scene,ps,0.6,0.6,x,y+2.45,z+0.05,0); signMesh(scene,ps,0.6,0.6,x,y+2.45,z-0.05,Math.PI); }
     LANDMARKS.heliPad={x:-100,z:-182}; }
+  try{ schoolExtras(cs,scene,y0); }catch(e){ console.warn('škola+',e); }
   // kindergarten: white, flat roof with a parapet, wooden window frames, pergola entrance, green mesh fence
   { const r=SCH.kinder; const [kx,kz,ka,kl,kw]=r; const f=frame(kx,kz,ka); const y=getHeight(kx,kz)+0.12; const hl=kl/2, hw=kw/2; const WH=lin('#f6f6f3');
     G.box(f,-hl,hl,y-1.2,y+3.6,-hw,hw,WH,1.2); T.box(f,-hl-0.05,hl+0.05,y+3.6,y+3.95,-hw-0.05,hw+0.05,lin('#e9e9e4')); localCollider(f,ka,-hl,hl,-hw,hw,y-1,y+4);
     const Wn=cs.get('win',kx,kz); for(let sk=0;sk<4;sk++){ const si=sideInfo(sk,hl,hw); const n=Math.max(1,Math.floor(si.len/2.4)); for(let k=0;k<n;k++){ const t=-si.e+si.len*(k+0.5)/n; decal(Wn,f,ka,si,t,y+0.9,'modern',0.05,0.9); } }
     const Wd=cs.get('wood',kx,kz); for(let t=-3;t<=3;t+=2){ const q=f(hl*0.55+t,0,hw+2.4); Wd.box(frame(q[0],q[2],ka,y),-0.07,0.07,0,2.6,-0.07,0.07,lin('#b98a55')); } Wd.box(f,hl*0.55-3.2,hl*0.55+3.2,y+2.5,y+2.65,hw,hw+2.5,lin('#b98a55'));
     const fM=lin('#2f6b45'); const fp=[[-hl-3,-hw-3],[hl+3,-hw-3],[hl+3,hw+7],[-hl-3,hw+7]]; for(let i=0;i<4;i++){ const a=f(fp[i][0],0,fp[i][1]), b2=f(fp[(i+1)%4][0],0,fp[(i+1)%4][1]); const dl=Math.hypot(b2[0]-a[0],b2[2]-a[2]); const an=Math.atan2(b2[2]-a[2],b2[0]-a[0]); for(let t=0;t<dl;t+=2.5){ const x=a[0]+(b2[0]-a[0])*t/dl, z=a[2]+(b2[2]-a[2])*t/dl; if(i===2&&Math.abs(t-dl*0.3)<2) continue; const yy=getHeight(x,z); const ff=frame(x,z,an,yy); Mt.box(ff,0,Math.min(2.5,dl-t),0,1.5,-0.02,0.02,fM); addCollider(...(()=>{ const q=ff(Math.min(1.25,(dl-t)/2),0,0); return [q[0],q[2]]; })(),an,Math.min(2.5,dl-t),0.1,yy-1,yy+1.5); } } } };
+
+// everything that makes the school one complex (Street View): a white link with a chimney between the old school and the wing,
+// the drive past the old school with orange railings, the tiled pavement down beside the hall, and the playground by the main road
+function schoolExtras(cs,scene,y0){ const G=cs.get('wall',-210,-240), T=cs.get('trim',-210,-240), Mt=cs.get('metal',-210,-240), Wd=cs.get('wood',-210,-240), Cl=cs.get('cloth',-210,-240), Hd=cs.get('hedge',-210,-240), K=cs.get('curb',-210,-240);
+  const ORG=lin('#e0603a'), WHT=lin('#f2f1ec');
+  // link block old school ↔ wing (white, three storeys, chimney)
+  { const f=frame(-226.5,-250,0,0); G.box(f,-2.5,2.5,SCH_LV.low-2,y0+9.4,-6,6,WHT,1.2); emitRoof(cs,frame(-226.5,-250,0),0,2.6,6.1,y0+9.4,'gable',30,0.3,0.3,lin('#8f5a42'),lin('#e9e4da')); G.box(f,-0.5,0.5,y0+9,y0+12.2,2.5,3.5,lin('#d9d6cf')); localCollider(f,0,-2.5,2.5,-6,6,y0-2,y0+10);
+    const Wn=cs.get('win',-226.5,-250); for(const yy of [1.2,4.6,7.6]) for(const zz of [-3,0,3]) decal(Wn,f,0,{n:[1,0],r:[0,-1],d:2.5,e:6,len:12},zz,y0+yy,'school',0.05,0.8); }
+  // the drive from the main road past the old school, orange railings and gate (Street View "55 Tuhelj")
+  paveArea(scene,[[-246,-219.5],[-176,-219.5],[-176,-213.8],[-246,-213.8]],'asphalt',{tile:4,roads:true});
+  for(let x=-243;x<-226;x+=1.6){ const z=-213.4, y=getHeight(x,z); const ff=frame(x+0.8,z,0,y); Mt.box(ff,-0.8,0.8,0.95,1.0,-0.02,0.02,ORG); Mt.box(ff,-0.8,0.8,0.12,0.16,-0.02,0.02,ORG); for(let k=-0.7;k<=0.71;k+=0.14) Mt.box(ff,k-0.012,k+0.012,0.12,0.97,-0.012,0.012,ORG); addCollider(x+0.8,z,0,1.6,0.1,y-1,y+1); }
+  { const y=getHeight(-227.3,-219.8); const gf=frame(-227.3,-219.8,0,y); for(let k=0;k<6;k++) Mt.box(gf,k*0.2,k*0.2+0.03,0,1.1,-0.02,0.02,ORG); Mt.box(gf,0,1.1,1.05,1.1,-0.02,0.02,ORG); }
+  // tiled pavement between the court and the hall, running down toward the parking
+  paveArea(scene,[[-180,-257],[-174.6,-257],[-174.6,-205],[-180,-205]],'setts',{tile:2.4,roads:true,lift:0.06});
+  for(let z=-256;z<-206;z+=1.6){ const y=getHeight(-180.1,z); K.box(frame(-180.1,z+0.8,0,y),-0.1,0.1,-0.2,0.15,-0.8,0.8,lin('#d6d3cc'),0.8); }
+  { const p=[-176.5,-210]; lathe(Hd,frame(p[0],p[1],0,getHeight(p[0],p[1])),[[0.6,0],[0.75,1.2],[0.55,2.6],[0.2,3.4],[0,3.6]],10,lin('#3f6e2e')); addCollider(p[0],p[1],0,1.2,1.2,-1e4,1e4); }
+  // playground by the main road south of the old school (Street View "57 Tuhelj")
+  { const cx=-231, cz=-206.5; const P=[]; for(let k=0;k<20;k++){ const a=k/20*TAU; P.push([cx+Math.cos(a)*8.5,cz+Math.sin(a)*4.6]); } paveArea(scene,P,'gravel',{tile:3,roads:false,lift:0.03});
+    const y=(x,z)=>getHeight(x,z); const RED=lin('#c8442c'), YEL=lin('#e9c21a'), BRN=lin('#7a5636');
+    // slide on a ladder tower
+    { const f=frame(cx-5,cz,0.4,y(cx-5,cz)); for(const [x,z] of [[-0.5,-0.5],[0.5,-0.5],[-0.5,0.5],[0.5,0.5]]) Wd.box(f,x-0.05,x+0.05,0,1.6,z-0.05,z+0.05,BRN); Wd.box(f,-0.6,0.6,1.5,1.6,-0.6,0.6,BRN); for(let k=0;k<6;k++) Wd.box(f,-0.55-k*0.12,-0.45-k*0.12,0.2+k*0.25,0.25+k*0.25,-0.35,0.35,BRN);
+      Cl.quad(f(0.6,1.55,-0.3),f(0.6,1.55,0.3),f(2.6,0.2,0.3),f(2.6,0.2,-0.3),[0,0],[1,0],[1,1],[0,1],RED,[0.5,1,0]); for(const sz of [-0.32,0.32]) beam(Mt,f(0.6,1.7,sz),f(2.6,0.35,sz),0.03,RED); addCollider(...(()=>{ const q=f(0.8,0,0); return [q[0],q[2]]; })(),0.4,3.2,1.3,y(cx-5,cz)-1,y(cx-5,cz)+1.7); }
+    // swing frame with two seats
+    { const f=frame(cx+1,cz-1,0.4,y(cx+1,cz-1)); for(const x of [-1.4,1.4]) for(const z of [-0.6,0.6]) beam(Wd,f(x,0,z),f(x,2.3,0),0.07,BRN); beam(Wd,f(-1.5,2.3,0),f(1.5,2.3,0),0.08,BRN); for(const x of [-0.6,0.6]){ for(const z of [-0.18,0.18]) beam(Mt,f(x,2.28,z),f(x,0.5,z),0.012,lin('#666')); Cl.box(f,x-0.25,x+0.25,0.46,0.52,-0.2,0.2,lin('#2a2a2a')); } addCollider(...(()=>{ const q=f(0,0,0); return [q[0],q[2]]; })(),0.4,3.1,1.4,y(cx+1,cz-1)-1,y(cx+1,cz-1)+2.4); }
+    // see-saw and a little play house with a yellow slide
+    { const f=frame(cx+5.5,cz+2,0.4,y(cx+5.5,cz+2)); Wd.box(f,-0.15,0.15,0,0.5,-0.15,0.15,BRN); Wd.box(f,-1.8,1.8,0.48,0.56,-0.15,0.15,lin('#d06a3a')); for(const x of [-1.6,1.6]) Mt.box(f,x-0.03,x+0.03,0.56,0.85,-0.2,0.2,lin('#444')); }
+    { const f=frame(cx+3,cz-3.8,0.4,y(cx+3,cz-3.8)); for(const [x,z] of [[-0.8,-0.8],[0.8,-0.8],[-0.8,0.8],[0.8,0.8]]) Wd.box(f,x-0.06,x+0.06,0,2.2,z-0.06,z+0.06,BRN); Wd.box(f,-0.9,0.9,1.0,1.08,-0.9,0.9,BRN); emitRoof(cs,f,0.4,0.95,0.95,2.2,'gable',38,0.15,0.15,lin('#5a3b2a'),BRN); Cl.quad(f(0.9,1.05,-0.3),f(0.9,1.05,0.3),f(2.6,0.15,0.3),f(2.6,0.15,-0.3),[0,0],[1,0],[1,1],[0,1],YEL,[0.5,1,0]); addCollider(...(()=>{ const q=f(0,0,0); return [q[0],q[2]]; })(),0.4,1.8,1.8,y(cx+3,cz-3.8)-1,y(cx+3,cz-3.8)+2.3); }
+    // hedge along the main road and the brown tourist sign
+    for(let z=-212;z<-198;z+=1.6){ const x=-241.2; const yy=y(x,z); Hd.box(frame(x,z+0.8,0,yy-0.1),-0.45,0.45,0,1.1,-0.82,0.82,lin('#4a7533'),0.8); addCollider(x,z+0.8,0,0.9,1.6,yy-1,yy+1.1); }
+    { const x=-240.5, z=-214.2, yy=y(x,z); for(const o of [-0.8,0.8]) Mt.cyl(frame(x,z+o,0,yy),0.045,0.045,0,2.6,8,lin('#9aa0a4'),1,false); const tx=signTex(['Muzej "Staro selo" Kumrovec','Terme Tuhelj · Krapinske Toplice','Galerija A. Augustinčića','200 m'],{w:512,h:384,bg:'#6e3a1e',fg:'#ffffff',border:'#ffffff',bw:8,size:34}); signMesh(scene,tx,1.9,1.4,x+0.06,yy+1.9,z,Math.PI/2); addCollider(x,z,0,0.2,1.8,yy-1,yy+2.6); } } }
