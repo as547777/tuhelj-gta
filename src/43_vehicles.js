@@ -17,9 +17,18 @@ function vxBar(g,x,y,z,len,blueOnly){ const base=vxBox(g,0.32,0.08,len,vxMat(0x2
 // ---- police: realistic sedan + livery ----
 function makePolice(){ const v=VX.base('sedan','#f4f5f6'); const g=v.group; const L=v.len, W=v.wid, top=v.roofY||1.45;
   const band=vxTex(1024,128,(c,w,h)=>{ c.clearRect(0,0,w,h); c.fillStyle='#1d3f99'; c.fillRect(0,22,w,62); c.fillStyle='#c9d3e0'; c.fillRect(0,84,w,10); c.fillStyle='#ffffff'; c.font='900 54px Manrope, Arial'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('POLICIJA',w/2,55); });
-  for(const sd of [-1,1]) vxPlane(g,band,L*0.86,0.34,0,0.72,sd*(W/2+0.015),sd>0?0:Math.PI);
-  const hood=vxTex(512,128,(c,w,h)=>{ c.clearRect(0,0,w,h); c.fillStyle='#1d3f99'; c.font='900 70px Manrope, Arial'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('POLICIJA',w/2,h/2); }); { const p=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.28),new THREE.MeshStandardMaterial({map:hood,transparent:true,polygonOffset:true,polygonOffsetFactor:-2})); p.rotation.set(-Math.PI/2,0,-Math.PI/2); p.position.set(L*0.36,0.98,0); g.add(p); }
-  v.lights=vxBar(g,-0.2,top+0.03,0,1.2,false); v.custom=true; v.label='Policija'; return v; }
+  // decals sit on the real body: ray-cast the car's own meshes so nothing hovers above the hood or beside the doors
+  g.updateMatrixWorld(true); const body=[]; g.traverse(o=>{ if(o.isMesh) body.push(o); }); const RC=new THREE.Raycaster(), V3=THREE.Vector3;
+  const gi=new THREE.Matrix4().copy(g.matrixWorld).invert();
+  const hit=(o,d)=>{ RC.set(o.applyMatrix4(g.matrixWorld),d.transformDirection(g.matrixWorld)); const h=RC.intersectObjects(body,false)[0]; return h?h.point.applyMatrix4(gi):null; };
+  const surfY=(x,z)=>{ const h=hit(new V3(x,6,z),new V3(0,-1,0)); return h?h.y:null; };
+  const sideZ=(x,y,sd)=>{ const h=hit(new V3(x,y,sd*6),new V3(0,0,-sd)); return h?Math.abs(h.z):null; };
+  { const N=6, len=L*0.8, by=0.72, mat=new THREE.MeshStandardMaterial({map:band,transparent:true,roughness:0.45,metalness:0.05,polygonOffset:true,polygonOffsetFactor:-2});
+    for(const sd of [-1,1]){ const zs=[]; for(let i=0;i<=N;i++){ const x=-len/2+len*i/N; zs.push([x,(sideZ(x,by,sd)||W/2)+0.012]); }
+      for(let i=0;i<N;i++){ const [x0,z0]=zs[i], [x1,z1]=zs[i+1]; const seg=new THREE.PlaneGeometry(Math.hypot(x1-x0,z1-z0),0.34); const uv=seg.attributes.uv; for(let k=0;k<uv.count;k++){ const u=uv.getX(k); uv.setX(k,sd>0?(i+u)/N:1-(i+1-u)/N); }
+        const m=new THREE.Mesh(seg,mat); m.position.set((x0+x1)/2,by,sd*(z0+z1)/2); m.rotation.y=(sd>0?0:Math.PI)+sd*Math.atan2(z1-z0,x1-x0)*-1; g.add(m); } } }
+  const hood=vxTex(512,128,(c,w,h)=>{ c.clearRect(0,0,w,h); c.fillStyle='#1d3f99'; c.font='900 70px Manrope, Arial'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('POLICIJA',w/2,h/2); }); { const p=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.28),new THREE.MeshStandardMaterial({map:hood,transparent:true,polygonOffset:true,polygonOffsetFactor:-2})); p.rotation.set(-Math.PI/2,0,-Math.PI/2); const hx=L*0.33, y0=surfY(hx-0.45,0), y1=surfY(hx+0.45,0), yc=surfY(hx,0); const hg=new THREE.Group(); hg.position.set(hx,(yc!==null?yc:0.98)+0.015,0); if(y0!==null&&y1!==null) hg.rotation.z=Math.atan2(y1-y0,0.9); hg.add(p); g.add(hg); }
+  { const ry=surfY(-0.2,0); v.lights=vxBar(g,-0.2,(ry!==null?ry:top)+0.03,0,1.2,false); } v.custom=true; v.label='Policija'; return v; }
 // ---- ambulance: high-roof van ----
 function makeAmbulance(){ const g=new THREE.Group(); const WH=vxMat(0xf6f6f2,0.4,0.15), GL=vxMat(0x22313d,0.08,0.3,{transparent:true,opacity:0.85}), DK=vxMat(0x26282b,0.7,0.2), RED=vxMat(0xd3151e,0.45,0.1), YEL=vxMat(0xf1d21b,0.45,0.1);
   const L=5.9, W=2.0, H=2.6;

@@ -186,3 +186,10 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - SPREMNO tek kad su učitani ljudi, animacije, auti i oružje (najviše 45 s), plus zagrijavanje shadera; traka ide do 85 % za svijet, ostatak za modele.
 - Prvi gumb NOVA PRIČA ▶ žut i pulsira, s uputom 'Dodirni za početak'.
 
+
+## Učitavanje na klik, glatko okretanje, policija, radio
+- Naslovni zaslon odmah pokazuje izbornik; svijet se gradi tek na NOVA PRIČA (mainGo u 12_main.js; ?dev učitava odmah). Kad je sve spremno: 'DODIRNI ZA POČETAK'.
+- 47_perf.js: sitni dijelovi (polumjer < 0.6 m) ne bacaju sjenu, sitni (< 0.3 m) daleko od kamere se ne crtaju (layer 1); sjene se crtaju svaki kadar (prije svaki drugi: kadrovi 16/25 ms naizmjence).
+- Policijski natpisi i rotacija postavljeni raycastom na pravu karoseriju.
+- Radio: zadana stanica Lounge Krapina; nova Zagorje Country.
+

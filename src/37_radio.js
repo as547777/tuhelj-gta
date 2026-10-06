@@ -1,8 +1,8 @@
 /* ===================== car radio =====================
    Stations are synthesised live with WebAudio (no copyrighted music, nothing to download):
-   Radio Kaj (zagorski valcer), Hit FM Tuhelj (pop), Noćna vožnja (synthwave), Lounge Krapina (jazz), radio off.
+   Radio Kaj (zagorski valcer), Hit FM Tuhelj (pop), Noćna vožnja (synthwave), Lounge Krapina (jazz, the default), Zagorje Country, radio off.
    In a car: R or the mouse wheel changes station (GTA style), the name flashes at the top of the screen. */
-const RADIO={st:1,on:false,next:0,step:0,gain:null,ctx:null,noise:null,tagT:0,bar:0};
+const RADIO={st:4,on:false,next:0,step:0,gain:null,ctx:null,noise:null,tagT:0,bar:0};
 const NOTE=(n)=>440*Math.pow(2,(n-69)/12); // MIDI note -> Hz
 function rdInit(){ if(RADIO.ctx) return true; try{ if(typeof audInit==='function') audInit(); }catch(e){} const C=(typeof AUD!=='undefined'&&AUD.ctx)||new (window.AudioContext||window.webkitAudioContext)(); RADIO.ctx=C;
   const lp=C.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=6500; const hp=C.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=70; const comp=C.createDynamicsCompressor(); comp.threshold.value=-18; comp.ratio.value=4;
@@ -44,7 +44,18 @@ const STATIONS=[
   {n:'LOUNGE KRAPINA', sub:'jazz', bpm:92*3, per:12, // swung 8ths as triplets: 12 steps per bar
    prog:[[50,53,57,60],[43,47,50,53],[48,52,55,59],[45,49,52,55]], walk:[[38,41,43,45],[31,35,38,40],[36,40,43,47],[33,37,40,43]],
    play(s,t,sd){ const st=s%12, bar=Math.floor(s/12)%4; if(st%3===0){ RI.bass(t,this.walk[bar][st/3]-0,sd*2.6,0.26); RI.ride(t,0.05); } if(st===5||st===11) RI.ride(t,0.035); if(st===3||st===9) RI.hat(t,0.04);
-     if(st===2||st===8){ for(const n of this.prog[bar]) RI.ep(t+Math.random()*0.01,n+12,sd*3,0.05); } if(Math.floor(s/48)%2===1&&(st===0||st===5||st===6)){ const sc=[62,65,67,69,72,74]; RI.ep(t,sc[(s*7+bar)%sc.length],sd*2,0.07); } } }];
+     if(st===2||st===8){ for(const n of this.prog[bar]) RI.ep(t+Math.random()*0.01,n+12,sd*3,0.05); } if(Math.floor(s/48)%2===1&&(st===0||st===5||st===6)){ const sc=[62,65,67,69,72,74]; RI.ep(t,sc[(s*7+bar)%sc.length],sd*2,0.07); } } },
+  {n:'ZAGORJE COUNTRY', sub:'country', bpm:112*2, per:8, // boom-chick: bass root/fifth on 1 and 3, brushed snare on 2 and 4, strummed guitar, twangy lead
+   prog:[[55,59,62],[55,59,62],[48,52,55],[48,52,55],[55,59,62],[55,59,62],[50,54,57],[50,54,57]], mel:rdMotif(58,64,[67,69,71,74,76],9),
+   play(s,t,sd){ const st=s%8, bar=Math.floor(s/8)%8; const ch=this.prog[bar];
+     if(st===0) RI.bass(t,ch[0]-12,sd*1.8,0.3); if(st===4) RI.bass(t,ch[2]-24,sd*1.8,0.26);
+     if(st===2||st===6){ RI.noise(t,0.12,0.12,'bandpass',2600,0.6); for(const n of ch) RI.pluck(t+Math.random()*0.015,n,0.06,0.18); }
+     if(st%2===1) RI.hat(t,0.025);
+     if(st===0||st===4) RI.kick(t,0.35);
+     if(Math.floor(s/64)%2===1){ const m=this.mel[(s/2|0)%64]; if(st%2===0&&m) RI.twang(t,m,sd*1.7,0.06); }
+     else if(st%2===0){ const roll=[ch[0]+12,ch[1]+12,ch[2]+12,ch[1]+24][(s/2|0)%4]; RI.pluck(t,roll,0.045,0.2); } } }];
+RI.twang=function(t,n,dur,v){ const C=RADIO.ctx; const f=C.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(3200,t); f.frequency.exponentialRampToValueAtTime(1200,t+dur); const g=C.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); f.connect(g); g.connect(RADIO.gain);
+  const o=C.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(NOTE(n-1),t); o.frequency.exponentialRampToValueAtTime(NOTE(n),t+0.06); o.connect(f); o.start(t); o.stop(t+dur+0.05); };
 function radioTag(){ let el=document.getElementById('radiotag'); if(!el){ el=document.createElement('div'); el.id='radiotag'; document.body.appendChild(el); const st=document.createElement('style'); st.textContent='#radiotag{position:fixed;left:50%;top:calc(26px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:400 30px Anton,Impact,sans-serif;color:#fff;-webkit-text-stroke:1.2px #000;text-shadow:2px 2px 0 #000;letter-spacing:.04em;pointer-events:none;opacity:0;transition:opacity .35s;z-index:30;text-align:center}#radiotag.on{opacity:1}#radiotag small{display:block;font:700 13px Manrope,sans-serif;letter-spacing:.2em;-webkit-text-stroke:0;color:#e9e3c8}'; document.head.appendChild(st); }
   const S=STATIONS[RADIO.st]; el.innerHTML=S.n+(S.sub?'<small>'+S.sub.toUpperCase()+'</small>':''); el.classList.add('on'); RADIO.tagT=GAME.time+2.6; }
 function radioStep(d){ if(!PLAYER.driving&&!PLAYER.riding) return; rdInit(); RADIO.st=(RADIO.st+d+STATIONS.length)%STATIONS.length; RADIO.step=0; RADIO.next=RADIO.ctx.currentTime+0.12; radioTag(); try{ if(typeof blip==='function') blip('click'); }catch(e){} }
