@@ -7253,16 +7253,10 @@ function pineTex(){ const S=512, c=cvs(S,S), g=c.getContext('2d'); const n=12, b
 function tileFloorTex(){ const S=512, c=cvs(S,S), g=c.getContext('2d'); g.fillStyle='#6f7479'; g.fillRect(0,0,S,S); const n=2, t=S/n;
   for(let i=0;i<n;i++) for(let j=0;j<n;j++){ const v=rnd(-10,10); g.fillStyle=`rgb(${146+v},${150+v},${155+v})`; g.fillRect(i*t+3,j*t+3,t-6,t-6); for(let k=0;k<120;k++){ g.fillStyle=`rgba(${pick(['255,255,255','60,60,60'])},${rnd(0.03,0.08)})`; g.fillRect(i*t+rnd(4,t-8),j*t+rnd(4,t-8),rnd(2,10),rnd(2,10)); } }
   return mkTex(c); }
-function muralTex(){ // warm wainscoting: wooden panels below a dado rail, cream plaster above, framed old photos of Tuhelj
-  const W=1850,H=600, c=cvs(W,H), g=c.getContext('2d'); const R=mulberry32(61); const dado=H*0.58;
-  g.fillStyle='#e9dcc3'; g.fillRect(0,0,W,dado); for(let i=0;i<9000;i++){ g.fillStyle=`rgba(${150+R()*60|0},${130+R()*50|0},${100+R()*40|0},0.08)`; g.fillRect(R()*W,R()*dado,2,2); }
-  g.fillStyle='#6e4426'; g.fillRect(0,dado,W,H-dado); const pw=W/12; for(let k=0;k<12;k++){ const x=k*pw; g.fillStyle='#7d5030'; g.fillRect(x+10,dado+22,pw-20,H-dado-60); g.strokeStyle='rgba(30,15,5,0.55)'; g.lineWidth=4; g.strokeRect(x+10,dado+22,pw-20,H-dado-60); g.strokeStyle='rgba(255,220,180,0.15)'; g.lineWidth=2; g.strokeRect(x+14,dado+26,pw-28,H-dado-68); }
-  g.fillStyle='#4f2f18'; g.fillRect(0,dado-10,W,18); g.fillStyle='#3a2210'; g.fillRect(0,H-34,W,34);
-  const pics=[[140,60,230,170],[470,90,170,130],[760,50,260,190],[1150,80,190,145],[1460,60,240,175]];
-  for(const [x,y,w,h] of pics){ g.fillStyle='#2b1a0e'; g.fillRect(x-14,y-14,w+28,h+28); g.fillStyle='#efe6d2'; g.fillRect(x-4,y-4,w+8,h+8); const gr=g.createLinearGradient(0,y,0,y+h); gr.addColorStop(0,'#c9b48a'); gr.addColorStop(0.55,'#a99068'); gr.addColorStop(1,'#6e5a3c'); g.fillStyle=gr; g.fillRect(x,y,w,h);
-    g.fillStyle='rgba(60,45,28,0.75)'; g.beginPath(); g.moveTo(x,y+h*0.62); for(let k=0;k<=10;k++) g.lineTo(x+w*k/10,y+h*(0.5+0.12*Math.sin(k*1.3+x))); g.lineTo(x+w,y+h); g.lineTo(x,y+h); g.fill();
-    g.fillStyle='rgba(235,225,200,0.85)'; g.fillRect(x+w*0.45,y+h*0.22,w*0.08,h*0.34); g.beginPath(); g.moveTo(x+w*0.43,y+h*0.24); g.lineTo(x+w*0.49,y+h*0.1); g.lineTo(x+w*0.55,y+h*0.24); g.fill(); }
-  return mkTex(c,{repeat:false}); }
+function muralTex(){ const W=1850,H=600, c=cvs(W,H), g=c.getContext('2d'); g.fillStyle='#3f4246'; g.fillRect(0,0,W,H); const px=W/9.25;
+  for(const [c0,r] of [[3.75,1.62],[6.75,1.25]]){ g.save(); g.beginPath(); g.rect(0,22,W,H-60); g.clip(); g.fillStyle='#efefed'; g.beginPath(); g.arc(c0*px,H*0.5,r*px,0,TAU); g.fill(); g.restore();
+    g.fillStyle='#3f4246'; for(const sx of [-1,1]) for(const sy of [-1,1]){ const x=c0*px+sx*r*px*0.72, y=H*0.5+sy*(H*0.5-30); g.fillRect(x-(sx<0?40:0),y-(sy<0?0:28),40,28); } }
+  g.fillStyle='#cfd0cd'; g.fillRect(0,H-38,W,38); return mkTex(c,{repeat:false}); }
 function barPanelTex(){ const W=512,H=256, c=cvs(W,H), g=c.getContext('2d'); const base='#6a2a17'; g.fillStyle=base; g.fillRect(0,0,W,H);
   for(let i=0;i<40;i++){ g.strokeStyle=`rgba(40,12,5,${rnd(0.05,0.15)})`; g.lineWidth=rnd(1,3); g.beginPath(); const y=rnd(0,H); g.moveTo(0,y); g.bezierCurveTo(W*0.3,y+rnd(-8,8),W*0.6,y+rnd(-8,8),W,y+rnd(-6,6)); g.stroke(); }
   g.strokeStyle='rgba(30,8,3,0.8)'; g.lineWidth=6; g.strokeRect(14,14,W-28,H-28); g.strokeStyle='rgba(160,80,50,0.35)'; g.lineWidth=2; g.strokeRect(20,20,W-40,H-40);
@@ -7328,6 +7322,7 @@ function pubInterior(cs,scene,o){
   { const mm=segMap(f,ang,[3.61,4.0-th],[3.61,-5.25]); const Hm=ea-0.3; const dS=[4.0-th-o.barDoor[1],4.0-th-o.barDoor[0]];
     texPoly(Mu,mm,[[0,y0-0.01],[mm.L,y0-0.01],[mm.L,Hm],[0,Hm]],[holeRect(dS[0],dS[1],y0,y0+2.3)],WHITE,(p)=>[p[0]/mm.L,(p[1]-y0)/(Hm-y0)]);
     const lp=mm.P(dS[1]+0.45,0,-0.02); lathe(G,frame(lp[0],lp[2],ang,0),[[0.16,y0+2.25],[0.18,y0+2.35],[0.12,y0+2.45],[0,y0+2.47]],10,lin('#f4f2ec'));
+    for(const s2 of [3.2,6.3]){ const p=mm.P(s2,0,-0.02); const pf=frame(p[0],p[2],ang,0); Wd.box(pf,-0.03,0.03,y0+2.05,y0+2.55,-0.18,0.18,lin('#3b2a1e')); T.box(pf,0.03,0.035,y0+2.1,y0+2.5,-0.14,0.14,lin('#b9a88a')); }
 
     { const Wn=cs.get('win',cx,cz); segDecal(Wn,f,ang,3.6,4.0-th,3.6,-5.25,8.35,y0-0.02,'door_wood',0.025); } }
   // floor (grey tiles laid diagonally) + walkable zones
@@ -7354,6 +7349,8 @@ function pubInterior(cs,scene,o){
       const c2=q((s0+s1)/2,y0+1.8); scr.position.set(c2[0],c2[1],c2[2]); const N=m.W(0,0,1); scr.rotation.y=Math.atan2(N[0],N[2]); scene.add(scr); T.box(m.T,s0-0.05,s1+0.05,y0+2.63,y0+2.7,-0.12,-0.02,lin('#e8e8e4'));
       const dp=f(6.1,0,-5.05); const df=frame(dp[0],dp[2],ang,y0); Wd.box(df,-0.45,0.45,0,0.95,-0.28,0.28,lin('#2a2a2a')); T.box(df,-0.18,0.18,0.95,0.97,-0.12,0.12,lin('#8d9196')); T.box(df,-0.18,0.18,0.97,1.2,0.1,0.12,lin('#1c1f22')); addCollider(dp[0],dp[2],ang,1.0,0.7,y0-1,y0+1.1); }
   }
+  // plaster pier where the house wall meets the long room: hides the outer corner trim and closes the gap (seen from inside)
+  G.box(f,3.55,4.0,y0-0.02,ea,-5.75,-4.85,lin('#f2f2ef')); localCollider(f,ang,3.55,4.0,-5.75,-4.85,y0-1,ea);
   // round black tables with rattan bases and mesh chairs with wooden armrests; beer bucket
   { const tables=[[5.7,1.0],[8.7,1.3],[5.6,-1.6],[8.7,-1.4],[5.6,-4.0],[8.6,-3.9],[5.6,-6.6],[8.6,-6.8],[5.6,-9.2],[8.6,-9.4],[5.6,-11.8],[8.6,-12.0],[5.6,-14.3],[8.6,-14.4]]; /* tables all the way to the end of the long room */
     tables.forEach(([x,z],i)=>{ const y=y0; const tf=frame(...(()=>{ const p=f(x,0,z); return [p[0],p[2]]; })(),ang,y);
@@ -9441,10 +9438,11 @@ function offRoad(x,z,margin){ const n=nearestRoad(x,z,30); if(!n) return [x,z]; 
 /* ---- every person has health; killing brings police + ambulance ---- */
 function allPeople(){ const L=[]; for(const N of NPCS) L.push({A:N.A,n:N.d.n}); for(const V of LIFE.villagers) L.push({A:V.A,n:V.n}); for(const Q of GTA.peds) L.push({A:Q.A,n:Q.A.name||'Mještanin'}); if(typeof PK3!=='undefined'&&PK3&&PK3.npc) for(const [n,A] of PK3.npc) L.push({A,n}); if(typeof LAW!=='undefined') for(const c of LAW.crew) if(c.out) L.push({A:c.A,n:c.A.name,crew:c}); return L; }
 function hurtPerson(P,dmg,byMe){ const A=P.A; if(A.dead) return; A.hp=(A.hp===undefined?100:A.hp)-dmg; if(A.hp<=0){ A.dead=true; A.deadT=45; A.deadPos=A.group.position.clone(); A.deadYaw=A.group.rotation.y; A.deadT0=GAME.time; A.knock=(typeof HITDIR!=='undefined'&&HITDIR.lengthSq()>0)?new THREE.Vector3(HITDIR.x,0,HITDIR.z).normalize():new THREE.Vector3(); A.deadY0=A.group.position.y; try{ bloodPool(A); }catch(e){} if(A.bub) A.bub.visible=false; if(byMe) pushFeed(NET.name+' → '+P.n); if(A.noCrime){ if(A.noRevive) A.deadT=1e9; return; } if(byMe) crime(3); try{ spawnAmbulance(A.deadPos.x,A.deadPos.z); }catch(e){} UI.toast('💀 '+P.n+' je pao — policija i hitna dolaze!'); }
-  else if(A.bub!==undefined||true){ fleeFrom(A,PLAYER.pos,14); try{ bubble(A,A.noCrime?['Aaa!','Ubijte ga!','Pucaj!'][Math.floor(Math.random()*3)]:['Au!','Kaj delaš?!','Pomoć! Policija!'][Math.floor(Math.random()*3)],2); }catch(e){} if(byMe&&!A.noCrime&&GAME.time-(GTA.lastCrime||-99)>3){ crime(1); GTA.lastCrime=GAME.time; } } }
+  else if(A.bub!==undefined||true){ if(!P.crew&&!A.law&&!/Policaj|Polic/i.test(P.n||'')) fleeFrom(A,PLAYER.pos,14); try{ bubble(A,A.noCrime?['Aaa!','Ubijte ga!','Pucaj!'][Math.floor(Math.random()*3)]:['Au!','Kaj delaš?!','Pomoć! Policija!'][Math.floor(Math.random()*3)],2); }catch(e){} if(byMe&&!A.noCrime&&GAME.time-(GTA.lastCrime||-99)>3){ crime(1); GTA.lastCrime=GAME.time; } } }
 function peopleRay(o,d,maxT){ let best=null; for(const P of allPeople()){ const A=P.A; if(A.dead||!A.group.visible) continue; const p=A.group.position; const h=rayCyl(o,d,p.x,p.z,p.y-0.1,p.y+1.9,0.36); if(h&&h.t<maxT&&(!best||h.t<best.t)) best={t:h.t,P,head:h.y>p.y+1.55}; } return best; }
 function peopleSplash(p,R){ for(const P of allPeople()){ const A=P.A; if(A.dead) continue; const q=A.group.position; const d=Math.hypot(q.x-p.x,q.z-p.z,(q.y+0.9)-p.y); if(d<R) hurtPerson(P,Math.round(110*(1-d/R)+15),true); } }
-function peopleTick(dt){ const v=PLAYER.driving; for(const P of allPeople()){ const A=P.A; if(!A.dead&&fleeStep(A,dt)) continue;
+function peopleTick(dt){ const v=PLAYER.driving; const me=PLAYER.pos; for(const P of allPeople()){ const A=P.A; if(!A.dead&&fleeStep(A,dt)) continue;
+    const lp=A._lp||(A._lp=A.group.position.clone()); const moved=Math.abs(lp.x-A.group.position.x)+Math.abs(lp.z-A.group.position.z)>0.004; lp.copy(A.group.position); if(moved&&!A.forceClip&&!A.dead&&A.group.visible&&!A.seatT&&Math.abs(A.group.position.x-me.x)<70&&Math.abs(A.group.position.z-me.z)<70&&(typeof INSIDE==='undefined'||!INSIDE)){ const q=A.group.position; const o={x:q.x,z:q.z}; BHASH.collide(o,0.3,q.y+0.5); if(o.x!==q.x||o.z!==q.z){ q.x=o.x; q.z=o.z; lp.copy(q); } } /* walkers are pushed out of walls instead of passing through them */
     if(A.dead){ A.deadT-=dt; const e=Math.min(1,(GAME.time-(A.deadT0||-9))/0.6), k=e*e*(3-2*e); const kn=A.knock||new THREE.Vector3(); const px=A.deadPos.x+kn.x*1.1*k, pz=A.deadPos.z+kn.z*1.1*k; A.group.position.set(px,(A.deadY0!==undefined?A.deadY0:A.deadPos.y)*(1-k)+(groundAt(px,pz)+0.18)*k,pz);
       /* falls over away from the shot instead of snapping flat */ const back=kn.lengthSq()>0?Math.sign(kn.x*Math.sin(A.deadYaw)+kn.z*Math.cos(A.deadYaw))||1:1; A.group.rotation.set(-back*Math.PI/2*k,A.deadYaw,0); if(A.pool){ const s=Math.min(1,(GAME.time-A.deadT0)/5)*1.1+0.1; A.pool.scale.set(s,s,s); A.pool.position.set(px,groundAt(px,pz)+0.03,pz); } A.legL.rotation.x=A.legR.rotation.x=0; A.armL.rotation.x=A.armR.rotation.x=-0.3; if(A.deadT<=0){ A.dead=false; A.hp=100; A.group.rotation.set(0,A.deadYaw,0); if(A.pool){ GAME.scene.remove(A.pool); A.pool=null; } } continue; }
     if(v&&Math.abs(v.st.v)>7&&!v.formula){ const q=A.group.position; if(Math.hypot(q.x-v.st.x,q.z-v.st.z)<(v.bike?0.9:1.8)&&Math.abs(q.y-v.st.y)<2) hurtPerson(P,Math.abs(v.st.v)*6,true); } } }
@@ -9495,7 +9493,7 @@ function bloodPool(A){ if(!POOL_MAT){ const c=cvs(128,128), g=c.getContext('2d')
 
 // running away: hit people (and everyone near a shooting) sprint away from you instead of standing there
 function fleeFrom(A,from,t){ if(A.noCrime||A.dead) return; A.fleeT=Math.max(A.fleeT||0,t); A.fleeFrom=[from.x,from.z]; if(!A.fleePos) A.fleePos=A.group.position.clone(); }
-function panicAround(p,r){ for(const P of allPeople()){ const A=P.A; if(A.dead||A.noCrime) continue; const q=A.group.position; if(Math.hypot(q.x-p.x,q.z-p.z)<r) fleeFrom(A,p,10+Math.random()*6); } }
+function panicAround(p,r){ for(const P of allPeople()){ const A=P.A; if(A.dead||A.noCrime||P.crew||A.law) continue; const q=A.group.position; if(Math.hypot(q.x-p.x,q.z-p.z)<r) fleeFrom(A,p,10+Math.random()*6); } }
 function fleeStep(A,dt){ if(!A.fleePos) return false; if(A.fleeT>0){ A.fleeT-=dt; const p=A.fleePos; let dx=p.x-A.fleeFrom[0], dz=p.z-A.fleeFrom[1]; const d=Math.hypot(dx,dz)||1; dx/=d; dz/=d; const wob=Math.sin(GAME.time*1.7+p.x)*0.35; const ux=dx*Math.cos(wob)-dz*Math.sin(wob), uz=dx*Math.sin(wob)+dz*Math.cos(wob);
     let nx=p.x+ux*5.6*dt, nz=p.z+uz*5.6*dt; if(BHASH.hit(nx,nz,0.4)){ nx=p.x-uz*5.6*dt; nz=p.z+ux*5.6*dt; if(BHASH.hit(nx,nz,0.4)){ nx=p.x; nz=p.z; } } p.set(nx,groundAt(nx,nz),nz); A.group.rotation.y=faceYaw(ux,uz); A.spdOv=5.6; }
   else { A.spdOv=0; if(Math.hypot(A.fleePos.x-PLAYER.pos.x,A.fleePos.z-PLAYER.pos.z)>70||A.fleeT<-25){ A.fleePos=null; A.spdOv=undefined; A.fleeT=0; return false; } A.fleeT-=dt; }
@@ -9567,7 +9565,7 @@ const COP={state:'PATROL',last:null,seenT:0,searchT:0,alertT:0};
 function copSees(C){ const dx=PLAYER.pos.x-C.st.x, dz=PLAYER.pos.z-C.st.z, d=Math.hypot(dx,dz); if(d>(PLAYER.crouch&&!PLAYER.driving?28:75)) return false; for(let t=0.1;t<1;t+=0.1){ const x=C.st.x+dx*t, z=C.st.z+dz*t; const hb=BHASH.hit(x,z,0); if(hb&&hb.hl>1.5&&hb.hw>1.5) return false; } return true; }
 function crimeEvent(x,z,stars){ GTA.wanted=Math.min(5,Math.max(GTA.wanted,0)+stars); GTA.wantT=0; COP.last=[x,z]; COP.state=COP.state==='CHASE'?'CHASE':'ALERT'; COP.alertT=0; OW.panic=12; }
 function policeTick(dt){ const cops=GTA.chasers.filter(c=>c.kind==='policija'&&!c.wreck&&!(c.burnT>0)); const want=GTA.wanted;
-  if(want>0){ const need=want<=2?1:want<=4?2:3; COP.spawnCd=(COP.spawnCd||0)-dt; COP.respT=(COP.respT||0)+dt; const delay=want>=3?6:14; /* they have to drive in from far away first */ while(cops.length<need&&COP.respT>delay&&COP.spawnCd<=0){ COP.spawnCd=10; const C=makeAI('policija'); const a=Math.random()*TAU; let x=(COP.last||[PLAYER.pos.x,PLAYER.pos.z])[0]+Math.cos(a)*260, z=(COP.last||[PLAYER.pos.x,PLAYER.pos.z])[1]+Math.sin(a)*260; const n=nearestRoad(x,z,90); if(n){ x=n.s.x; z=n.s.z; } C.st.x=x; C.st.z=z; C.st.yaw=0; GTA.chasers.push(C); cops.push(C); } }
+  if(want>0){ const need=want<=3?1:2; /* never more than two police cars at once */ COP.spawnCd=(COP.spawnCd||0)-dt; COP.respT=(COP.respT||0)+dt; const delay=want>=3?6:14; /* they have to drive in from far away first */ while(cops.length<need&&COP.respT>delay&&COP.spawnCd<=0){ COP.spawnCd=10; const C=makeAI('policija'); const a=Math.random()*TAU; let x=(COP.last||[PLAYER.pos.x,PLAYER.pos.z])[0]+Math.cos(a)*260, z=(COP.last||[PLAYER.pos.x,PLAYER.pos.z])[1]+Math.sin(a)*260; const n=nearestRoad(x,z,90); if(n){ x=n.s.x; z=n.s.z; } C.st.x=x; C.st.z=z; C.st.yaw=0; GTA.chasers.push(C); cops.push(C); } }
   const seen=cops.some(copSees); if(seen){ COP.last=[PLAYER.pos.x,PLAYER.pos.z]; COP.seenT=0; if(want>0) COP.state='CHASE'; } else COP.seenT+=dt;
   if(want>0){ if(COP.state==='ALERT'){ COP.alertT+=dt; if(COP.alertT>4) COP.state='INVESTIGATE'; } if(COP.state==='CHASE'&&!seen&&COP.seenT>3) { COP.state='SEARCH'; COP.searchT=0; } if(COP.state==='INVESTIGATE'&&!seen){ COP.searchT+=dt; if(COP.searchT>25){ COP.state='SEARCH'; COP.searchT=0; } } if(COP.state==='SEARCH'){ COP.searchT+=dt; if(COP.searchT>10){ GTA.wanted=Math.max(0,GTA.wanted-1); COP.searchT=0; if(!GTA.wanted) COP.state='RETURN'; } } }
   else { COP.respT=0; if(cops.length) COP.state='RETURN'; else COP.state='PATROL'; }
@@ -10079,10 +10077,10 @@ function copCarTick(C,dt){ const crew=lawCrew(C,'cop'); const me=PLAYER.pos; con
     else { c.face=angLerp(c.face,faceYaw(dx,dz),Math.min(1,dt*8)); A.group.rotation.set(0,c.face,0); c.aim=shoot; }
     // arrest when you're on foot and they catch you (1 star, or anyone close enough)
     if(!PLAYER.driving&&!COMBAT.dead&&dd<1.6&&want<=2){ c.arrestT+=dt; if(c.arrestT>1.0){ c.arrestT=0; busted(); } } else c.arrestT=Math.max(0,c.arrestT-dt);
-    if(c.aim&&want>=2&&(COMBAT.armed||want>=3)){ c.cd-=dt; if(c.cd<=0){ c.cd=(want>=4?1.1:1.8)+Math.random()*1.2; copShoot(c,dd); } } } } /* 1 star: they only arrest; they shoot only at an armed suspect or 3+ stars */
+    if(c.aim&&want>=2&&(COMBAT.armed||want>=3)){ c.cd-=dt; if(c.cd<=0){ c.cd=(want>=4?1.7:2.6)+Math.random()*1.6; copShoot(c,dd); } } } } /* 1 star: they only arrest; they shoot only at an armed suspect or 3+ stars */
 function copShoot(c,dd){ const A=c.A; const muzzle=c.muzzle?c.muzzle.clone():A.group.position.clone().add(new THREE.Vector3(0,1.4,0)); const me=PLAYER.pos;
   const moving=Math.hypot(PLAYER.vel.x,PLAYER.vel.z)>5||(PLAYER.driving&&Math.abs(PLAYER.driving.st.v)>5);
-  let pHit=0.24*(1-dd/50)*(moving?0.5:1)*(GTA.wanted>=3?1.15:0.85); if(COMBAT.ads) pHit*=0.85;
+  let pHit=0.15*(1-dd/50)*(moving?0.5:1)*(GTA.wanted>=3?1.15:0.85); if(COMBAT.ads) pHit*=0.85;
   const hit=Math.random()<pHit; const aimP=new THREE.Vector3(me.x+(hit?0:(Math.random()-0.5)*2.4),me.y+(PLAYER.driving?1.0:1.0+Math.random()*0.6),me.z+(hit?0:(Math.random()-0.5)*2.4));
   if(!hit) aimP.add(aimP.clone().sub(muzzle).normalize().multiplyScalar(12));
   addTracer(muzzle,aimP); fxFlash(muzzle,2,0.05,10); sfxAt('pistol',muzzle,200); c.recoil=0.12;

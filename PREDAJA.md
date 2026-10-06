@@ -170,3 +170,5 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - stara kartica "Povratak u Zagorje" više ne bljesne: CSS u build.py skriva .card odmah, crni ekran s logom dok 42_title ne preuzme (#start.ttready)
 - brtija: zid s drvenom oplatom (lamperijom), krem žbukom i uokvirenim slikama Tuhlja (muralTex); 14 stolova do kraja duge prostorije
 - izbornik pauze (46_menu.js): GTA stil — TUHELJ, sat, novac, kartice IGRA/KARTA/POSTAVKE/KONTROLE; postavke: doba dana (0–24), grafika, glasnoća, letenje
+- brtija: VRAĆEN izvorni zid s velikim bijelim krugovima (bio je po igračevim slikama — ne mijenjati!); stolovi do kraja ostaju; stup na spoju kuće i duge prostorije zatvara procijep
+- ljudi koji hodaju guraju se iz zidova (BHASH.collide samo dok se kreću); policajci ne bježe; policija pucanje rjeđe (cd 2.6–4.2 s), pHit 0.15, najviše 2 auta

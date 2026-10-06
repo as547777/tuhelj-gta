@@ -36,10 +36,10 @@ function copCarTick(C,dt){ const crew=lawCrew(C,'cop'); const me=PLAYER.pos; con
     else { c.face=angLerp(c.face,faceYaw(dx,dz),Math.min(1,dt*8)); A.group.rotation.set(0,c.face,0); c.aim=shoot; }
     // arrest when you're on foot and they catch you (1 star, or anyone close enough)
     if(!PLAYER.driving&&!COMBAT.dead&&dd<1.6&&want<=2){ c.arrestT+=dt; if(c.arrestT>1.0){ c.arrestT=0; busted(); } } else c.arrestT=Math.max(0,c.arrestT-dt);
-    if(c.aim&&want>=2&&(COMBAT.armed||want>=3)){ c.cd-=dt; if(c.cd<=0){ c.cd=(want>=4?1.1:1.8)+Math.random()*1.2; copShoot(c,dd); } } } } /* 1 star: they only arrest; they shoot only at an armed suspect or 3+ stars */
+    if(c.aim&&want>=2&&(COMBAT.armed||want>=3)){ c.cd-=dt; if(c.cd<=0){ c.cd=(want>=4?1.7:2.6)+Math.random()*1.6; copShoot(c,dd); } } } } /* 1 star: they only arrest; they shoot only at an armed suspect or 3+ stars */
 function copShoot(c,dd){ const A=c.A; const muzzle=c.muzzle?c.muzzle.clone():A.group.position.clone().add(new THREE.Vector3(0,1.4,0)); const me=PLAYER.pos;
   const moving=Math.hypot(PLAYER.vel.x,PLAYER.vel.z)>5||(PLAYER.driving&&Math.abs(PLAYER.driving.st.v)>5);
-  let pHit=0.24*(1-dd/50)*(moving?0.5:1)*(GTA.wanted>=3?1.15:0.85); if(COMBAT.ads) pHit*=0.85;
+  let pHit=0.15*(1-dd/50)*(moving?0.5:1)*(GTA.wanted>=3?1.15:0.85); if(COMBAT.ads) pHit*=0.85;
   const hit=Math.random()<pHit; const aimP=new THREE.Vector3(me.x+(hit?0:(Math.random()-0.5)*2.4),me.y+(PLAYER.driving?1.0:1.0+Math.random()*0.6),me.z+(hit?0:(Math.random()-0.5)*2.4));
   if(!hit) aimP.add(aimP.clone().sub(muzzle).normalize().multiplyScalar(12));
   addTracer(muzzle,aimP); fxFlash(muzzle,2,0.05,10); sfxAt('pistol',muzzle,200); c.recoil=0.12;
