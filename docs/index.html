@@ -8067,7 +8067,7 @@ function setupInput(canvas,onLockChange){
   document.addEventListener('mousedown',e=>{ if(e.button===0&&PLAYER.driving&&PLAYER.driving.truck) LIFE.spray=true; if((document.pointerLockElement===canvas||GAME.dragLook) && GAME.started && !GAME.paused && COMBAT.armed){ if(e.button===0){ COMBAT.fired=false; fireGun(); COMBAT.hold=true; } if(e.button===2) COMBAT.ads=true; } });
   document.addEventListener('mouseup',e=>{ if(e.button===0){ COMBAT.hold=false; COMBAT.fired=false; LIFE.spray=false; } if(e.button===2) COMBAT.ads=false; });
   document.addEventListener('contextmenu',e=>{ if(GAME.started) e.preventDefault(); });
-  document.addEventListener('mousemove',e=>{ if(document.pointerLockElement!==canvas) return; if(PLAYER.driving||PLAYER.riding){ CARCAM.orbit-=e.movementX*0.0025; if(CARCAM.first) CARCAM.pitchFP=clamp(CARCAM.pitchFP-e.movementY*0.002,-0.5,0.35); else CARCAM.pitch=clamp(CARCAM.pitch+e.movementY*0.002,-0.1,0.6); CARCAM.t=0; return; } const zs=GAME.camera.fov/72; PLAYER.yaw-=e.movementX*0.0021*zs; PLAYER.pitch-=e.movementY*0.0021*zs; PLAYER.pitch=clamp(PLAYER.pitch,-1.45,1.45); });
+  document.addEventListener('mousemove',e=>{ if(document.pointerLockElement!==canvas) return; if(Math.abs(e.movementX)>400||Math.abs(e.movementY)>300) return; /* Chrome sometimes reports one huge jump under pointer lock: ignore it instead of whipping the camera round */ if(PLAYER.driving||PLAYER.riding){ CARCAM.orbit-=e.movementX*0.0025; if(CARCAM.first) CARCAM.pitchFP=clamp(CARCAM.pitchFP-e.movementY*0.002,-0.5,0.35); else CARCAM.pitch=clamp(CARCAM.pitch+e.movementY*0.002,-0.1,0.6); CARCAM.t=0; return; } const zs=GAME.camera.fov/72; PLAYER.yaw-=e.movementX*0.0021*zs; PLAYER.pitch-=e.movementY*0.0021*zs; PLAYER.pitch=clamp(PLAYER.pitch,-1.45,1.45); });
   // touch: fixed joystick bottom-left (in #joyzone), run toggle bottom-right, drag anywhere else to look
   const look={id:null,x:0,y:0};
   canvas.addEventListener('touchstart',e=>{ if(!PLAYER.enabled&&!PKC.sit) return; for(const t of e.changedTouches){ if(look.id===null){ look.id=t.identifier; look.x=t.clientX; look.y=t.clientY; } } e.preventDefault(); },{passive:false});
@@ -8279,7 +8279,7 @@ async function main(){
     TEX.waterN.offset.set(GAME.time*0.012,GAME.time*0.03);
     renderFrame(renderer,scene,camera);
     if(GAME.started){ UI.updateHUD(dt); if(fr%4===0) UI.drawMini(); if(UI.mapOpen && fr%6===0) drawMap(); }
-    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>2.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?0.7:0.8; /* phones may drop resolution when the frame rate sags */ let np=cur; if(P2.ema>30 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.ema<17 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
+    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>3.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?0.7:0.8; /* resolution only moves after a sustained change (not during a quick spin), and never more than once every 12 s, so the picture does not flicker between sizes */ P2.hi=P2.ema>34?(P2.hi||0)+1:0; P2.lo=P2.ema<15?(P2.lo||0)+1:0; P2.cool=(P2.cool||0)-3; let np=cur; if(P2.cool<=0&&P2.hi>=2 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.cool<=0&&P2.lo>=4 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(np!==cur){ P2.cool=12; P2.hi=P2.lo=0; } if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
   };
   const loop=(t)=>{ requestAnimationFrame(loop); GAME.frame(t); };
   if(!window.__NOLOOP) requestAnimationFrame(loop);
@@ -9942,7 +9942,10 @@ applyCamera=function(cam){ if(!tpsActive()){ _fpApplyCamera(cam); return; }
   const fw=tpsForward(_tw).clone(), rt=new THREE.Vector3(Math.cos(P.yaw),0,-Math.sin(P.yaw));
   const sidePt=piv.clone().addScaledVector(rt,side).add(new THREE.Vector3(0,up,0)); const sideOk=tpsFree(piv,sidePt); sidePt.lerpVectors(piv,sidePt,sideOk);
   const want=sidePt.clone().addScaledVector(fw,-dist); const f=tpsFree(sidePt,want); const d=Math.max(0.35,dist*f-0.15);
-  TPS.cur=d<TPS.cur?d:TPS.cur+(d-TPS.cur)*Math.min(1,TPS.dt*4);
+  // turning fast past a wall used to make the camera pump in and out every revolution: while the view swings quickly
+  // it stays at the shortest recent distance and only eases back out once you slow down
+  { const ly=TPS.lastYaw===undefined?P.yaw:TPS.lastYaw; const dyw=Math.abs(((P.yaw-ly)%TAU+TAU*1.5)%TAU-Math.PI); const yr=dyw/Math.max(TPS.dt,1e-3); TPS.lastYaw=P.yaw; TPS.yr=(TPS.yr||0)+(Math.min(yr,30)-(TPS.yr||0))*Math.min(1,TPS.dt*6);
+    const out=TPS.dt*4/(1+TPS.yr*1.5); TPS.cur=d<TPS.cur?d:TPS.cur+(d-TPS.cur)*Math.min(1,out); }
   cam.position.copy(sidePt).addScaledVector(fw,-TPS.cur);
   if(INSIDE){ cam.position.y=Math.min(cam.position.y,P.pos.y+2.55); const B=INT_BOX.find(b=>Math.abs(P.pos.x-b.x)<b.W+0.5&&Math.abs(P.pos.z-b.z)<b.D+0.5&&Math.abs(P.pos.y-b.y)<3);
     if(B){ cam.position.x=clamp(cam.position.x,B.x-B.W+0.25,B.x+B.W-0.25); cam.position.z=clamp(cam.position.z,B.z-B.D+0.25,B.z+B.D-0.25); cam.position.y=Math.min(cam.position.y,B.y+B.H-0.2); } }
@@ -11413,7 +11416,7 @@ function ttInit(){ const s=document.getElementById('start'); if(!s||TT.el) retur
   const unlock=()=>{ try{ ttMusicStart(); if(RADIO.ctx&&RADIO.ctx.state!=='running') RADIO.ctx.resume(); }catch(e){} }; addEventListener('pointerdown',unlock,{once:true}); addEventListener('keydown',unlock,{once:true});
   setTimeout(()=>ttMenu(),0); }
 /* NOVA PRIČA: hide the menu and build the whole world now; when everything is in, one tap starts */
-function ttPlay(){ const el=TT.el; if(el.classList.contains('loading')) return; el.classList.remove('menu'); el.classList.add('loading'); try{ ttMusicStart(); }catch(e){} setTimeout(()=>{ try{ mainGo(); }catch(e){ console.error(e); } },60); }
+function ttPlay(){ const el=TT.el; if(el.classList.contains('loading')) return; el.classList.remove('menu'); el.classList.add('loading'); try{ TTM.stop=true; if(TTM.g) TTM.g.gain.setTargetAtTime(0,RADIO.ctx.currentTime,0.35); }catch(e){} /* the lounge theme fades out while the village loads */ setTimeout(()=>{ try{ mainGo(); }catch(e){ console.error(e); } },60); }
 function ttNewGame(){ if(!confirm('Započeti priču ispočetka? Novac, stan, oružje i namještaj se brišu.')) return; try{ for(const k of ['tuhelj_story','tuhelj_money','tuhelj_home','tuhelj_done','tuhelj_arms','tuhelj_decor','tuhelj_save']) localStorage.removeItem(k); }catch(e){} location.reload(); }
 function ttMenu(){ const el=TT.el; el.classList.add('menu'); const m=el.querySelector('.menu'); const n=(typeof STORY!=='undefined')?STORY.ch:0; const go=document.getElementById('go');
   const items=[[(n>=7?'SLOBODNA IGRA':n?'NASTAVI PRIČU':'NOVA PRIČA')+' ▶',(n?('Poglavlje '+Math.min(7,n+1)+' od 7 · '):'')+(GAME.touch?'Dodirni za početak':'Klikni ili Enter za početak'),()=>ttPlay()],
@@ -11429,12 +11432,12 @@ function ttTick(dt){ if(!TT.el){ try{ ttInit(); }catch(e){ return; } } if(GAME.s
   TT.t-=dt; if(TT.t<=0&&TT.arts.length>1){ TT.t=6; TT.arts.forEach(a=>a.classList.remove('on')); TT.arts[++TT.i%TT.arts.length].classList.add('on'); } }
 // runs while loading too (the game loop has not started yet)
 (function loop(){ let last=performance.now(); const f=()=>{ const n=performance.now(); try{ ttTick((n-last)/1000); }catch(e){} last=n; if(!GAME.started) setTimeout(f,100); else ttTick(0); }; if(document.readyState==='loading') addEventListener('DOMContentLoaded',f); else setTimeout(f,0); })();
-// title music (the "Noćna vožnja" synthwave theme, starts with your first key/tap — browsers block sound before that)
+// title music (the Lounge Krapina jazz theme, starts with your first key/tap — browsers block sound before that)
 // and menu sounds when you move over / pick an item
 const TTM={on:false,next:0,step:0,g:null};
-function ttMusicStart(){ if(TTM.on) return; try{ if(!rdInit()) return; const C=RADIO.ctx; if(C.state!=='running') C.resume(); TTM.g=C.createGain(); TTM.g.gain.value=0; TTM.g.connect(C.destination); TTM.on=true; TTM.next=C.currentTime+0.2; TTM.step=0; TTM.g.gain.setTargetAtTime(0.32,C.currentTime,1.2); }catch(e){} }
+function ttMusicStart(){ if(TTM.on||TTM.stop) return; try{ if(!rdInit()) return; const C=RADIO.ctx; if(C.state!=='running') C.resume(); TTM.g=C.createGain(); TTM.g.gain.value=0; TTM.g.connect(C.destination); TTM.on=true; TTM.next=C.currentTime+0.2; TTM.step=0; TTM.g.gain.setTargetAtTime(0.32,C.currentTime,1.2); }catch(e){} }
 function ttMusicTick(){ if(!TTM.on) return; const C=RADIO.ctx; if(GAME.started){ TTM.g.gain.setTargetAtTime(0,C.currentTime,0.5); if(C.currentTime>TTM.next+2){ TTM.on=false; } return; }
-  const S=STATIONS[3]; const sd=60/S.bpm; const keep=RADIO.gain; RADIO.gain=TTM.g; try{ while(TTM.next<C.currentTime+0.3){ S.play(TTM.step,TTM.next,sd); TTM.step++; TTM.next+=sd; } }catch(e){} RADIO.gain=keep; }
+  if(TTM.stop) return; const S=STATIONS.find(x=>x.n==='LOUNGE KRAPINA')||STATIONS[3]; const sd=60/S.bpm; const keep=RADIO.gain; RADIO.gain=TTM.g; try{ while(TTM.next<C.currentTime+0.3){ S.play(TTM.step,TTM.next,sd); TTM.step++; TTM.next+=sd; } }catch(e){} RADIO.gain=keep; }
 function uiSnd(kind){ try{ if(!RADIO.ctx) return; const C=RADIO.ctx, t=C.currentTime; const o=C.createOscillator(), g=C.createGain(); o.type=kind==='pick'?'triangle':'sine'; o.frequency.setValueAtTime(kind==='pick'?660:880,t); if(kind==='pick') o.frequency.exponentialRampToValueAtTime(1320,t+0.08);
   g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(kind==='pick'?0.16:0.07,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+(kind==='pick'?0.22:0.08)); o.connect(g); g.connect(C.destination); o.start(t); o.stop(t+0.25); }catch(e){} }
 { const _menu=ttMenu; ttMenu=function(){ ttMusicStart(); uiSnd('pick'); _menu(); const m=TT.el.querySelector('.menu'); m.querySelectorAll('button,.q span').forEach(b=>{ b.addEventListener('pointerenter',()=>uiSnd('hover')); b.addEventListener('click',()=>uiSnd('pick')); }); };
@@ -11682,6 +11685,9 @@ function pfScan(){ GAME.scene.traverse(o=>{ if(!o.isMesh||o.__pf||o.isInstancedM
 function perfTick(dt){ if(!GAME.scene) return; PF.t-=dt; if(PF.t<=0){ PF.t=4; pfScan(); PF.list=PF.list.filter(o=>o.parent); }
   const L=PF.list; if(!L.length) return; const cam=GAME.camera.position, R2=GAME.touch?45*45:80*80; const n=Math.min(L.length,400);
   for(let k=0;k<n;k++){ const o=L[PF.i++%L.length]; o.getWorldPosition(PF.V); o.layers.mask=PF.V.distanceToSquared(cam)>R2?2:1; } }
+
+/* raw mouse input under pointer lock (no OS acceleration → no sudden jumps when you flick the mouse round) */
+{ const _rpl=HTMLCanvasElement.prototype.requestPointerLock; HTMLCanvasElement.prototype.requestPointerLock=function(o){ try{ const p=_rpl.call(this,Object.assign({unadjustedMovement:true},o||{})); if(p&&p.catch) return p.catch(()=>_rpl.call(this)); return p; }catch(e){ return _rpl.call(this); } }; }
 
 /* ===================== death and arrest screens =====================
    One big word (UBIJEN / UHIĆEN) in the style of the big open-world games, a plain sentence saying what happened

@@ -9,3 +9,6 @@ function pfScan(){ GAME.scene.traverse(o=>{ if(!o.isMesh||o.__pf||o.isInstancedM
 function perfTick(dt){ if(!GAME.scene) return; PF.t-=dt; if(PF.t<=0){ PF.t=4; pfScan(); PF.list=PF.list.filter(o=>o.parent); }
   const L=PF.list; if(!L.length) return; const cam=GAME.camera.position, R2=GAME.touch?45*45:80*80; const n=Math.min(L.length,400);
   for(let k=0;k<n;k++){ const o=L[PF.i++%L.length]; o.getWorldPosition(PF.V); o.layers.mask=PF.V.distanceToSquared(cam)>R2?2:1; } }
+
+/* raw mouse input under pointer lock (no OS acceleration → no sudden jumps when you flick the mouse round) */
+{ const _rpl=HTMLCanvasElement.prototype.requestPointerLock; HTMLCanvasElement.prototype.requestPointerLock=function(o){ try{ const p=_rpl.call(this,Object.assign({unadjustedMovement:true},o||{})); if(p&&p.catch) return p.catch(()=>_rpl.call(this)); return p; }catch(e){ return _rpl.call(this); } }; }

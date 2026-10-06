@@ -31,7 +31,10 @@ applyCamera=function(cam){ if(!tpsActive()){ _fpApplyCamera(cam); return; }
   const fw=tpsForward(_tw).clone(), rt=new THREE.Vector3(Math.cos(P.yaw),0,-Math.sin(P.yaw));
   const sidePt=piv.clone().addScaledVector(rt,side).add(new THREE.Vector3(0,up,0)); const sideOk=tpsFree(piv,sidePt); sidePt.lerpVectors(piv,sidePt,sideOk);
   const want=sidePt.clone().addScaledVector(fw,-dist); const f=tpsFree(sidePt,want); const d=Math.max(0.35,dist*f-0.15);
-  TPS.cur=d<TPS.cur?d:TPS.cur+(d-TPS.cur)*Math.min(1,TPS.dt*4);
+  // turning fast past a wall used to make the camera pump in and out every revolution: while the view swings quickly
+  // it stays at the shortest recent distance and only eases back out once you slow down
+  { const ly=TPS.lastYaw===undefined?P.yaw:TPS.lastYaw; const dyw=Math.abs(((P.yaw-ly)%TAU+TAU*1.5)%TAU-Math.PI); const yr=dyw/Math.max(TPS.dt,1e-3); TPS.lastYaw=P.yaw; TPS.yr=(TPS.yr||0)+(Math.min(yr,30)-(TPS.yr||0))*Math.min(1,TPS.dt*6);
+    const out=TPS.dt*4/(1+TPS.yr*1.5); TPS.cur=d<TPS.cur?d:TPS.cur+(d-TPS.cur)*Math.min(1,out); }
   cam.position.copy(sidePt).addScaledVector(fw,-TPS.cur);
   if(INSIDE){ cam.position.y=Math.min(cam.position.y,P.pos.y+2.55); const B=INT_BOX.find(b=>Math.abs(P.pos.x-b.x)<b.W+0.5&&Math.abs(P.pos.z-b.z)<b.D+0.5&&Math.abs(P.pos.y-b.y)<3);
     if(B){ cam.position.x=clamp(cam.position.x,B.x-B.W+0.25,B.x+B.W-0.25); cam.position.z=clamp(cam.position.z,B.z-B.D+0.25,B.z+B.D-0.25); cam.position.y=Math.min(cam.position.y,B.y+B.H-0.2); } }

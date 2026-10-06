@@ -199,3 +199,10 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - 27_law.js: auto staje i policajci izlaze i kad stignu na mjesto prijave (ISTRAGA/TRAŽE TE), pješke pretražuju okolicu; ako te vide → potjera. Nenaoružanom prilaze i uhite ga.
 - Kill feed samo za ubojstva od drugih igrača.
 
+
+## Glazba naslova i glatko brzo okretanje
+- Naslovni zaslon svira Lounge Krapina; na NOVA PRIČA se utiša (TTM.stop).
+- Kamera iz trećeg lica: dok se pogled brzo okreće ostaje na najkraćoj udaljenosti i polako se vraća (nema pumpanja uz zidove).
+- Miš: sirovi unos (unadjustedMovement) i ignoriranje Chromeovih lažnih skokova (>400 px).
+- Rezolucija se mijenja tek nakon duljeg pada/rasta brzine i najviše jednom u 12 s.
+

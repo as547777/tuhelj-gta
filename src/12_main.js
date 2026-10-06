@@ -72,7 +72,7 @@ async function main(){
     TEX.waterN.offset.set(GAME.time*0.012,GAME.time*0.03);
     renderFrame(renderer,scene,camera);
     if(GAME.started){ UI.updateHUD(dt); if(fr%4===0) UI.drawMini(); if(UI.mapOpen && fr%6===0) drawMap(); }
-    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>2.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?0.7:0.8; /* phones may drop resolution when the frame rate sags */ let np=cur; if(P2.ema>30 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.ema<17 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
+    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>3.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?0.7:0.8; /* resolution only moves after a sustained change (not during a quick spin), and never more than once every 12 s, so the picture does not flicker between sizes */ P2.hi=P2.ema>34?(P2.hi||0)+1:0; P2.lo=P2.ema<15?(P2.lo||0)+1:0; P2.cool=(P2.cool||0)-3; let np=cur; if(P2.cool<=0&&P2.hi>=2 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.cool<=0&&P2.lo>=4 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(np!==cur){ P2.cool=12; P2.hi=P2.lo=0; } if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
   };
   const loop=(t)=>{ requestAnimationFrame(loop); GAME.frame(t); };
   if(!window.__NOLOOP) requestAnimationFrame(loop);
