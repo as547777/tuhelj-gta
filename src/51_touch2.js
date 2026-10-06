@@ -73,7 +73,10 @@ function t2Tick(){ const gun=document.getElementById('twpn'), ab=document.getEle
 { const _br=buildRoads; buildRoads=function(scene){ const r=_br(scene); if(GAME.touch){ try{ MAP.early=true; MAP.scale=0.4; MAP.noLabels=true; buildMapCanvas(); MAP.earlyOk=!mapBlank(); }catch(e){ console.warn('karta',e); } } return r; }; }
 { const _bm2=buildMapCanvas; buildMapCanvas=function(){ if(GAME.touch&&MAP.earlyOk&&!MAP.early){ return; } if(GAME.touch&&MAP.early){ MAP.early=false; }
     if(GAME.touch){ MAP.c=null; MAP.labels=null; } _bm2(); }; }
-{ const _cv=cvs; cvs=function(w,h){ if(MAP.noLabels&&MAP.c&&w===MAP.W&&h===MAP.H){ /* the labels canvas: tiny on phones */ return _cv(1,1); } return _cv(w,h); }; }
+// reserve the phone map canvas the moment the page opens, while the canvas budget is still empty
+if(GAME.touch){ try{ const c=document.createElement('canvas'); c.width=Math.round(GW*0.4); c.height=Math.round(GH*0.4); const g=c.getContext('2d'); g.fillStyle='#8d9a6a'; g.fillRect(0,0,c.width,c.height); MAP.reserve=c; }catch(e){} }
+{ const _cv=cvs; cvs=function(w,h){ if(MAP.reserve&&!MAP.c&&w===MAP.reserve.width&&h===MAP.reserve.height){ const c=MAP.reserve; MAP.reserve=null; c.getContext('2d').clearRect(0,0,w,h); return c; }
+    if(MAP.noLabels&&MAP.c&&w===MAP.W&&h===MAP.H){ /* the labels canvas: tiny on phones */ return _cv(1,1); } return _cv(w,h); }; }
 { const _dm=drawMap; drawMap=function(){ _dm(); if(!GAME.touch) return; const c=$('mapc'), g=c.getContext('2d'), t=mapXform(); const dpr=Math.min(2,devicePixelRatio||1); g.textAlign='center'; g.textBaseline='middle';
     const lab=(txt,x,z,size,col)=>{ const X=t.ox+(x-X0)*t.s, Z=t.oz+(z-Z0)*t.s; if(X<-80||Z<-40||X>t.W+80||Z>t.H+40) return; g.font=`800 ${size*dpr}px Manrope, Arial`; g.lineWidth=4*dpr; g.strokeStyle='rgba(255,255,255,.85)'; g.strokeText(txt,X,Z); g.fillStyle=col; g.fillText(txt,X,Z); };
     for(const p of D.places) lab(p.n,p.x,p.z,p.n==='Tuhelj'?18:13,'#2a2622');
