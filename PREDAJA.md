@@ -172,3 +172,4 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - izbornik pauze (46_menu.js): GTA stil — TUHELJ, sat, novac, kartice IGRA/KARTA/POSTAVKE/KONTROLE; postavke: doba dana (0–24), grafika, glasnoća, letenje
 - brtija: VRAĆEN izvorni zid s velikim bijelim krugovima (bio je po igračevim slikama — ne mijenjati!); stolovi do kraja ostaju; stup na spoju kuće i duge prostorije zatvara procijep
 - ljudi koji hodaju guraju se iz zidova (BHASH.collide samo dok se kreću); policajci ne bježe; policija pucanje rjeđe (cd 2.6–4.2 s), pHit 0.15, najviše 2 auta
+- PERFORMANSE: grudaste daleke krošnje (5 blobova detail 1 = 410 tri × ~100k stabala) dizale su kadar na 14,8 M trokuta → 3 bloba detail 0 + deblo s 4 strane; udio dalekih stabala 0.55/0.75/0.85 (mobitel 0.35/0.5/0.6). Mjereno: 47 ms → ~18 ms po kadru u testnom pregledniku.
