@@ -175,3 +175,9 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - PERFORMANSE: grudaste daleke krošnje (5 blobova detail 1 = 410 tri × ~100k stabala) dizale su kadar na 14,8 M trokuta → 3 bloba detail 0 + deblo s 4 strane; udio dalekih stabala 0.55/0.75/0.85 (mobitel 0.35/0.5/0.6). Mjereno: 47 ms → ~18 ms po kadru u testnom pregledniku.
 - brtija: maknuto platno projektora (PUB QUIZ) i stolić s laptopom
 - putokazi se nikad ne postavljaju u zgradu: sgInside() ih premjesti na rub ceste (plavi putokaz je bio u brtiji)
+
+## Mobitel (iPhone početni zaslon)
+- HUD poštuje safe-area (notch, zaobljeni rubovi): radar, novac, joystick, gumbi, kartica misije kompaktno lijevo.
+- Animacija likova blizu kamere svaki frame na dodiru (nema trzanja pri hodu).
+- Hardverski antialiasing (MSAA) umjesto post-obrade na mobitelu: glatki rubovi i brže.
+

@@ -4,10 +4,15 @@
      nothing under the joystick (bottom-left) or the action buttons (bottom-right)
    - radio button while driving, lighter post-processing (fewer AO samples) */
 (function(){ const st=document.createElement('style'); st.textContent=`
-body.touch #hudpanel{left:auto!important;right:calc(16px + env(safe-area-inset-right,0px))!important;top:calc(16px + 122px + env(safe-area-inset-top,0px))!important;bottom:auto!important}
+body.touch #mini{right:calc(12px + env(safe-area-inset-right,0px))!important;top:calc(10px + env(safe-area-inset-top,0px))!important;left:auto!important;bottom:auto!important}
+body.touch #joyzone{left:env(safe-area-inset-left,0px)!important}
+body.touch #objcard{right:auto!important;left:calc(16px + env(safe-area-inset-left,0px))!important;top:calc(96px + env(safe-area-inset-top,0px))!important;max-width:min(300px,38vw)!important;padding:6px 10px 6px 8px!important}
+body.touch #objcard .t{font-size:13px!important} body.touch #objcard .d{font-size:11px!important} body.touch #objcard .ex{width:22px!important;height:22px!important;font-size:15px!important}
+body.touch #tbtns{right:calc(12px + 118px + 12px + env(safe-area-inset-right,0px))!important}
+body.touch #hudpanel{left:auto!important;right:calc(12px + env(safe-area-inset-right,0px))!important;top:calc(10px + 122px + env(safe-area-inset-top,0px))!important;bottom:auto!important}
 body.touch #hudpanel .bars{width:118px!important}
 body.touch #mini{border-radius:12px!important}
-body.touch #gtacash{right:auto;left:calc(18px + env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));font-size:30px}
+body.touch #gtacash{right:auto;left:calc(18px + env(safe-area-inset-left,0px))!important;top:calc(12px + env(safe-area-inset-top,0px));font-size:30px}
 body.touch #wbox{right:auto!important;left:calc(16px + env(safe-area-inset-left,0px))!important;top:calc(50px + env(safe-area-inset-top,0px))!important}
 body.touch #wbox b{font-size:30px!important}
 body.touch #toast{top:calc(100px + env(safe-area-inset-top,0px))!important;max-width:60vw}

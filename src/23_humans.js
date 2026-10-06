@@ -85,7 +85,7 @@ function humansTick(dt){ realInit(); rbInit(); if(!REAL.ready&&!REAL.rbReady){ i
     rbPlay(R,clip,ts);
     R.m.position.y=A.forceY!==undefined&&A.forceClip?A.forceY:sitClip?(0.99-(REAL.pel[R.g][sitClip]||0.58)*R.sc):onBike?0.04:0;
     if(A.dead){ continue; }
-    R.acc+=dt; const step=onBike?0:GAME.touch?(d<12?1/40:d<30?1/15:1/8):(d<25?0:d<55?1/20:1/10); if(R.acc>=step){ R.mixer.update(R.acc); R.acc=0; if(onBike) bikePose(R,A.bikePh||0); } } }
+    R.acc+=dt; const step=onBike?0:GAME.touch?(d<14?0:d<30?1/15:1/8) /* near (and your own character) animate every frame — the 40 Hz cap made walking judder */:(d<25?0:d<55?1/20:1/10); if(R.acc>=step){ R.mixer.update(R.acc); R.acc=0; if(onBike) bikePose(R,A.bikePh||0); } } }
 /* cycling: realistic riders keep the idle clip and get legs/arms/spine posed per frame (pedalling from the wheel phase) */
 const _bq=new THREE.Quaternion(), _bp=new THREE.Quaternion(), _br=new THREE.Quaternion(), _bx=new THREE.Vector3(), BX=new THREE.Vector3(1,0,0);
 function boneRot(root,bone,ang){ if(!bone||!bone.parent) return; bone.parent.updateWorldMatrix(true,false); root.getWorldQuaternion(_br); bone.parent.getWorldQuaternion(_bp); _bx.copy(BX).applyQuaternion(_br).applyQuaternion(_bp.invert()).normalize(); _bq.setFromAxisAngle(_bx,ang); bone.quaternion.premultiply(_bq); }
