@@ -93,11 +93,12 @@ function holdGun(A,wi,dir,gun,recoil){ const H=GUN_HOLD[wi]; if(!H||!gun) return
       gun.position.copy(base).addScaledVector(dir,0.1-recoil*0.6);
       armIK(B.ru,B.rf,B.rh,gun.position.clone().addScaledVector(dir,0.08).addScaledVector(upv,-0.14),chest.clone().addScaledVector(rt,0.5).addScaledVector(upv,-0.6));
       armIK(B.lu,B.lf,B.lh,gun.position.clone().addScaledVector(dir,0.42).addScaledVector(upv,-0.1),chest.clone().addScaledVector(rt,-0.6).addScaledVector(upv,-0.6)); }
-    else if(H.pistol){ const hand=chest.clone().addScaledVector(dir,0.5-recoil*0.5).addScaledVector(upv,-0.05);
+    else if(H.pistol){ const hand=chest.clone().addScaledVector(dir,0.46-recoil*0.5).addScaledVector(upv,0.02).addScaledVector(rt,-0.04);
       armIK(B.ru,B.rf,B.rh,hand,chest.clone().addScaledVector(rt,0.6).addScaledVector(upv,-0.7));
       const rh=B.rh.getWorldPosition(new THREE.Vector3());
       gun.position.copy(rh).addScaledVector(dir,H.f).addScaledVector(upv,H.u);
-      armIK(B.lu,B.lf,B.lh,rh.clone().addScaledVector(rt,-0.05).addScaledVector(upv,-0.02),chest.clone().addScaledVector(rt,-0.6).addScaledVector(upv,-0.7)); }
+      armIK(B.lu,B.lf,B.lh,rh.clone().addScaledVector(rt,-0.045).addScaledVector(upv,-0.035).addScaledVector(dir,-0.02),chest.clone().addScaledVector(rt,-0.45).addScaledVector(upv,-0.9));
+      /* support hand wraps the grip: same orientation as the gun hand, mirrored about the barrel (was an open, twisted palm) */ { B.rh.getWorldQuaternion(_tq2); _tq.setFromAxisAngle(dir,Math.PI*0.85); _tq2.premultiply(_tq); B.lh.parent.getWorldQuaternion(_tq3); B.lh.quaternion.copy(_tq3.invert().multiply(_tq2)); B.lh.updateWorldMatrix(false,true); } }
     else { // long gun: butt in the right shoulder, right hand on the grip, left hand under the fore-end
       const sh=(B.ru||B.sp).getWorldPosition(new THREE.Vector3()); const L=gun.userData.len;
       const hd=(B.head||B.neck||B.sp).getWorldPosition(new THREE.Vector3()); const butt=sh.addScaledVector(dir,0.06-recoil*0.6).addScaledVector(rt,-0.11); butt.y+=((hd.y-0.13)-butt.y)*0.85; /* butt in the shoulder pocket, sights at eye level: cheek on the stock */

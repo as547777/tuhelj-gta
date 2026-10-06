@@ -64,3 +64,14 @@ function ttTick(dt){ if(!TT.el){ try{ ttInit(); }catch(e){ return; } } if(GAME.s
   TT.t-=dt; if(TT.t<=0&&TT.arts.length>1){ TT.t=6; TT.arts.forEach(a=>a.classList.remove('on')); TT.arts[++TT.i%TT.arts.length].classList.add('on'); } }
 // runs while loading too (the game loop has not started yet)
 (function loop(){ let last=performance.now(); const f=()=>{ const n=performance.now(); try{ ttTick((n-last)/1000); }catch(e){} last=n; if(!GAME.started) setTimeout(f,100); else ttTick(0); }; if(document.readyState==='loading') addEventListener('DOMContentLoaded',f); else setTimeout(f,0); })();
+// title music (the "Noćna vožnja" synthwave theme, starts with your first key/tap — browsers block sound before that)
+// and menu sounds when you move over / pick an item
+const TTM={on:false,next:0,step:0,g:null};
+function ttMusicStart(){ if(TTM.on) return; try{ if(!rdInit()) return; const C=RADIO.ctx; if(C.state!=='running') C.resume(); TTM.g=C.createGain(); TTM.g.gain.value=0; TTM.g.connect(C.destination); TTM.on=true; TTM.next=C.currentTime+0.2; TTM.step=0; TTM.g.gain.setTargetAtTime(0.32,C.currentTime,1.2); }catch(e){} }
+function ttMusicTick(){ if(!TTM.on) return; const C=RADIO.ctx; if(GAME.started){ TTM.g.gain.setTargetAtTime(0,C.currentTime,0.5); if(C.currentTime>TTM.next+2){ TTM.on=false; } return; }
+  const S=STATIONS[3]; const sd=60/S.bpm; const keep=RADIO.gain; RADIO.gain=TTM.g; try{ while(TTM.next<C.currentTime+0.3){ S.play(TTM.step,TTM.next,sd); TTM.step++; TTM.next+=sd; } }catch(e){} RADIO.gain=keep; }
+function uiSnd(kind){ try{ if(!RADIO.ctx) return; const C=RADIO.ctx, t=C.currentTime; const o=C.createOscillator(), g=C.createGain(); o.type=kind==='pick'?'triangle':'sine'; o.frequency.setValueAtTime(kind==='pick'?660:880,t); if(kind==='pick') o.frequency.exponentialRampToValueAtTime(1320,t+0.08);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(kind==='pick'?0.16:0.07,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+(kind==='pick'?0.22:0.08)); o.connect(g); g.connect(C.destination); o.start(t); o.stop(t+0.25); }catch(e){} }
+{ const _menu=ttMenu; ttMenu=function(){ ttMusicStart(); uiSnd('pick'); _menu(); const m=TT.el.querySelector('.menu'); m.querySelectorAll('button,.q span').forEach(b=>{ b.addEventListener('pointerenter',()=>uiSnd('hover')); b.addEventListener('click',()=>uiSnd('pick')); }); };
+  addEventListener('keydown',e=>{ if(!GAME.started&&TT.el&&TT.el.classList.contains('menu')&&/Arrow|Key[WS]/.test(e.code)) uiSnd('hover'); });
+  const _tick=ttTick; ttTick=function(dt){ _tick(dt); ttMusicTick(); }; }

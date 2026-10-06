@@ -165,7 +165,7 @@ function shootRay(o,d,maxR,W,wantVeh){ let best=null; for(const R of NET.remotes
   const pp=peopleRay(o,d,veh?veh.t:(best?best.t:end)); let person=null; if(pp){ person=pp; end=pp.t; best=null; veh=null; }
   if(veh){ end=veh.t; best=null; } else if(best) end=best.t;
   return {end,best,person,veh,wall}; }
-function fireGun(){ if(COMBAT.armed&&COMBAT.cd<=0&&!COMBAT.dead&&typeof panicAround==='function'&&(!COMBAT._pt||GAME.time>COMBAT._pt)){ COMBAT._pt=GAME.time+1; try{ panicAround(PLAYER.pos,35); }catch(e){} } const C=COMBAT, W=curW(); if(!C.armed||C.dead||C.cd>0||C.reload>0||PLAYER.driving||PLAYER.riding||C.drink||(typeof PKC!=='undefined'&&PKC.sit)) return; if(!W.auto&&C.hold&&C.fired) return; C.fired=true; if(C.mags[C.wi]<=0){ sfx('dry'); reloadGun(); return; }
+function fireGun(){ const C=COMBAT, W=curW(); if(!C.armed||C.dead||C.cd>0||C.reload>0||PLAYER.driving||PLAYER.riding||C.drink||(typeof PKC!=='undefined'&&PKC.sit)) return; if(!W.auto&&C.hold&&C.fired) return; C.fired=true; if(C.mags[C.wi]<=0){ sfx('dry'); reloadGun(); return; }
   buildWeaponModels(); fxInit(); C.cd=W.cd; C.mags[C.wi]--; C.mag=C.mags[C.wi]; C.recoil=Math.min(W.rocket?0.2:0.14,C.recoil+(W.rocket?0.16:C.wi===2?0.1:W.pellets?0.12:C.wi===4?0.06:0.03)); const vm=WMODELS[C.wi]; const fl=vm&&vm.userData.flash; if(fl){ fl.visible=true; fl.material.rotation=Math.random()*TAU; C.flash=0.05; C.flashM=fl; }
   const cam=GAME.camera; const o=cam.getWorldPosition(new THREE.Vector3()); const d0=new THREE.Vector3(0,0,-1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion())).normalize();
   const tps=typeof tpsActive==='function'&&tpsActive(); if(tps) o.addScaledVector(d0,TPS.cur+0.2);
@@ -180,7 +180,7 @@ function fireGun(){ if(COMBAT.armed&&COMBAT.cd<=0&&!COMBAT.dead&&typeof panicAro
     else if(R.veh){ damageVehicle(R.veh.V,W.dmg*0.45*fall,o.clone().addScaledVector(d,R.end)); sparks(o.clone().addScaledVector(d,R.end)); if(Math.random()<0.3) sfx('ricochet',0.5); }
     else if(R.wall&&R.end<120){ dustHit(o.clone().addScaledVector(d,R.end)); }
     const e=o.clone().addScaledVector(d,R.end); lastE=e; if(k<4) addTracer(muzzle,e); }
-  gtaShot(); OW.panic=Math.max(OW.panic,8); C.shot={n:++C.shotN,w:C.wi,a:[+muzzle.x.toFixed(2),+muzzle.y.toFixed(2),+muzzle.z.toFixed(2)],b:[+lastE.x.toFixed(2),+lastE.y.toFixed(2),+lastE.z.toFixed(2)]};
+  gtaShot(); OW.panic=Math.max(OW.panic,8); if(!C._pt||GAME.time>C._pt){ C._pt=GAME.time+1; try{ panicAround(PLAYER.pos,35); }catch(e){} } /* only a real shot scares people, not aiming */ C.shot={n:++C.shotN,w:C.wi,a:[+muzzle.x.toFixed(2),+muzzle.y.toFixed(2),+muzzle.z.toFixed(2)],b:[+lastE.x.toFixed(2),+lastE.y.toFixed(2),+lastE.z.toFixed(2)]};
   if(C.mags[C.wi]<=0) setTimeout(()=>reloadGun(),200); updateCombatHUD(); }
 /* ---- small impact effects ---- */
 function smokeSprite(){ let P=PUFFS.find(q=>!q.m.visible); if(!P){ if(PUFFS.length>260) return null; const m=new THREE.Sprite(new THREE.SpriteMaterial({map:FX.smoke,transparent:true,depthWrite:false,opacity:0.6})); m.renderOrder=3; GAME.scene.add(m); P={m}; PUFFS.push(P); } return P; }

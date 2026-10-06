@@ -42,6 +42,7 @@ function groundLine(scene,M,x0,z0,x1,z1,w=0.12){ const L=Math.hypot(x1-x0,z1-z0)
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); const m=new THREE.Mesh(g,M); m.receiveShadow=true; scene.add(m); }
 
 function photoPaving(cs,scene){
+  try{ laneFlares(scene); }catch(e){ console.warn('spojevi',e); }
   if(PHOTO.forecourt) paveArea(scene,PHOTO.forecourt,'concrete',{tile:2.5,roads:true,lift:0.05,mat:PHOTO.foreMat||null});
   // 1) church: red clay pavers right round it, a wider square on the entrance side
   const ch=BLD.find(b=>b.k==='church'); if(ch){ const [cx,cz,ang,L,W]=ch.rect; const f=frame(cx,cz,ang); const e=4.6;
@@ -153,3 +154,10 @@ function pubFrontArcade(cs,scene,b,f,RPs,rw){ const [cx,cz,ang]=b.rect; const y0
   seg([xs[0],4.25],O[0],'door'); for(let i=0;i<O.length-1;i++) seg(O[i],O[i+1],'arches'); seg(O[O.length-1],[xs[xs.length-1],2.0],'plain');
   const roofP=O.concat([[xs[xs.length-1],2.0],[xs[0],4.25]]); hipRoofOver(cs,f,ang,roofP,ea,28,0.5,{mat:'roofK',color:lin('#f6ece6'),soffit:lin('#8a5c3c'),fascia:lin('#6a4630'),skipEave:(a,b2)=>Math.abs(a[1]-4.25)<0.01&&Math.abs(b2[1]-4.25)<0.01});
   addFloor(f,ang,xs[0],xs[xs.length-1],4.25,Math.min(...O.map(q=>q[1])),y0); }
+
+// where a gravel lane meets a road, its end flares out with rounded corners (it used to stop as a square block)
+function laneFlares(scene){ for(const r of ROADS){ if(!r.gravel||!r.S||r.S.length<4) continue;
+    for(const end of [0,1]){ const S=r.S, T=r.T; const i=end?S.length-1:0, j=end?S.length-6:5; const p=S[i]; const n=nearestRoad(p[0],p[1],r.w+4,q=>q.rid!==r.rid&&q.t!=='track'&&q.t!=='path'); if(!n) continue;
+      const tx=(p[0]-S[j][0]), tz=(p[1]-S[j][1]); const tl=Math.hypot(tx,tz)||1; const ux=tx/tl, uz=tz/tl, nx=-uz, nz=ux; const back=6, hw=r.w/2;
+      const P=[]; for(let k=0;k<=8;k++){ const t=k/8; const w=hw+3.2*Math.pow(t,2.2); P.push([p[0]-ux*back*(1-t)+nx*w, p[1]-uz*back*(1-t)+nz*w]); } for(let k=8;k>=0;k--){ const t=k/8; const w=hw+3.2*Math.pow(t,2.2); P.push([p[0]-ux*back*(1-t)-nx*w, p[1]-uz*back*(1-t)-nz*w]); }
+      paveArea(scene,P,'gravel',{tile:5,roads:true,lift:0.03,skip:(x,z)=>{ const q=nearestRoad(x,z,8,s2=>s2.rid===n.s.rid); return q&&q.d<0.2; }}); } } }

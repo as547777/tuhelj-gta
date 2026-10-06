@@ -112,7 +112,7 @@ function buildRoads(scene){
       g.quad(A.it,A.ot,B.ot,B.it,[u0,0],[u0,W/2],[u1,W/2],[u1,0],c,[0,1,0]);
       g.quad(A.i,A.it,B.it,B.i,[u0,0],[u0,0.1],[u1,0.1],[u1,0],cdark,[-A.n[0],0,-A.n[1]]);
       g.quad(A.ot,A.o,B.o,B.ot,[u0,0],[u0,0.1],[u1,0.1],[u1,0],cdark,[A.n[0],0,A.n[1]]); }
-    SIDEWALKS.push(pts);
+    SIDEWALKS.push(pts); for(let k=0;k<pts.length-1;k++){ const A=pts[k], B=pts[k+1]; const seg={ax:A.it[0],az:A.it[2],bx:B.it[0],bz:B.it[2],ya:A.it[1],yb:B.it[1],nx:A.n[0],nz:A.n[1],W}; const key=Math.floor(A.it[0]/8)+'|'+Math.floor(A.it[2]/8); for(let u=-1;u<=1;u++) for(let v=-1;v<=1;v++){ const kk=(Math.floor(A.it[0]/8)+u)+'|'+(Math.floor(A.it[2]/8)+v); let L=SWHASH.get(kk); if(!L){ L=[]; SWHASH.set(kk,L); } L.push(seg); } }
   }
   // crosswalks
   const zebra=[[-214,-31],[-249,-56],[-292,-58],[-372,-1],[-257,-104]];
@@ -130,3 +130,5 @@ function buildRoads(scene){
   ROADMESH.mats=mats;
 }
 const SIDEWALKS=[], CROSSINGS=[];
+const SWHASH=new Map(); // sidewalk top surfaces, so you walk ON the pavement instead of sinking into it
+function sidewalkAt(x,z){ const L=SWHASH.get(Math.floor(x/8)+'|'+Math.floor(z/8)); if(!L) return -1e9; let best=-1e9; for(const s of L){ const dx=s.bx-s.ax, dz=s.bz-s.az, l2=dx*dx+dz*dz||1e-6; const t=((x-s.ax)*dx+(z-s.az)*dz)/l2; if(t<-0.05||t>1.05) continue; const px=s.ax+dx*t, pz=s.az+dz*t; const o=(x-px)*s.nx+(z-pz)*s.nz; if(o<-0.05||o>s.W+0.05) continue; const y=s.ya+(s.yb-s.ya)*clamp(t,0,1); if(y>best) best=y; } return best; }

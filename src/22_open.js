@@ -48,7 +48,7 @@ function blip(type){ const C=AUD.ctx; if(!C||OW.muted) return; const t=C.current
 function audioTick(dt){ if(!AUD.ctx){ if(GAME.started) audInit(); return; } if(AUD.ctx.state==='suspended') AUD.ctx.resume().catch(()=>{}); const v=PLAYER.driving; const sp=v?Math.abs(v.st.v):0;
   AUD.engG.gain.value=OW.muted?0:(v&&!v.bike?0.05+Math.min(0.08,sp*0.004):PLAYER.heli?0.1:0); AUD.eng.frequency.value=v?(v.formula?90+sp*9:45+sp*4.5):PLAYER.heli?38:40;
   let pd=1e9; for(const C of GTA.chasers) if(C.kind==='policija'||C.kind==='hitna') pd=Math.min(pd,Math.hypot(C.st.x-PLAYER.pos.x,C.st.z-PLAYER.pos.z)); for(const C of GTA.amb) pd=Math.min(pd,Math.hypot(C.st.x-PLAYER.pos.x,C.st.z-PLAYER.pos.z));
-  AUD.sirG.gain.value=OW.muted?0:(pd<160?0.05*(1-pd/160):0); AUD.sir.frequency.value=(Math.floor(GAME.time*1.6)%2)?960:720;
+  AUD.sirG.gain.value=OW.muted?0:(pd<160?0.012*Math.pow(1-pd/160,1.5):0); AUD.sir.type='triangle'; AUD.sir.frequency.value=650+260*(0.5+0.5*Math.sin(GAME.time*2.6)); /* softer, wailing siren */
   OW.stepT=(OW.stepT||0)+dt; const moving=!v&&!PLAYER.heli&&PLAYER.ground&&Math.hypot(PLAYER.vel.x,PLAYER.vel.z)>1; if(moving&&OW.stepT>(KEYS.ShiftLeft||TOUCH.run?0.28:0.45)){ OW.stepT=0; blip('step'); }
   if((SKY.night||0)<0.4&&OW.rain<0.3&&Math.random()<dt*0.35) blip('bird'); }
 /* ---- stamina + fall damage ---- */

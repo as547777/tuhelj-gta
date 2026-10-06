@@ -88,7 +88,7 @@ function buildTrees(scene,quality){
   const barkMat=lodMaterial(new THREE.MeshStandardMaterial({color:0x5b4a3c,vertexColors:true,roughness:0.95}),true);
   const farMat=lodMaterial(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.92,metalness:0}),false);
   const farBush=lodMaterial(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.92,metalness:0}),false);
-  for(const m of [leafMat,needleMat,farMat,farBush]) foliageFill(m); /* light through the leaves: crowns are never black blocks */
+  for(const m of [leafMat,needleMat,farMat,farBush]) foliageFill(m); needleMat.color.setRGB(1.7,1.75,1.6); /* pines were black silhouettes */ /* light through the leaves: crowns are never black blocks */
   VEG.T=T; VEG.mats={leafMat,needleMat,barkMat,farMat};
   // far chunks
   const CH=560; const chunks=new Map(); const n=TREES.n; const mtx=new THREE.Matrix4(), q=new THREE.Quaternion(), s=new THREE.Vector3(), p=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);

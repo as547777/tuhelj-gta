@@ -158,3 +158,10 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - AI auti se razmiču jedni od drugih i od parkiranih (aiSeparate), promet koči iza drugih
 - ljudi: pogođeni i oni u 35 m oko pucnjave bježe trčeći (fleeFrom/fleeStep, spdOv=5.6), nakon bijega se vrate kad su daleko
 - vatra (45_fire.js): 70 plamenih čestica, stup crnog dima, iskre, treperavo svjetlo (desktop), čađavi krov
+
+## Runda: pištolj, pločnik, panika, zvuk (listopad 2026, 9)
+- pištolj: lijeva ruka obuhvaća dršku (kvaternion desne ruke zrcaljen oko cijevi), ruke ispružene u visini prsa
+- pločnici: SWHASH + sidewalkAt() — groundAt uzima visinu pločnika (više se ne propada u nj)
+- panika samo na stvarni pucanj (ne na nišanjenje); dealer = Female_Adult_17; sirena tiša, trokutasti zavijajući ton
+- laneFlares: šljunčani putovi se na spoju s cestom zaobljeno šire; borovi svjetliji (needleMat ×1.7)
+- početni ekran: glazba (Noćna vožnja) od prve tipke/dodira + zvukovi izbornika (uiSnd)

@@ -54,7 +54,7 @@ function updatePlayer(dt){
   }
   if(typeof INSIDE==='undefined'||!INSIDE){ P.pos.x=clamp(P.pos.x,M.XMIN-150,M.XMAX+150); P.pos.z=clamp(P.pos.z,M.ZMIN-150,M.ZMAX+150); } // interior rooms sit outside the map
 }
-function groundAt(x,z){ if(typeof INSIDE!=='undefined'&&INSIDE){ const fl=floorAt(x,z); if(fl>-1e8) return fl; } const g=getHeight(x,z)+walkLift(x,z); return FLOORS.length?Math.max(g,floorAt(x,z)):g; }
+function groundAt(x,z){ if(typeof INSIDE!=='undefined'&&INSIDE){ const fl=floorAt(x,z); if(fl>-1e8) return fl; } let g=getHeight(x,z)+walkLift(x,z); { const sw=sidewalkAt(x,z); if(sw>g) g=sw; } return FLOORS.length?Math.max(g,floorAt(x,z)):g; }
 function walkLift(x,z){ // sidewalks & road surface
   const n=nearestRoad(x,z,4); if(!n) return 0; return n.d<0? 0.07 : 0; }
 function applyCamera(cam){ const P=PLAYER; const b=P.fly?0:Math.sin(P.bob*2)*0.035; const sw=drunkSway(); const dy=COMBAT.dead?-1.2:0; cam.position.set(P.pos.x,P.pos.y+P.eye+b+dy,P.pos.z); cam.rotation.set(P.pitch+COMBAT.recoil*0.6,P.yaw+sw[1],Math.sin(P.bob)*0.004+sw[0]+(COMBAT.dead?0.5:0),'YXZ'); }

@@ -6244,7 +6244,7 @@ function buildRoads(scene){
       g.quad(A.it,A.ot,B.ot,B.it,[u0,0],[u0,W/2],[u1,W/2],[u1,0],c,[0,1,0]);
       g.quad(A.i,A.it,B.it,B.i,[u0,0],[u0,0.1],[u1,0.1],[u1,0],cdark,[-A.n[0],0,-A.n[1]]);
       g.quad(A.ot,A.o,B.o,B.ot,[u0,0],[u0,0.1],[u1,0.1],[u1,0],cdark,[A.n[0],0,A.n[1]]); }
-    SIDEWALKS.push(pts);
+    SIDEWALKS.push(pts); for(let k=0;k<pts.length-1;k++){ const A=pts[k], B=pts[k+1]; const seg={ax:A.it[0],az:A.it[2],bx:B.it[0],bz:B.it[2],ya:A.it[1],yb:B.it[1],nx:A.n[0],nz:A.n[1],W}; const key=Math.floor(A.it[0]/8)+'|'+Math.floor(A.it[2]/8); for(let u=-1;u<=1;u++) for(let v=-1;v<=1;v++){ const kk=(Math.floor(A.it[0]/8)+u)+'|'+(Math.floor(A.it[2]/8)+v); let L=SWHASH.get(kk); if(!L){ L=[]; SWHASH.set(kk,L); } L.push(seg); } }
   }
   // crosswalks
   const zebra=[[-214,-31],[-249,-56],[-292,-58],[-372,-1],[-257,-104]];
@@ -6262,6 +6262,8 @@ function buildRoads(scene){
   ROADMESH.mats=mats;
 }
 const SIDEWALKS=[], CROSSINGS=[];
+const SWHASH=new Map(); // sidewalk top surfaces, so you walk ON the pavement instead of sinking into it
+function sidewalkAt(x,z){ const L=SWHASH.get(Math.floor(x/8)+'|'+Math.floor(z/8)); if(!L) return -1e9; let best=-1e9; for(const s of L){ const dx=s.bx-s.ax, dz=s.bz-s.az, l2=dx*dx+dz*dz||1e-6; const t=((x-s.ax)*dx+(z-s.az)*dz)/l2; if(t<-0.05||t>1.05) continue; const px=s.ax+dx*t, pz=s.az+dz*t; const o=(x-px)*s.nx+(z-pz)*s.nz; if(o<-0.05||o>s.W+0.05) continue; const y=s.ya+(s.yb-s.ya)*clamp(t,0,1); if(y>best) best=y; } return best; }
 
 /* ===================== buildings ===================== */
 const BHASH={cell:16,map:new Map(),
@@ -7634,7 +7636,7 @@ function buildTrees(scene,quality){
   const barkMat=lodMaterial(new THREE.MeshStandardMaterial({color:0x5b4a3c,vertexColors:true,roughness:0.95}),true);
   const farMat=lodMaterial(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.92,metalness:0}),false);
   const farBush=lodMaterial(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.92,metalness:0}),false);
-  for(const m of [leafMat,needleMat,farMat,farBush]) foliageFill(m); /* light through the leaves: crowns are never black blocks */
+  for(const m of [leafMat,needleMat,farMat,farBush]) foliageFill(m); needleMat.color.setRGB(1.7,1.75,1.6); /* pines were black silhouettes */ /* light through the leaves: crowns are never black blocks */
   VEG.T=T; VEG.mats={leafMat,needleMat,barkMat,farMat};
   // far chunks
   const CH=560; const chunks=new Map(); const n=TREES.n; const mtx=new THREE.Matrix4(), q=new THREE.Quaternion(), s=new THREE.Vector3(), p=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
@@ -8104,7 +8106,7 @@ function updatePlayer(dt){
   }
   if(typeof INSIDE==='undefined'||!INSIDE){ P.pos.x=clamp(P.pos.x,M.XMIN-150,M.XMAX+150); P.pos.z=clamp(P.pos.z,M.ZMIN-150,M.ZMAX+150); } // interior rooms sit outside the map
 }
-function groundAt(x,z){ if(typeof INSIDE!=='undefined'&&INSIDE){ const fl=floorAt(x,z); if(fl>-1e8) return fl; } const g=getHeight(x,z)+walkLift(x,z); return FLOORS.length?Math.max(g,floorAt(x,z)):g; }
+function groundAt(x,z){ if(typeof INSIDE!=='undefined'&&INSIDE){ const fl=floorAt(x,z); if(fl>-1e8) return fl; } let g=getHeight(x,z)+walkLift(x,z); { const sw=sidewalkAt(x,z); if(sw>g) g=sw; } return FLOORS.length?Math.max(g,floorAt(x,z)):g; }
 function walkLift(x,z){ // sidewalks & road surface
   const n=nearestRoad(x,z,4); if(!n) return 0; return n.d<0? 0.07 : 0; }
 function applyCamera(cam){ const P=PLAYER; const b=P.fly?0:Math.sin(P.bob*2)*0.035; const sw=drunkSway(); const dy=COMBAT.dead?-1.2:0; cam.position.set(P.pos.x,P.pos.y+P.eye+b+dy,P.pos.z); cam.rotation.set(P.pitch+COMBAT.recoil*0.6,P.yaw+sw[1],Math.sin(P.bob)*0.004+sw[0]+(COMBAT.dead?0.5:0),'YXZ'); }
@@ -9122,7 +9124,7 @@ function shootRay(o,d,maxR,W,wantVeh){ let best=null; for(const R of NET.remotes
   const pp=peopleRay(o,d,veh?veh.t:(best?best.t:end)); let person=null; if(pp){ person=pp; end=pp.t; best=null; veh=null; }
   if(veh){ end=veh.t; best=null; } else if(best) end=best.t;
   return {end,best,person,veh,wall}; }
-function fireGun(){ if(COMBAT.armed&&COMBAT.cd<=0&&!COMBAT.dead&&typeof panicAround==='function'&&(!COMBAT._pt||GAME.time>COMBAT._pt)){ COMBAT._pt=GAME.time+1; try{ panicAround(PLAYER.pos,35); }catch(e){} } const C=COMBAT, W=curW(); if(!C.armed||C.dead||C.cd>0||C.reload>0||PLAYER.driving||PLAYER.riding||C.drink||(typeof PKC!=='undefined'&&PKC.sit)) return; if(!W.auto&&C.hold&&C.fired) return; C.fired=true; if(C.mags[C.wi]<=0){ sfx('dry'); reloadGun(); return; }
+function fireGun(){ const C=COMBAT, W=curW(); if(!C.armed||C.dead||C.cd>0||C.reload>0||PLAYER.driving||PLAYER.riding||C.drink||(typeof PKC!=='undefined'&&PKC.sit)) return; if(!W.auto&&C.hold&&C.fired) return; C.fired=true; if(C.mags[C.wi]<=0){ sfx('dry'); reloadGun(); return; }
   buildWeaponModels(); fxInit(); C.cd=W.cd; C.mags[C.wi]--; C.mag=C.mags[C.wi]; C.recoil=Math.min(W.rocket?0.2:0.14,C.recoil+(W.rocket?0.16:C.wi===2?0.1:W.pellets?0.12:C.wi===4?0.06:0.03)); const vm=WMODELS[C.wi]; const fl=vm&&vm.userData.flash; if(fl){ fl.visible=true; fl.material.rotation=Math.random()*TAU; C.flash=0.05; C.flashM=fl; }
   const cam=GAME.camera; const o=cam.getWorldPosition(new THREE.Vector3()); const d0=new THREE.Vector3(0,0,-1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion())).normalize();
   const tps=typeof tpsActive==='function'&&tpsActive(); if(tps) o.addScaledVector(d0,TPS.cur+0.2);
@@ -9137,7 +9139,7 @@ function fireGun(){ if(COMBAT.armed&&COMBAT.cd<=0&&!COMBAT.dead&&typeof panicAro
     else if(R.veh){ damageVehicle(R.veh.V,W.dmg*0.45*fall,o.clone().addScaledVector(d,R.end)); sparks(o.clone().addScaledVector(d,R.end)); if(Math.random()<0.3) sfx('ricochet',0.5); }
     else if(R.wall&&R.end<120){ dustHit(o.clone().addScaledVector(d,R.end)); }
     const e=o.clone().addScaledVector(d,R.end); lastE=e; if(k<4) addTracer(muzzle,e); }
-  gtaShot(); OW.panic=Math.max(OW.panic,8); C.shot={n:++C.shotN,w:C.wi,a:[+muzzle.x.toFixed(2),+muzzle.y.toFixed(2),+muzzle.z.toFixed(2)],b:[+lastE.x.toFixed(2),+lastE.y.toFixed(2),+lastE.z.toFixed(2)]};
+  gtaShot(); OW.panic=Math.max(OW.panic,8); if(!C._pt||GAME.time>C._pt){ C._pt=GAME.time+1; try{ panicAround(PLAYER.pos,35); }catch(e){} } /* only a real shot scares people, not aiming */ C.shot={n:++C.shotN,w:C.wi,a:[+muzzle.x.toFixed(2),+muzzle.y.toFixed(2),+muzzle.z.toFixed(2)],b:[+lastE.x.toFixed(2),+lastE.y.toFixed(2),+lastE.z.toFixed(2)]};
   if(C.mags[C.wi]<=0) setTimeout(()=>reloadGun(),200); updateCombatHUD(); }
 /* ---- small impact effects ---- */
 function smokeSprite(){ let P=PUFFS.find(q=>!q.m.visible); if(!P){ if(PUFFS.length>260) return null; const m=new THREE.Sprite(new THREE.SpriteMaterial({map:FX.smoke,transparent:true,depthWrite:false,opacity:0.6})); m.renderOrder=3; GAME.scene.add(m); P={m}; PUFFS.push(P); } return P; }
@@ -9540,7 +9542,7 @@ function blip(type){ const C=AUD.ctx; if(!C||OW.muted) return; const t=C.current
 function audioTick(dt){ if(!AUD.ctx){ if(GAME.started) audInit(); return; } if(AUD.ctx.state==='suspended') AUD.ctx.resume().catch(()=>{}); const v=PLAYER.driving; const sp=v?Math.abs(v.st.v):0;
   AUD.engG.gain.value=OW.muted?0:(v&&!v.bike?0.05+Math.min(0.08,sp*0.004):PLAYER.heli?0.1:0); AUD.eng.frequency.value=v?(v.formula?90+sp*9:45+sp*4.5):PLAYER.heli?38:40;
   let pd=1e9; for(const C of GTA.chasers) if(C.kind==='policija'||C.kind==='hitna') pd=Math.min(pd,Math.hypot(C.st.x-PLAYER.pos.x,C.st.z-PLAYER.pos.z)); for(const C of GTA.amb) pd=Math.min(pd,Math.hypot(C.st.x-PLAYER.pos.x,C.st.z-PLAYER.pos.z));
-  AUD.sirG.gain.value=OW.muted?0:(pd<160?0.05*(1-pd/160):0); AUD.sir.frequency.value=(Math.floor(GAME.time*1.6)%2)?960:720;
+  AUD.sirG.gain.value=OW.muted?0:(pd<160?0.012*Math.pow(1-pd/160,1.5):0); AUD.sir.type='triangle'; AUD.sir.frequency.value=650+260*(0.5+0.5*Math.sin(GAME.time*2.6)); /* softer, wailing siren */
   OW.stepT=(OW.stepT||0)+dt; const moving=!v&&!PLAYER.heli&&PLAYER.ground&&Math.hypot(PLAYER.vel.x,PLAYER.vel.z)>1; if(moving&&OW.stepT>(KEYS.ShiftLeft||TOUCH.run?0.28:0.45)){ OW.stepT=0; blip('step'); }
   if((SKY.night||0)<0.4&&OW.rain<0.3&&Math.random()<dt*0.35) blip('bird'); }
 /* ---- stamina + fall damage ---- */
@@ -9591,7 +9593,7 @@ const EXTRA_PEOPLE=[]; // police officers, paramedics, story characters: avatars
 const REAL={ready:false,gltf:null,variants:[],list:[],rb:{},rbReady:false,clips:{m:{},f:{}},pel:{m:{},f:{}},sortT:0,chosen:new Set(),n:0};
 const RB_M=['Male_Adult_02','Male_Adult_05','Male_Adult_06','Male_Adult_08','Male_Adult_13','Male_Adult_16','Male_Adult_20','Delivery_Male_01','Gardener_Male_01','Male_Adult_03'];
 const RB_F=['Female_Adult_01','Female_Adult_02','Female_Adult_04','Female_Adult_07','Female_Adult_13','Female_Adult_17'];
-const RB_ROLE={'Vatrogasac Krtek':'Fire_Male_01','Poljanec Martin':'Male_Adult_03','Joža st.':'Male_Adult_03','Lidija':'Female_Adult_02','Valentina':'Female_Adult_13','Kenka':'Kenka_Mandura','Jovo':'Male_Adult_20','Kiki Poljanec':'Male_Adult_16','Prgac':'Delivery_Male_01','Tuljulju':'Male_Adult_13','Štefica':'Female_Adult_07','Dragica':'Female_Adult_01','Mirko':'Male_Adult_08','Ivek':'Male_Adult_06','Barica':'Female_Adult_04'};
+const RB_ROLE={'Dealer':'Female_Adult_17','Vatrogasac Krtek':'Fire_Male_01','Poljanec Martin':'Male_Adult_03','Joža st.':'Male_Adult_03','Lidija':'Female_Adult_02','Valentina':'Female_Adult_13','Kenka':'Kenka_Mandura','Jovo':'Male_Adult_20','Kiki Poljanec':'Male_Adult_16','Prgac':'Delivery_Male_01','Tuljulju':'Male_Adult_13','Štefica':'Female_Adult_07','Dragica':'Female_Adult_01','Mirko':'Male_Adult_08','Ivek':'Male_Adult_06','Barica':'Female_Adult_04'};
 const RB_IDLE={'Tuljulju':'talk','Prgac':'talk','Vatrogasac Krtek':'look','Lidija':'idle'};
 const SKINS=[{n:'obični'},{n:'realistični vojnik',k:'soldier'},{n:'Tomo (crveni pulover)',k:'Male_Adult_06'},{n:'Marko (plava majica)',k:'Male_Adult_16'},{n:'Ivan (košulja)',k:'Male_Adult_08'},{n:'Ana (zelena majica)',k:'Female_Adult_17'},{n:'Maja (smeđa jakna)',k:'Female_Adult_04'},{n:'Policajac',k:'Police_Male_01'},{n:'Vatrogasac',k:'Fire_Male_01'},{n:'Hitna',k:'Medical_Male_01'},{n:'Seljak (gumene čizme)',k:'Gardener_Male_01'}];
 const MALE_W=new Set(['Kenka','Jovo','Joža','Štef','Šemso','Krtek','Prgac','Tuljulju','Dealer','Vatrogasac','Poljanec','Ivek','Mirko','Kiki']);
@@ -9993,11 +9995,12 @@ function holdGun(A,wi,dir,gun,recoil){ const H=GUN_HOLD[wi]; if(!H||!gun) return
       gun.position.copy(base).addScaledVector(dir,0.1-recoil*0.6);
       armIK(B.ru,B.rf,B.rh,gun.position.clone().addScaledVector(dir,0.08).addScaledVector(upv,-0.14),chest.clone().addScaledVector(rt,0.5).addScaledVector(upv,-0.6));
       armIK(B.lu,B.lf,B.lh,gun.position.clone().addScaledVector(dir,0.42).addScaledVector(upv,-0.1),chest.clone().addScaledVector(rt,-0.6).addScaledVector(upv,-0.6)); }
-    else if(H.pistol){ const hand=chest.clone().addScaledVector(dir,0.5-recoil*0.5).addScaledVector(upv,-0.05);
+    else if(H.pistol){ const hand=chest.clone().addScaledVector(dir,0.46-recoil*0.5).addScaledVector(upv,0.02).addScaledVector(rt,-0.04);
       armIK(B.ru,B.rf,B.rh,hand,chest.clone().addScaledVector(rt,0.6).addScaledVector(upv,-0.7));
       const rh=B.rh.getWorldPosition(new THREE.Vector3());
       gun.position.copy(rh).addScaledVector(dir,H.f).addScaledVector(upv,H.u);
-      armIK(B.lu,B.lf,B.lh,rh.clone().addScaledVector(rt,-0.05).addScaledVector(upv,-0.02),chest.clone().addScaledVector(rt,-0.6).addScaledVector(upv,-0.7)); }
+      armIK(B.lu,B.lf,B.lh,rh.clone().addScaledVector(rt,-0.045).addScaledVector(upv,-0.035).addScaledVector(dir,-0.02),chest.clone().addScaledVector(rt,-0.45).addScaledVector(upv,-0.9));
+      /* support hand wraps the grip: same orientation as the gun hand, mirrored about the barrel (was an open, twisted palm) */ { B.rh.getWorldQuaternion(_tq2); _tq.setFromAxisAngle(dir,Math.PI*0.85); _tq2.premultiply(_tq); B.lh.parent.getWorldQuaternion(_tq3); B.lh.quaternion.copy(_tq3.invert().multiply(_tq2)); B.lh.updateWorldMatrix(false,true); } }
     else { // long gun: butt in the right shoulder, right hand on the grip, left hand under the fore-end
       const sh=(B.ru||B.sp).getWorldPosition(new THREE.Vector3()); const L=gun.userData.len;
       const hd=(B.head||B.neck||B.sp).getWorldPosition(new THREE.Vector3()); const butt=sh.addScaledVector(dir,0.06-recoil*0.6).addScaledVector(rt,-0.11); butt.y+=((hd.y-0.13)-butt.y)*0.85; /* butt in the shoulder pocket, sights at eye level: cheek on the stock */
@@ -10728,6 +10731,7 @@ function groundLine(scene,M,x0,z0,x1,z1,w=0.12){ const L=Math.hypot(x1-x0,z1-z0)
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); const m=new THREE.Mesh(g,M); m.receiveShadow=true; scene.add(m); }
 
 function photoPaving(cs,scene){
+  try{ laneFlares(scene); }catch(e){ console.warn('spojevi',e); }
   if(PHOTO.forecourt) paveArea(scene,PHOTO.forecourt,'concrete',{tile:2.5,roads:true,lift:0.05,mat:PHOTO.foreMat||null});
   // 1) church: red clay pavers right round it, a wider square on the entrance side
   const ch=BLD.find(b=>b.k==='church'); if(ch){ const [cx,cz,ang,L,W]=ch.rect; const f=frame(cx,cz,ang); const e=4.6;
@@ -10839,6 +10843,13 @@ function pubFrontArcade(cs,scene,b,f,RPs,rw){ const [cx,cz,ang]=b.rect; const y0
   seg([xs[0],4.25],O[0],'door'); for(let i=0;i<O.length-1;i++) seg(O[i],O[i+1],'arches'); seg(O[O.length-1],[xs[xs.length-1],2.0],'plain');
   const roofP=O.concat([[xs[xs.length-1],2.0],[xs[0],4.25]]); hipRoofOver(cs,f,ang,roofP,ea,28,0.5,{mat:'roofK',color:lin('#f6ece6'),soffit:lin('#8a5c3c'),fascia:lin('#6a4630'),skipEave:(a,b2)=>Math.abs(a[1]-4.25)<0.01&&Math.abs(b2[1]-4.25)<0.01});
   addFloor(f,ang,xs[0],xs[xs.length-1],4.25,Math.min(...O.map(q=>q[1])),y0); }
+
+// where a gravel lane meets a road, its end flares out with rounded corners (it used to stop as a square block)
+function laneFlares(scene){ for(const r of ROADS){ if(!r.gravel||!r.S||r.S.length<4) continue;
+    for(const end of [0,1]){ const S=r.S, T=r.T; const i=end?S.length-1:0, j=end?S.length-6:5; const p=S[i]; const n=nearestRoad(p[0],p[1],r.w+4,q=>q.rid!==r.rid&&q.t!=='track'&&q.t!=='path'); if(!n) continue;
+      const tx=(p[0]-S[j][0]), tz=(p[1]-S[j][1]); const tl=Math.hypot(tx,tz)||1; const ux=tx/tl, uz=tz/tl, nx=-uz, nz=ux; const back=6, hw=r.w/2;
+      const P=[]; for(let k=0;k<=8;k++){ const t=k/8; const w=hw+3.2*Math.pow(t,2.2); P.push([p[0]-ux*back*(1-t)+nx*w, p[1]-uz*back*(1-t)+nz*w]); } for(let k=8;k>=0;k--){ const t=k/8; const w=hw+3.2*Math.pow(t,2.2); P.push([p[0]-ux*back*(1-t)-nx*w, p[1]-uz*back*(1-t)-nz*w]); }
+      paveArea(scene,P,'gravel',{tile:5,roads:true,lift:0.03,skip:(x,z)=>{ const q=nearestRoad(x,z,8,s2=>s2.rid===n.s.rid); return q&&q.d<0.2; }}); } } }
 
 /* ===================== Pristavčica — the creek where the player drew it =====================
    Across the meadow from the west, under the blue-railed bridge by the bus stop / workout park (Street View
@@ -11383,6 +11394,17 @@ function ttTick(dt){ if(!TT.el){ try{ ttInit(); }catch(e){ return; } } if(GAME.s
   TT.t-=dt; if(TT.t<=0&&TT.arts.length>1){ TT.t=6; TT.arts.forEach(a=>a.classList.remove('on')); TT.arts[++TT.i%TT.arts.length].classList.add('on'); } }
 // runs while loading too (the game loop has not started yet)
 (function loop(){ let last=performance.now(); const f=()=>{ const n=performance.now(); try{ ttTick((n-last)/1000); }catch(e){} last=n; if(!GAME.started) setTimeout(f,100); else ttTick(0); }; if(document.readyState==='loading') addEventListener('DOMContentLoaded',f); else setTimeout(f,0); })();
+// title music (the "Noćna vožnja" synthwave theme, starts with your first key/tap — browsers block sound before that)
+// and menu sounds when you move over / pick an item
+const TTM={on:false,next:0,step:0,g:null};
+function ttMusicStart(){ if(TTM.on) return; try{ if(!rdInit()) return; const C=RADIO.ctx; if(C.state!=='running') C.resume(); TTM.g=C.createGain(); TTM.g.gain.value=0; TTM.g.connect(C.destination); TTM.on=true; TTM.next=C.currentTime+0.2; TTM.step=0; TTM.g.gain.setTargetAtTime(0.32,C.currentTime,1.2); }catch(e){} }
+function ttMusicTick(){ if(!TTM.on) return; const C=RADIO.ctx; if(GAME.started){ TTM.g.gain.setTargetAtTime(0,C.currentTime,0.5); if(C.currentTime>TTM.next+2){ TTM.on=false; } return; }
+  const S=STATIONS[3]; const sd=60/S.bpm; const keep=RADIO.gain; RADIO.gain=TTM.g; try{ while(TTM.next<C.currentTime+0.3){ S.play(TTM.step,TTM.next,sd); TTM.step++; TTM.next+=sd; } }catch(e){} RADIO.gain=keep; }
+function uiSnd(kind){ try{ if(!RADIO.ctx) return; const C=RADIO.ctx, t=C.currentTime; const o=C.createOscillator(), g=C.createGain(); o.type=kind==='pick'?'triangle':'sine'; o.frequency.setValueAtTime(kind==='pick'?660:880,t); if(kind==='pick') o.frequency.exponentialRampToValueAtTime(1320,t+0.08);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(kind==='pick'?0.16:0.07,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+(kind==='pick'?0.22:0.08)); o.connect(g); g.connect(C.destination); o.start(t); o.stop(t+0.25); }catch(e){} }
+{ const _menu=ttMenu; ttMenu=function(){ ttMusicStart(); uiSnd('pick'); _menu(); const m=TT.el.querySelector('.menu'); m.querySelectorAll('button,.q span').forEach(b=>{ b.addEventListener('pointerenter',()=>uiSnd('hover')); b.addEventListener('click',()=>uiSnd('pick')); }); };
+  addEventListener('keydown',e=>{ if(!GAME.started&&TT.el&&TT.el.classList.contains('menu')&&/Arrow|Key[WS]/.test(e.code)) uiSnd('hover'); });
+  const _tick=ttTick; ttTick=function(dt){ _tick(dt); ttMusicTick(); }; }
 
 /* ===================== emergency vehicles & helicopter, detailed =====================
    Police: the realistic sedan in Croatian police livery (white, blue band, POLICIJA, light bar).
