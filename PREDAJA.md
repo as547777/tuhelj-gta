@@ -193,3 +193,9 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - Policijski natpisi i rotacija postavljeni raycastom na pravu karoseriju.
 - Radio: zadana stanica Lounge Krapina; nova Zagorje Country.
 
+
+## Ekrani smrti i uhićenja, policija izlazi iz auta
+- 48_wasted.js: UBIJEN / UHIĆEN + pravi uzrok (policija, Crni Vukovi, eksplozija, pad, igrač), 'MISIJA NIJE USPJELA' kao red ispod (bez bannera preko). Uhićenje: 4 s ekran pa postaja.
+- 27_law.js: auto staje i policajci izlaze i kad stignu na mjesto prijave (ISTRAGA/TRAŽE TE), pješke pretražuju okolicu; ako te vide → potjera. Nenaoružanom prilaze i uhite ga.
+- Kill feed samo za ubojstva od drugih igrača.
+

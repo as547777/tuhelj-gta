@@ -18,20 +18,25 @@ function copCarTick(C,dt){ const crew=lawCrew(C,'cop'); const me=PLAYER.pos; con
   const playerCar=PLAYER.driving; const fleeing=playerCar&&Math.abs(playerCar.st.v)>6;
   const anyOut=crew.some(c=>c.out&&!c.A.dead);
   // decide: park & get out, or keep driving
-  if(!C.parked&&want>0&&COP.state==='CHASE'&&d<30&&!fleeing) { C.parked=true; C.parkT=0; }
+  const atLast=COP.last&&Math.hypot(C.st.x-COP.last[0],C.st.z-COP.last[1])<24;
+  if(!C.parked&&want>0&&!fleeing&&((COP.state==='CHASE'&&d<38)||((COP.state==='INVESTIGATE'||COP.state==='SEARCH'||COP.state==='ALERT')&&(atLast||d<28)))) { C.parked=true; C.parkT=0; C.stopAt=[C.st.x,C.st.z]; } /* reach the spot → stop and get out to look around on foot */
   if(C.parked){ C.parkT+=dt; C.tgt=[C.st.x,C.st.z]; C.st.v*=Math.exp(-dt*4);
-    const wantBack=want===0||(fleeing&&d>28)||d>70;
+    const wantBack=want===0||(fleeing&&d>28)||(COP.state==='CHASE'&&d>70);
     if(wantBack){ const allIn=crew.every(c=>!c.out||c.A.dead); if(allIn&&C.parkT>1){ C.parked=false; for(const c of crew) if(c.A.dead&&c.out){ /* left behind */ } } } }
   for(const c of crew){ const A=c.A; c.t+=dt;
     if(A.dead){ c.st='dead'; continue; } if(c.st==='dead'){ c.st='out'; }
     if(!c.out){ if(C.parked&&Math.abs(C.st.v)<1.5&&C.parkT>0.4+c.seat*0.3&&!(want===0)){ c.out=true; c.st='out'; const dp=doorWorld(C,c.seat); A.group.position.copy(dp); A.seatT=-1; A.legL.rotation.x=A.legR.rotation.x=0; c.cd=0.8+Math.random()*0.8; try{ blip('door'); }catch(e){} } else { sitIn(c); continue; } }
     // on foot
-    const wantBack=!C.parked||want===0||(fleeing&&d>28)||d>70;
+    const wantBack=!C.parked||want===0||(fleeing&&d>28)||(COP.state==='CHASE'&&d>70);
+    if(!wantBack&&COP.state!=='CHASE'){ // searching on foot: walk around the last known spot, look about; if they see you it becomes a chase
+      const p0=A.group.position; const eye0=_lv.set(p0.x,p0.y+1.6,p0.z), t0=_lw.set(me.x,me.y+1.2,me.z); const dme=Math.hypot(me.x-p0.x,me.z-p0.z);
+      if(dme<(PLAYER.crouch?14:30)&&sees(eye0,t0)){ COP.state='CHASE'; COP.last=[me.x,me.z]; COP.seenT=0; try{ bubble(A,['Eno ga!','Stoj! Policija!','Ne miči se!'][Math.floor(Math.random()*3)],2); }catch(e){} }
+      else { const L=COP.last||[C.st.x,C.st.z]; if(!c.wp||c.t>c.wpT){ const a=Math.random()*TAU, r=4+Math.random()*14; c.wp=[L[0]+Math.cos(a)*r,L[1]+Math.sin(a)*r]; c.wpT=c.t+6+Math.random()*5; } walkTo(c,c.wp[0],c.wp[1],2.2,dt); c.aim=false; continue; } }
     if(wantBack){ const dp=doorWorld(C,c.seat); const r=walkTo(c,dp.x,dp.z,5.8,dt); c.aim=false; if(r<0.8){ sitIn(c); try{ blip('door'); }catch(e){} } continue; }
     const p=A.group.position; const dx=me.x-p.x, dz=me.z-p.z, dd=Math.hypot(dx,dz);
     const eye=_lv.set(p.x,p.y+1.6,p.z), tgt=_lw.set(me.x,me.y+1.2,me.z); const los=sees(eye,tgt);
     const shoot=want>=2&&los&&dd<45&&!COMBAT.dead;
-    const keep=shoot?(want>=3?9:12):1.3;
+    const keep=(shoot&&(COMBAT.armed||want>=3))?(want>=3?9:12):1.3; /* an unarmed suspect gets walked up to and cuffed */
     if(dd>keep||!los){ walkTo(c,me.x+(c.seat?1.5:-1.5)*(dd>4?1:0),me.z,dd>8?6.2:4.0,dt); c.aim=shoot&&dd<25; }
     else { c.face=angLerp(c.face,faceYaw(dx,dz),Math.min(1,dt*8)); A.group.rotation.set(0,c.face,0); c.aim=shoot; }
     // arrest when you're on foot and they catch you (1 star, or anyone close enough)
