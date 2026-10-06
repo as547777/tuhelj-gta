@@ -34,6 +34,9 @@ button{font-family:var(--sans)}
 /* start */
 #start{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;padding:calc(28px + env(safe-area-inset-top,0px)) 28px calc(28px + env(safe-area-inset-bottom,0px));background:linear-gradient(90deg,rgba(8,10,8,.78) 0%,rgba(8,10,8,.42) 38%,rgba(8,10,8,0) 64%),linear-gradient(0deg,rgba(8,10,8,.55),rgba(8,10,8,0) 45%);transition:opacity .6s ease;z-index:20}
 #start.gone{opacity:0;pointer-events:none}
+#start .card{opacity:0!important;pointer-events:none!important} #start{background:#0b0b0b!important}
+#start:after{content:"TUHELJ";position:absolute;left:5vw;bottom:13vh;font:400 min(19vw,190px) Anton,Impact,sans-serif;color:#fff;-webkit-text-stroke:5px #0a0a0a;text-shadow:7px 7px 0 #0a0a0a;transform:rotate(-3deg);z-index:1;pointer-events:none}
+#start.ttready:after{display:none}
 .card{max-width:470px;width:100%}
 .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
 h1{font-family:var(--serif);font-weight:400;font-size:clamp(64px,11vw,124px);line-height:.9;margin:.12em 0 .08em;letter-spacing:-.01em}

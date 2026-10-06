@@ -44,7 +44,7 @@ function comicArt(img,W){ const H=Math.round(W*img.height/img.width); const c=cv
   g.putImageData(id,0,0); const v=g.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.85); v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,0.45)'); g.fillStyle=v; g.fillRect(0,0,W,H); return c.toDataURL('image/jpeg',0.85); }
 function ttInit(){ const s=document.getElementById('start'); if(!s||TT.el) return; const el=document.createElement('div'); el.id='tt';
   el.innerHTML='<div class="art"></div><div class="bars"></div><div class="logo"><b>TUHELJ</b><i>POVRATAK U ZAGORJE</i></div><div class="pct" style="width:0"></div><div class="load"><s></s><span>UČITAVANJE</span></div><div class="press">'+(GAME.touch?'DODIRNI ZASLON':'PRITISNI BILO KOJU TIPKU')+'</div><div class="menu"></div><div class="help"></div><div class="cr">© OpenStreetMap · Mapillary CC BY-SA · Rocketbox MIT · Quaternius/Kenney CC0</div>';
-  s.appendChild(el); TT.el=el;
+  s.appendChild(el); TT.el=el; s.classList.add('ttready');
   // art panels from your photos (falls back to plain dark if there are none)
   const P=Array.isArray(window.TUHELJ_PHOTOS)?window.TUHELJ_PHOTOS:[]; const art=el.querySelector('.art'); const W=GAME.touch?720:1100;
   const lay=[{l:'4%',t:'10%',w:'62%',h:'62%',r:'-2.5deg'},{l:'52%',t:'16%',w:'44%',h:'46%',r:'3deg'},{l:'30%',t:'40%',w:'48%',h:'50%',r:'-1deg'}];

@@ -8,10 +8,16 @@ function pineTex(){ const S=512, c=cvs(S,S), g=c.getContext('2d'); const n=12, b
 function tileFloorTex(){ const S=512, c=cvs(S,S), g=c.getContext('2d'); g.fillStyle='#6f7479'; g.fillRect(0,0,S,S); const n=2, t=S/n;
   for(let i=0;i<n;i++) for(let j=0;j<n;j++){ const v=rnd(-10,10); g.fillStyle=`rgb(${146+v},${150+v},${155+v})`; g.fillRect(i*t+3,j*t+3,t-6,t-6); for(let k=0;k<120;k++){ g.fillStyle=`rgba(${pick(['255,255,255','60,60,60'])},${rnd(0.03,0.08)})`; g.fillRect(i*t+rnd(4,t-8),j*t+rnd(4,t-8),rnd(2,10),rnd(2,10)); } }
   return mkTex(c); }
-function muralTex(){ const W=1850,H=600, c=cvs(W,H), g=c.getContext('2d'); g.fillStyle='#3f4246'; g.fillRect(0,0,W,H); const px=W/9.25;
-  for(const [c0,r] of [[3.75,1.62],[6.75,1.25]]){ g.save(); g.beginPath(); g.rect(0,22,W,H-60); g.clip(); g.fillStyle='#efefed'; g.beginPath(); g.arc(c0*px,H*0.5,r*px,0,TAU); g.fill(); g.restore();
-    g.fillStyle='#3f4246'; for(const sx of [-1,1]) for(const sy of [-1,1]){ const x=c0*px+sx*r*px*0.72, y=H*0.5+sy*(H*0.5-30); g.fillRect(x-(sx<0?40:0),y-(sy<0?0:28),40,28); } }
-  g.fillStyle='#cfd0cd'; g.fillRect(0,H-38,W,38); return mkTex(c,{repeat:false}); }
+function muralTex(){ // warm wainscoting: wooden panels below a dado rail, cream plaster above, framed old photos of Tuhelj
+  const W=1850,H=600, c=cvs(W,H), g=c.getContext('2d'); const R=mulberry32(61); const dado=H*0.58;
+  g.fillStyle='#e9dcc3'; g.fillRect(0,0,W,dado); for(let i=0;i<9000;i++){ g.fillStyle=`rgba(${150+R()*60|0},${130+R()*50|0},${100+R()*40|0},0.08)`; g.fillRect(R()*W,R()*dado,2,2); }
+  g.fillStyle='#6e4426'; g.fillRect(0,dado,W,H-dado); const pw=W/12; for(let k=0;k<12;k++){ const x=k*pw; g.fillStyle='#7d5030'; g.fillRect(x+10,dado+22,pw-20,H-dado-60); g.strokeStyle='rgba(30,15,5,0.55)'; g.lineWidth=4; g.strokeRect(x+10,dado+22,pw-20,H-dado-60); g.strokeStyle='rgba(255,220,180,0.15)'; g.lineWidth=2; g.strokeRect(x+14,dado+26,pw-28,H-dado-68); }
+  g.fillStyle='#4f2f18'; g.fillRect(0,dado-10,W,18); g.fillStyle='#3a2210'; g.fillRect(0,H-34,W,34);
+  const pics=[[140,60,230,170],[470,90,170,130],[760,50,260,190],[1150,80,190,145],[1460,60,240,175]];
+  for(const [x,y,w,h] of pics){ g.fillStyle='#2b1a0e'; g.fillRect(x-14,y-14,w+28,h+28); g.fillStyle='#efe6d2'; g.fillRect(x-4,y-4,w+8,h+8); const gr=g.createLinearGradient(0,y,0,y+h); gr.addColorStop(0,'#c9b48a'); gr.addColorStop(0.55,'#a99068'); gr.addColorStop(1,'#6e5a3c'); g.fillStyle=gr; g.fillRect(x,y,w,h);
+    g.fillStyle='rgba(60,45,28,0.75)'; g.beginPath(); g.moveTo(x,y+h*0.62); for(let k=0;k<=10;k++) g.lineTo(x+w*k/10,y+h*(0.5+0.12*Math.sin(k*1.3+x))); g.lineTo(x+w,y+h); g.lineTo(x,y+h); g.fill();
+    g.fillStyle='rgba(235,225,200,0.85)'; g.fillRect(x+w*0.45,y+h*0.22,w*0.08,h*0.34); g.beginPath(); g.moveTo(x+w*0.43,y+h*0.24); g.lineTo(x+w*0.49,y+h*0.1); g.lineTo(x+w*0.55,y+h*0.24); g.fill(); }
+  return mkTex(c,{repeat:false}); }
 function barPanelTex(){ const W=512,H=256, c=cvs(W,H), g=c.getContext('2d'); const base='#6a2a17'; g.fillStyle=base; g.fillRect(0,0,W,H);
   for(let i=0;i<40;i++){ g.strokeStyle=`rgba(40,12,5,${rnd(0.05,0.15)})`; g.lineWidth=rnd(1,3); g.beginPath(); const y=rnd(0,H); g.moveTo(0,y); g.bezierCurveTo(W*0.3,y+rnd(-8,8),W*0.6,y+rnd(-8,8),W,y+rnd(-6,6)); g.stroke(); }
   g.strokeStyle='rgba(30,8,3,0.8)'; g.lineWidth=6; g.strokeRect(14,14,W-28,H-28); g.strokeStyle='rgba(160,80,50,0.35)'; g.lineWidth=2; g.strokeRect(20,20,W-40,H-40);
@@ -77,7 +83,7 @@ function pubInterior(cs,scene,o){
   { const mm=segMap(f,ang,[3.61,4.0-th],[3.61,-5.25]); const Hm=ea-0.3; const dS=[4.0-th-o.barDoor[1],4.0-th-o.barDoor[0]];
     texPoly(Mu,mm,[[0,y0-0.01],[mm.L,y0-0.01],[mm.L,Hm],[0,Hm]],[holeRect(dS[0],dS[1],y0,y0+2.3)],WHITE,(p)=>[p[0]/mm.L,(p[1]-y0)/(Hm-y0)]);
     const lp=mm.P(dS[1]+0.45,0,-0.02); lathe(G,frame(lp[0],lp[2],ang,0),[[0.16,y0+2.25],[0.18,y0+2.35],[0.12,y0+2.45],[0,y0+2.47]],10,lin('#f4f2ec'));
-    for(const s2 of [3.2,6.3]){ const p=mm.P(s2,0,-0.02); const pf=frame(p[0],p[2],ang,0); Wd.box(pf,-0.03,0.03,y0+2.05,y0+2.55,-0.18,0.18,lin('#3b2a1e')); T.box(pf,0.03,0.035,y0+2.1,y0+2.5,-0.14,0.14,lin('#b9a88a')); }
+
     { const Wn=cs.get('win',cx,cz); segDecal(Wn,f,ang,3.6,4.0-th,3.6,-5.25,8.35,y0-0.02,'door_wood',0.025); } }
   // floor (grey tiles laid diagonally) + walkable zones
   { const fp=insetPoly(o.roofP,th); floorPoly(Fl,f,fp,y0+0.005,lin('#c9ccd0'),1.2,Math.PI/4); Fl.box(f,3.75,6.05,y0-0.05,y0+0.005,3.7,4.3,lin('#c9ccd0'),0.8,4);
@@ -104,7 +110,7 @@ function pubInterior(cs,scene,o){
       const dp=f(6.1,0,-5.05); const df=frame(dp[0],dp[2],ang,y0); Wd.box(df,-0.45,0.45,0,0.95,-0.28,0.28,lin('#2a2a2a')); T.box(df,-0.18,0.18,0.95,0.97,-0.12,0.12,lin('#8d9196')); T.box(df,-0.18,0.18,0.97,1.2,0.1,0.12,lin('#1c1f22')); addCollider(dp[0],dp[2],ang,1.0,0.7,y0-1,y0+1.1); }
   }
   // round black tables with rattan bases and mesh chairs with wooden armrests; beer bucket
-  { const tables=[[5.7,1.0],[8.7,1.3],[5.6,-1.6],[8.7,-1.4],[5.6,-4.0],[8.6,-3.9]];
+  { const tables=[[5.7,1.0],[8.7,1.3],[5.6,-1.6],[8.7,-1.4],[5.6,-4.0],[8.6,-3.9],[5.6,-6.6],[8.6,-6.8],[5.6,-9.2],[8.6,-9.4],[5.6,-11.8],[8.6,-12.0],[5.6,-14.3],[8.6,-14.4]]; /* tables all the way to the end of the long room */
     tables.forEach(([x,z],i)=>{ const y=y0; const tf=frame(...(()=>{ const p=f(x,0,z); return [p[0],p[2]]; })(),ang,y);
       lathe(Cl,tf,[[0.32,0],[0.2,0.18],[0.13,0.4],[0.2,0.62],[0.42,0.7],[0,0.7]],14,lin('#3a2f26')); lathe(Cl,tf,[[0.47,0.7],[0.49,0.72],[0.47,0.74],[0,0.74]],20,lin('#2e251e')); lathe(BG,tf,[[0.455,0.745],[0.455,0.76],[0,0.762]],24,WHITE);
       const n=4; for(let k=0;k<n;k++){ const a=k/n*TAU+0.4+i*0.3; const px=x+Math.cos(a)*0.8, pz=z+Math.sin(a)*0.8; const p=f(px,0,pz); chairAt(Mt,Cl,Wd,p[0],p[2],y,ang+Math.atan2(-Math.cos(a),Math.sin(a))); }

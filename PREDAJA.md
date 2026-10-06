@@ -165,3 +165,8 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - panika samo na stvarni pucanj (ne na nišanjenje); dealer = Female_Adult_17; sirena tiša, trokutasti zavijajući ton
 - laneFlares: šljunčani putovi se na spoju s cestom zaobljeno šire; borovi svjetliji (needleMat ×1.7)
 - početni ekran: glazba (Noćna vožnja) od prve tipke/dodira + zvukovi izbornika (uiSnd)
+
+## Runda: početak, brtija, izbornik (listopad 2026, 10)
+- stara kartica "Povratak u Zagorje" više ne bljesne: CSS u build.py skriva .card odmah, crni ekran s logom dok 42_title ne preuzme (#start.ttready)
+- brtija: zid s drvenom oplatom (lamperijom), krem žbukom i uokvirenim slikama Tuhlja (muralTex); 14 stolova do kraja duge prostorije
+- izbornik pauze (46_menu.js): GTA stil — TUHELJ, sat, novac, kartice IGRA/KARTA/POSTAVKE/KONTROLE; postavke: doba dana (0–24), grafika, glasnoća, letenje
