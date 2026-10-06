@@ -206,3 +206,9 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - Miš: sirovi unos (unadjustedMovement) i ignoriranje Chromeovih lažnih skokova (>400 px).
 - Rezolucija se mijenja tek nakon duljeg pada/rasta brzine i najviše jednom u 12 s.
 
+
+## Nišan na iPhoneu, misije s oznakama, likovi šetaju
+- 12_main.js VW()/VH(): veličina platna iz #view (iPhone početni zaslon javlja staru veličinu) + 47_perf.js pfFit svakih 400 ms: slika uvijek preko cijelog zaslona, sredina točno ispod nišana.
+- 50_missions.js: missionWhere() daje cilj i koracima bez mjesta (požar, kamion, auto, Vukovi, općina…); požar bez misije također označen. Duže misije: Gori u selu!, Dostava za Putnika (+ sir s Pristave), Taksi za Martina (čekanje mise, pa doma), Banda Crni Vukovi.
+- 49_routines.js: A* po mreži 0.5 m oko BHASH zidova; Kenka i Jovo povremeno izlaze (trgovina, trg, crkva, općina, terasa), Lidija poslužuje po brtiji, Prgac i Tuljulju šetaju zajedno.
+

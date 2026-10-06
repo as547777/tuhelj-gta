@@ -1,9 +1,12 @@
 /* ===================== main ===================== */
 const GAME={perf:{ema:16,t:0},basePR:1,started:false,paused:false,time:0,hour:16.5,q:1,touch:('ontouchstart' in window)&&matchMedia('(pointer:coarse)').matches,dragLook:false};
+/* real size of the game view (iPhone home-screen apps report a stale innerWidth/innerHeight for a while) */
+function VW(){ const v=document.getElementById('view'); const w=v?v.clientWidth:0; return w>0?w:innerWidth; }
+function VH(){ const v=document.getElementById('view'); const h=v?v.clientHeight:0; return h>0?h:innerHeight; }
 const START={x:-395,z:6,look:[-300,-2]};
 const GRASSN=[16000,34000,60000];
 function detectQuality(){ if(GAME.qPref!==undefined) return GAME.qPref; if(!GAME.touch) return 2;  const mem=navigator.deviceMemory||4, cores=navigator.hardwareConcurrency||4; return (mem<=3||cores<=4)?0:1; } // phones: medium (or low on weak ones); the frame-time governor in the loop trims resolution further
-function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?(GAME.touch?Math.min(devicePixelRatio,1.0):Math.min(devicePixelRatio,1)*0.85):q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(innerWidth,innerHeight);
+function setQuality(q){ GAME.q=q; const r=GAME.renderer; r.setPixelRatio(q===0?(GAME.touch?Math.min(devicePixelRatio,1.0):Math.min(devicePixelRatio,1)*0.85):q===1?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,GAME.touch?1.8:1.75)); r.setSize(VW(),VH());
   GAME.basePR=r.getPixelRatio(); SKY.setShadowQuality(q); { const mts=Math.min(r.capabilities.maxTextureSize||4096,GAME.ios?2048:8192); if(SKY.sun.shadow.mapSize.x>mts){ SKY.sun.shadow.mapSize.set(mts,mts); } } if(q>=1&&!GAME.touch) setupPost(r); else { disposePost(); POST.enabled=false; } /* phones: draw straight to the screen with hardware anti-aliasing (smooth edges, faster than the post chain) */ if(VEG.grass) VEG.grass.geometry.instanceCount=GRASSN[q]; for(const m of VEG.far){ m.count=Math.max(1,Math.floor(m.userData.full*(GAME.touch?[0.35,0.5,0.6]:[0.55,0.75,0.85])[q])); } VEG.uniforms.uLodR.value=[80,110,145][q]; VEG.lastRebuild.set(1e9,0,1e9); }
 async function main(){
   setTimeout(()=>{ try{ startModelPacks(); }catch(e){ console.warn('modeli',e); } },0);
@@ -19,9 +22,9 @@ async function main(){
   const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:GAME.touch?'default':'high-performance',stencil:false});
   renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.92;
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.25)); renderer.setSize(innerWidth,innerHeight); $('view').appendChild(renderer.domElement); renderer.domElement.addEventListener('webglcontextlost',e=>e.preventDefault(),false); /* let the browser give the context back (iOS drops it when the tab is in the background) */
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.25)); renderer.setSize(VW(),VH()); $('view').appendChild(renderer.domElement); renderer.domElement.addEventListener('webglcontextlost',e=>e.preventDefault(),false); /* let the browser give the context back (iOS drops it when the tab is in the background) */
   ANISO=Math.min(8,renderer.capabilities.getMaxAnisotropy()); GAME.renderer=renderer;
-  const scene=new THREE.Scene(); GAME.scene=scene; const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.15,7000); GAME.camera=camera;
+  const scene=new THREE.Scene(); GAME.scene=scene; const camera=new THREE.PerspectiveCamera(72,VW()/VH(),0.15,7000); GAME.camera=camera;
   await step(0.03,'Učitavam teren…'); decodeHeights();
   { const cb=D.bld.find(b=>b.k==='cafe'); if(cb&&cb.r.length===1){ const r=cb.r[0]; const c=Math.cos(r[2]), sn=Math.sin(r[2]); const lx=7.0, lz=-5.1; cb.r.push([r[0]+c*lx-sn*lz, r[1]+sn*lx+c*lz, r[2], 7.4, 2.6, r[5]]); } }
   photoTerrain(); photoLand(); gradeRoads(); try{ schoolTerrain(); }catch(e){ console.warn('škola',e); } flattenSites(); try{ creekBuild(); }catch(e){ console.warn('potok',e); }
@@ -51,7 +54,7 @@ async function main(){
   addEventListener('pointerup',()=>drag=null);
   addEventListener('pointermove',e=>{ if(!drag) return; if(PKC.sit){ PKC.lookY=clamp((PKC.lookY||0)-(e.clientX-drag.x)*0.004,-2.7,2.7); PKC.lookP=clamp((PKC.lookP||0)-(e.clientY-drag.y)*0.003,-0.5,0.7); } else if(PLAYER.driving){ CARCAM.orbit-=(e.clientX-drag.x)*0.005; CARCAM.pitch=clamp(CARCAM.pitch+(e.clientY-drag.y)*0.003,-0.1,0.6); CARCAM.t=0; } else { PLAYER.yaw-=(e.clientX-drag.x)*0.004; PLAYER.pitch=clamp(PLAYER.pitch-(e.clientY-drag.y)*0.004,-1.45,1.45); } drag.x=e.clientX; drag.y=e.clientY; });
   addEventListener('keydown',e=>{ if(e.code==='Escape' && GAME.dragLook && GAME.started){ togglePause(!GAME.paused); } });
-  const onResize=()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); updateRotate(); };
+  const onResize=()=>{ camera.aspect=VW()/VH(); camera.updateProjectionMatrix(); renderer.setSize(VW(),VH()); if(POST.enabled) setupPost(renderer); updateRotate(); };
   addEventListener('resize',onResize); addEventListener('orientationchange',()=>setTimeout(onResize,300)); document.addEventListener('fullscreenchange',()=>{ setTimeout(onResize,150); updateFsLabel(); }); document.addEventListener('webkitfullscreenchange',()=>{ setTimeout(onResize,150); updateFsLabel(); });
   setQuality(q);
   teleport(START.x,START.z,START.look[0],START.look[1]);
@@ -61,7 +64,7 @@ async function main(){
   let last=performance.now(), fr=0;
   GAME.frame=(t)=>{ const dt=Math.max(0,Math.min(0.05,(t-last)/1000)); last=Math.max(last,t); GAME.time+=dt; fr++;
     // a page loaded in a hidden tab/pane starts with a 0x0 window -> aspect NaN and a black screen; fix it as soon as the window has a size
-    if(innerHeight>0 && !(Math.abs(camera.aspect-innerWidth/innerHeight)<1e-3)) onResize();
+    if(innerHeight>0 && !(Math.abs(camera.aspect-VW()/VH())<1e-3)) onResize();
     if(GAME.started){ if(!GAME.paused){ if(PLAYER.heli) heliTick(dt); else if(PLAYER.driving) updateDriving(dt); else if(PLAYER.riding) updateRiding(dt); else updatePlayer(dt); } if(PLAYER.heli) heliCamera(camera,dt); else if(PLAYER.driving||PLAYER.riding) carCamera(camera,dt); else if(PKC.sit) pkCamera(camera); else applyCamera(camera);
       if(fr%6===0){ const inCar=PLAYER.driving||PLAYER.riding; const nv=(!inCar&&!GAME.paused)?(nearestVehicle(PLAYER.pos.x,PLAYER.pos.z,3.4,true)||((g)=>g?g.T.v:null)(grabbableCar(PLAYER.pos.x,PLAYER.pos.z,3.4))):null; GAME.nearCar=nv; const cb=document.getElementById('carbtn'); if(cb){ cb.classList.toggle('on',!!nv); const sp=cb.querySelector('span'); if(sp) sp.textContent=nv&&nv.remote?'Sjedni':'Vozi'; } const pr=document.getElementById('prompt'); if(pr){ const gg=giverNear(); const txt=GTA.dlg?'':PLAYER.heli?'E — izađi iz helikoptera (na tlu)':gg?'E — misija: '+gg.title:nearHeli()?'E — uđi u helikopter':intPrompt()?'E — '+intPrompt():(!PLAYER.driving&&nearPt(HOME_POS(),4))?(GTA.home?'E — odmori se kod kuće':'E — kupi stan Kod Ruže (800 €)'):PLAYER.driving?'E — izađi iz auta · V — pogled iz auta':PLAYER.riding?'E — izađi (suvozač) · V — pogled':(nv?(nv.remote?'E — sjedni kao suvozač':(nv.truck?'E — uđi u vatrogasno vozilo':nv.bike?'E — sjedni na bicikl':nv.label?'E — uđi u '+nv.label:'E — uđi u auto')):(nearValentina()?'E — naruči kod Valentine':nearBar()?'E — naruči piće na šanku':(nearPoker()?'E — sjedni za poker':(LANDMARKS.churchDoor&&Math.hypot(PLAYER.pos.x-LANDMARKS.churchDoor.x,PLAYER.pos.z-LANDMARKS.churchDoor.z)<7?'Crkva je otvorena — samo uđi ⛪':'')))); if(pr.dataset.t!==txt){ pr.dataset.t=txt; pr.innerHTML=promptHTML(txt); } pr.classList.toggle('on',!!txt); } }
       netTick(dt); occupantTick(); npcTick(dt); lifeTick(dt); gtaTick(dt); gta2Tick(dt); owTick(dt); modelsTick(); combatTick(dt); weaponTick(dt); tpsTick(dt); pokerTick(dt); try{ intTick(dt); }catch(e){ console.warn(e); } try{ tractorTick(dt); fire2Tick(dt); }catch(e){} try{ creekTick(dt); lightsTick(); radioTick(dt); try{ perfTick(dt); }catch(e){} }catch(e){} try{ parkedTick(); }catch(e){ console.warn("parked",e); } try{ lawTick(dt); }catch(e){ console.warn('law',e); } try{ homeTick(dt); storyTick(dt); voicesTick(dt); }catch(e){ console.warn('story',e); } humansTick(dt); tpsLate(); try{ lawLate(); }catch(e){ console.warn('lawLate',e); } if(COMBAT.hold&&COMBAT.armed) fireGun(); }
@@ -72,7 +75,7 @@ async function main(){
     TEX.waterN.offset.set(GAME.time*0.012,GAME.time*0.03);
     renderFrame(renderer,scene,camera);
     if(GAME.started){ UI.updateHUD(dt); if(fr%4===0) UI.drawMini(); if(UI.mapOpen && fr%6===0) drawMap(); }
-    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>3.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?0.7:0.8; /* resolution only moves after a sustained change (not during a quick spin), and never more than once every 12 s, so the picture does not flicker between sizes */ P2.hi=P2.ema>34?(P2.hi||0)+1:0; P2.lo=P2.ema<15?(P2.lo||0)+1:0; P2.cool=(P2.cool||0)-3; let np=cur; if(P2.cool<=0&&P2.hi>=2 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.cool<=0&&P2.lo>=4 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(np!==cur){ P2.cool=12; P2.hi=P2.lo=0; } if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(innerWidth,innerHeight); if(POST.enabled) setupPost(renderer); } } }
+    { const P2=GAME.perf; const ft=dt*1000; P2.ema=P2.ema*0.94+ft*0.06; P2.t+=dt; if(GAME.started && P2.t>3.0){ P2.t=0; const cur=renderer.getPixelRatio(); const minPR=GAME.touch?0.7:0.8; /* resolution only moves after a sustained change (not during a quick spin), and never more than once every 12 s, so the picture does not flicker between sizes */ P2.hi=P2.ema>34?(P2.hi||0)+1:0; P2.lo=P2.ema<15?(P2.lo||0)+1:0; P2.cool=(P2.cool||0)-3; let np=cur; if(P2.cool<=0&&P2.hi>=2 && cur>minPR+0.01) np=Math.max(minPR,cur-0.1); else if(P2.cool<=0&&P2.lo>=4 && cur<GAME.basePR-0.01) np=Math.min(GAME.basePR,cur+0.1); if(np!==cur){ P2.cool=12; P2.hi=P2.lo=0; } if(Math.abs(np-cur)>0.01){ renderer.setPixelRatio(np); renderer.setSize(VW(),VH()); if(POST.enabled) setupPost(renderer); } } }
   };
   const loop=(t)=>{ requestAnimationFrame(loop); GAME.frame(t); };
   if(!window.__NOLOOP) requestAnimationFrame(loop);

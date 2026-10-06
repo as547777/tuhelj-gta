@@ -12,3 +12,10 @@ function perfTick(dt){ if(!GAME.scene) return; PF.t-=dt; if(PF.t<=0){ PF.t=4; pf
 
 /* raw mouse input under pointer lock (no OS acceleration → no sudden jumps when you flick the mouse round) */
 { const _rpl=HTMLCanvasElement.prototype.requestPointerLock; HTMLCanvasElement.prototype.requestPointerLock=function(o){ try{ const p=_rpl.call(this,Object.assign({unadjustedMovement:true},o||{})); if(p&&p.catch) return p.catch(()=>_rpl.call(this)); return p; }catch(e){ return _rpl.call(this); } }; }
+/* iPhone home-screen apps change the window size after start (status bar, safe areas) without a resize event:
+   the picture then did not fill the screen and its centre was not under the aim dot, so shots seemed to go to the side.
+   Watch the real window size and re-fit the canvas whenever it differs. */
+function pfFit(){ const R=GAME.renderer; if(!R) return; const c=R.domElement; const W=VW(), H=VH(); const s=R.getSize(PF.sz||(PF.sz=new THREE.Vector2()));
+  if(Math.abs(s.x-W)>1||Math.abs(s.y-H)>1||Math.abs(c.clientWidth-W)>1||Math.abs(c.clientHeight-H)>1) dispatchEvent(new Event('resize')); }
+setInterval(()=>{ try{ pfFit(); }catch(e){} },400);
+if(window.visualViewport) visualViewport.addEventListener('resize',()=>setTimeout(()=>{ try{ pfFit(); }catch(e){} },60));
