@@ -100,10 +100,10 @@ function holdGun(A,wi,dir,gun,recoil){ const H=GUN_HOLD[wi]; if(!H||!gun) return
       armIK(B.lu,B.lf,B.lh,rh.clone().addScaledVector(rt,-0.05).addScaledVector(upv,-0.02),chest.clone().addScaledVector(rt,-0.6).addScaledVector(upv,-0.7)); }
     else { // long gun: butt in the right shoulder, right hand on the grip, left hand under the fore-end
       const sh=(B.ru||B.sp).getWorldPosition(new THREE.Vector3()); const L=gun.userData.len;
-      const butt=sh.addScaledVector(dir,0.03-recoil*0.6).addScaledVector(upv,0.04).addScaledVector(rt,-0.05);
+      const hd=(B.head||B.neck||B.sp).getWorldPosition(new THREE.Vector3()); const butt=sh.addScaledVector(dir,0.06-recoil*0.6).addScaledVector(rt,-0.11); butt.y+=((hd.y-0.13)-butt.y)*0.85; /* butt in the shoulder pocket, sights at eye level: cheek on the stock */
       gun.position.copy(butt).addScaledVector(dir,L*0.5);
       armIK(B.ru,B.rf,B.rh,butt.clone().addScaledVector(dir,Math.min(0.22,L*0.3)).addScaledVector(upv,-0.08),chest.clone().addScaledVector(rt,0.7).addScaledVector(upv,-0.6));
-      armIK(B.lu,B.lf,B.lh,butt.clone().addScaledVector(dir,L*0.62).addScaledVector(upv,-0.07),chest.clone().addScaledVector(rt,-0.4).addScaledVector(upv,-0.8)); } }
+      armIK(B.lu,B.lf,B.lh,butt.clone().addScaledVector(dir,Math.min(L*0.62,0.55)).addScaledVector(upv,-0.06),chest.clone().addScaledVector(rt,-0.15).addScaledVector(upv,-0.9)); } }
   else { // procedural body: arm straight forward, gun at the end
     const g=A.group; base=new THREE.Vector3(0,1.38,0).applyMatrix4(g.matrixWorld); gun.position.copy(base).addScaledVector(rt,H.shoulder?0.15:0.2).addScaledVector(dir,H.shoulder?0.1:0.42).addScaledVector(upv,H.shoulder?0.18:0); }
   gun.lookAt(_ikT.copy(gun.position).sub(dir)); gun.visible=true;

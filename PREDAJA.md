@@ -141,3 +141,12 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
   ground albedo 2048 na touchu, creek maska 1 m/px, iOS kvaliteta 0 (bez posta, PR 1.0)
 - početni ekran (42_title.js): stripovski paneli iz photos/, veliki logo, učitavanje, "pritisni tipku", izbornik (priča, kontrole, nova igra, kvaliteta, ime)
 - traktor: seatY 0.72, sjedalo i volan u liniji vozača
+
+## Runda: vozila, sudari, noć, dućan, pucanje (listopad 2026, 7)
+- 43_vehicles.js: policija = realistična limuzina + livreja POLICIJA + rotirka; hitna = visoki kombi (HITNA POMOĆ 194, kockice);
+  vatrogasci = kamion s kabinom za posadu, roletama, ljestvama; helikopter EC135 stil. makeCarGroup('police') / ('van','#f7f7f7') vraćaju nove.
+- sudari: vehicleCollide gura i od prometa/policije/hitne (aiCars), carBump: zvuk, promet stane, policija = zvjezdica
+- noć: exposure ×(1+0.6·noć), hemi ≥0.3+0.3·noć vani, unutra 1.05 + toplo svjetlo koje prati igrača (NL.room); lampe po svim seoskim cestama (villageLamps)
+- dućan (44_shop.js): police s pakiranjima iz atlasa (mlijeko, kruh, kava...), 15 artikala, svaka polica je mjesto za kupnju (E)
+- pucanje: krv prema smjeru metka, lokva krvi, pad unazad od pogotka (knock), puška u ramenu u visini oka
+- DVD: stepenica ispred ulaza → asfaltna rampa; živice svjetlije; daleke krošnje grudaste (5 blobova)

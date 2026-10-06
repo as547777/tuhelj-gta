@@ -175,7 +175,7 @@ function fireGun(){ const C=COMBAT, W=curW(); if(!C.armed||C.dead||C.cd>0||C.rel
   if(W.rocket){ const d=spread(); gtaShot(); spawnRocket(muzzle,d,true); if(vm&&vm.userData.war) vm.userData.war.visible=false; C.shot={n:++C.shotN,w:3,a:[+muzzle.x.toFixed(2),+muzzle.y.toFixed(2),+muzzle.z.toFixed(2)],d:[+d.x.toFixed(3),+d.y.toFixed(3),+d.z.toFixed(3)]}; if(C.mags[C.wi]<=0) setTimeout(()=>reloadGun(),350); updateCombatHUD(); return; }
   const maxR=C.wi===2?400:(W.range||150); const n=W.pellets||1; let lastE=null;
   for(let k=0;k<n;k++){ const d=spread(); const R=shootRay(o,d,maxR,W); const fall=W.range?clamp(1.15-R.end/W.range,0.25,1):1;
-    if(R.person){ hurtPerson(R.person.P,Math.round((R.person.head?W.head:W.dmg)*fall),true); if(k===0||n===1) showHitMarker(R.person.head); bloodPuff(o.clone().addScaledVector(d,R.end)); }
+    if(R.person){ HITDIR.copy(d); HITHEAD=!!R.person.head; hurtPerson(R.person.P,Math.round((R.person.head?W.head:W.dmg)*fall),true); if(k===0||n===1) showHitMarker(R.person.head); bloodPuff(o.clone().addScaledVector(d,R.end)); }
     else if(R.best){ const dmg=Math.round((R.best.head?W.head:W.dmg)*fall); C.hits[R.best.R.id]=(C.hits[R.best.R.id]||0)+dmg; showHitMarker(R.best.head); }
     else if(R.veh){ damageVehicle(R.veh.V,W.dmg*0.45*fall,o.clone().addScaledVector(d,R.end)); sparks(o.clone().addScaledVector(d,R.end)); if(Math.random()<0.3) sfx('ricochet',0.5); }
     else if(R.wall&&R.end<120){ dustHit(o.clone().addScaledVector(d,R.end)); }
@@ -186,7 +186,8 @@ function fireGun(){ const C=COMBAT, W=curW(); if(!C.armed||C.dead||C.cd>0||C.rel
 function smokeSprite(){ let P=PUFFS.find(q=>!q.m.visible); if(!P){ if(PUFFS.length>260) return null; const m=new THREE.Sprite(new THREE.SpriteMaterial({map:FX.smoke,transparent:true,depthWrite:false,opacity:0.6})); m.renderOrder=3; GAME.scene.add(m); P={m}; PUFFS.push(P); } return P; }
 function puff(p,s,col,o){ fxInit(); const P=smokeSprite(); if(!P) return; o=o||{}; const m=P.m; m.visible=true; m.position.copy(p); P.t=0; P.s=s; P.life=o.life||1.4; P.rise=o.rise===undefined?0.8:o.rise; P.op=o.op||0.6; P.grow=o.grow||1.6; P.add=!!o.fire; P.vx=o.vx||0; P.vz=o.vz||0; P.vy=o.vy||0;
   m.material.map=o.fire?FX.fire:FX.smoke; m.material.blending=o.fire?THREE.AdditiveBlending:THREE.NormalBlending; m.material.color.setHex(col||0xb9b6ae); m.material.rotation=Math.random()*TAU; P.spin=(Math.random()-0.5)*0.8; m.scale.setScalar(s*0.35); m.material.opacity=P.op; }
-function bloodPuff(p){ for(let i=0;i<4;i++) puff(p.clone().add(new THREE.Vector3((Math.random()-0.5)*0.3,(Math.random()-0.5)*0.3,(Math.random()-0.5)*0.3)),0.35,0x7a0d0d,{life:0.5,rise:-0.4,op:0.85,grow:1.2}); }
+const HITDIR=new THREE.Vector3(); let HITHEAD=false;
+function bloodPuff(p){ for(let i=0;i<(HITHEAD?14:9);i++) puff(p.clone().add(new THREE.Vector3(HITDIR.x*0.4*Math.random(),Math.random()*0.15,HITDIR.z*0.4*Math.random())),0.18+Math.random()*0.15,0x6a0808,{life:0.45,rise:-1.2,op:0.95,grow:0.8}); for(let i=0;i<4;i++) puff(p.clone().add(new THREE.Vector3((Math.random()-0.5)*0.3,(Math.random()-0.5)*0.3,(Math.random()-0.5)*0.3)),0.35,0x7a0d0d,{life:0.5,rise:-0.4,op:0.85,grow:1.2}); }
 function dustHit(p){ puff(p,0.5,0xa89c88,{life:0.7,rise:0.3,op:0.55,grow:1.4}); }
 function sparks(p){ puff(p,0.35,0xffc060,{life:0.15,rise:0,op:1,grow:1,fire:true}); }
 /* ---- rockets ---- */

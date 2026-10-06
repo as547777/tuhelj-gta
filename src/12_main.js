@@ -34,7 +34,7 @@ async function main(){
   const special=new Set(['church','fire','townhall','chapel','school','shrine','tank','shop','cafe','parish','apt']);
   let i=0; for(const b of BLD){ if(special.has(b.k)||b.st) continue; if(b.k==='garage'||b.k==='shed'||b.k==='barn') emitOutbuilding(cs,b); else emitHouse(cs,b); if(++i%120===0){ UI.progress(0.38+0.14*i/BLD.length); await yieldFrame(); } }
   const pm=propMats(); const bm=Object.assign({},pm,HM,{brick:new THREE.MeshStandardMaterial({map:TEX.brick,vertexColors:true,roughness:0.95}),plinth:new THREE.MeshStandardMaterial({map:TEX.stone,vertexColors:true,roughness:0.95}),gold:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.9,roughness:0.3}),metal:new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.55,roughness:0.4})}); addNormalMaps(bm);
-  GAME.bm=bm; for(const m of cs.meshes(bm,{cast:k=>k!=='win'&&k!=='glassW'&&k!=='leaded'&&k!=='stain'&&k!=='glow'&&k!=='mural'&&k!=='floorT'})) scene.add(m);
+  GAME.bm=bm; if(bm.hedge){ bm.hedge.color.setRGB(1.35,1.45,1.3); try{ foliageFill(bm.hedge); }catch(e){} } /* hedges were near-black in shade */ for(const m of cs.meshes(bm,{cast:k=>k!=='win'&&k!=='glassW'&&k!=='leaded'&&k!=='stain'&&k!=='glow'&&k!=='mural'&&k!=='floorT'})) scene.add(m);
   await step(0.54,'Uređujem dvorišta…'); paintYards(BLD); paintAprons(BLD); 
   await step(0.58,'Postavljam stupove i ograde…'); buildProps(scene,q); try{ await waitPack('vehicles',7000); prepVehicles(); }catch(e){ console.warn('vozila',e); } buildCars(scene); buildCourts(scene);
   finishGround();

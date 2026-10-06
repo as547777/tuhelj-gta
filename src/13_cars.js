@@ -206,6 +206,7 @@ function vehicleCollide(v,fx,fz,damp){ const s=v.st; const rr=v.wid*0.46; let sx
     for(const t of [-0.36,0,0.36]){ const p={x:s.x+fx*v.len*t, z:s.z+fz*v.len*t}; const q={x:p.x,z:p.z}; carCollide(q,rr,s.y+0.6);
       for(const [tx,tz,tr] of TR){ const ddx=q.x-tx, ddz=q.z-tz, dd=Math.hypot(ddx,ddz), m=tr+rr*0.8; if(dd<m&&dd>1e-4){ q.x=tx+ddx/dd*m; q.z=tz+ddz/dd*m; } }
       for(const o of DRIVE){ if(o===v) continue; const ddx=q.x-o.st.x, ddz=q.z-o.st.z, dd=Math.hypot(ddx,ddz), m=(o.wid+v.wid)*0.5; if(dd<m&&dd>1e-4){ q.x=o.st.x+ddx/dd*m; q.z=o.st.z+ddz/dd*m; } }
+      for(const T of aiCars()){ if(T.v===v) continue; const o=T.st; const ddx=q.x-o.x, ddz=q.z-o.z, dd=Math.hypot(ddx,ddz), m=(T.v.wid+v.wid)*0.5; if(dd<m&&dd>1e-4){ q.x=o.x+ddx/dd*m; q.z=o.z+ddz/dd*m; carBump(v,T); } }
       const ddx=q.x-p.x, ddz=q.z-p.z; if(Math.abs(ddx)+Math.abs(ddz)>1e-4){ mx+=ddx; mz+=ddz; hits++; } }
     if(!hits) break; s.x+=mx/hits; s.z+=mz/hits; sx+=mx/hits; sz+=mz/hits; n++; }
   if(n && damp){ const pl=Math.hypot(sx,sz); if(pl>1e-4){ const into=(fx*sx+fz*sz)/pl*Math.sign(s.v); if(into<-0.2) s.v*=Math.max(0.15,1+into*0.85*Math.min(1,pl*8)); else s.v*=0.985; } }
@@ -234,3 +235,8 @@ function makeFormula(){ const g=new THREE.Group(); const M=(c,m=0.4,r=0.35)=>new
   const tire=new THREE.CylinderGeometry(0.34,0.34,0.36,24); tire.rotateX(Math.PI/2); const rim=new THREE.CylinderGeometry(0.2,0.2,0.37,16); rim.rotateX(Math.PI/2);
   const wheels=[]; for(const [x,sz,wd] of [[1.9,-1,0.3],[1.9,1,0.3],[-1.7,-1,0.4],[-1.7,1,0.4]]){ const w=new THREE.Group(), spin=new THREE.Group(); const t=new THREE.Mesh(tire,blk), rm=new THREE.Mesh(rim,M(0x9aa0a6,0.9,0.3)); t.scale.z=wd/0.36; rm.scale.z=wd/0.36; t.castShadow=true; spin.add(t,rm); w.add(spin); w.position.set(x,0.34,sz*0.82); g.add(w); wheels.push({w,spin,front:x>0}); }
   return {group:g,wheels,wb:3.6,track:1.64,len:5.4,wid:1.95,r:0.34,formula:true,helmet,label:'Formulu',col:'#c8161d',halfL:2.7,phys:{maxV:88,rev:-8,acc:17,brake:34,maxSteer:0.34,sv:24}}; }
+
+// traffic, police, gang and ambulance cars are solid too: bumping them stops them and costs you speed
+function aiCars(){ const L=[]; if(typeof GTA==='undefined') return L; for(const T of GTA.traffic) if(!T.wreck) L.push(T); for(const C of GTA.chasers) if(!C.gone) L.push(C); for(const A of GTA.amb) L.push(A); return L; }
+function carBump(v,T){ const now=GAME.time; T.hitT=now+3.5; if(v===PLAYER.driving){ const sp=Math.abs(v.st.v||0); if(sp>3&&(!v._bumpT||now>v._bumpT)){ v._bumpT=now+0.6; crashSound(Math.min(1,sp/20)); if(sp>12&&typeof GAME.shake!=='undefined') GAME.shake=0.4; if(T.drv&&Math.random()<0.6){ try{ bubble(T.drv,['Hej! Pazi malo!','Jesi lud?!','Moj auto!!'][Math.floor(Math.random()*3)]); }catch(e){} } if(T.kind==='policija'&&typeof crime==='function') crime(1); } } }
+function crashSound(k){ try{ const C=AUD.ctx; if(!C||OW.muted) return; const t=C.currentTime; const n=C.createBufferSource(); const b=C.createBuffer(1,C.sampleRate*0.4,C.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(C.sampleRate*0.08)); n.buffer=b; const f=C.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900; const g=C.createGain(); g.gain.value=0.5*k+0.15; n.connect(f); f.connect(g); g.connect(AUD.master); n.start(t); }catch(e){} }

@@ -56,7 +56,7 @@ function treeTemplates(){
     const blobs=[[0,0.6,0,0.25],[0.15,0.52,0.06,0.19],[-0.14,0.55,-0.08,0.19],[0.03,0.74,-0.1,0.17],[-0.05,0.43,0.13,0.16]];
     for(const [x,y,z,s] of blobs){ const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion(),new THREE.Vector3(s,s*0.92,s)); parts.push({g:blobGeo(1,Math.floor(r()*1000)),m,sphereN:true,center,uvs:2.2,shade:shadeY(0.5,1.1,0.3,0.9)}); }
     T.broadCrown=mergeGeos(parts);
-    const far=[{g:blobGeo(0,11),m:new THREE.Matrix4().compose(new THREE.Vector3(0,0.6,0),new THREE.Quaternion(),new THREE.Vector3(0.31,0.29,0.31)),sphereN:true,center,shade:shadeY(0.6,1.05,0.3,0.88)}];
+    const far=[[0,0.6,0,0.27],[0.12,0.53,0.08,0.19],[-0.13,0.55,-0.06,0.19],[0.02,0.73,-0.06,0.17],[-0.04,0.46,0.12,0.15]].map(([x,y,z,s2],i)=>({g:blobGeo(1,11+i*7),m:new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion(),new THREE.Vector3(s2,s2*0.92,s2)),sphereN:true,center,shade:shadeY(0.55,1.08,0.3,0.9)})); /* clumped crown instead of one faceted ball */
     { const tr=new THREE.CylinderGeometry(0.016,0.026,0.42,5,1,true); tr.translate(0,0.21,0); far.push({g:tr,m:new THREE.Matrix4(),shade:()=>0.32}); } /* far trees keep a trunk: no floating balls */
     T.broadFar=mergeGeos(far);
     const trunk=new THREE.CylinderGeometry(0.013,0.024,0.5,6,1,true); trunk.translate(0,0.25,0); const br1=new THREE.CylinderGeometry(0.005,0.01,0.2,4,1,true); br1.rotateZ(0.7); br1.translate(0.06,0.5,0); const br2=br1.clone(); br2.rotateY(2.2);

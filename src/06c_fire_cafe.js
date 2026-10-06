@@ -61,7 +61,10 @@ function fireStation(cs,scene,b){
     const pz0=gz0, pz1=gz0-2.4, ptop=y0+3.55; const pc=F(gx,0,(pz0+pz1)/2); const pf=frame(pc[0],pc[2],a2,0);
     G.box(pf,-ghw+0.3,ghw-0.3,ptop,ptop+0.4,-(pz0-pz1)/2,(pz0-pz1)/2,WALLC,0.5); T.box(pf,-ghw+0.25,ghw-0.25,ptop+0.4,ptop+0.5,-(pz0-pz1)/2-0.05,(pz0-pz1)/2+0.05,TRIMC); T.box(pf,-ghw+0.3,ghw-0.3,ptop-0.12,ptop,-(pz0-pz1)/2,(pz0-pz1)/2,TRIMC);
     for(const x of [-ghw+0.9,ghw-0.9]){ const cp=F(gx+x,0,pz1+0.45); const lf=frame(cp[0],cp[2],a2,0); lathe(G,lf,[[0.4,y0],[0.4,y0+0.18],[0.34,y0+0.24],[0.3,y0+0.4],[0.27,ptop-0.45],[0.3,ptop-0.35],[0.38,ptop-0.2],[0.4,ptop]],14,TRIMC); addCollider(cp[0],cp[2],a2,0.8,0.8,y0-1,ptop); }
-    H.stone.box(pf,-ghw+0.3,ghw-0.3,y0-0.3,y0+0.02,-(pz0-pz1)/2,(pz0-pz1)/2,lin('#b9b3a8'),0.5); addFloor(pf,a2,-ghw+0.3,ghw-0.3,-(pz0-pz1)/2,(pz0-pz1)/2,y0+0.02);
+    { const AS=cs.get('curb',cx,cz), AC=lin('#a3a4a6'); const hz=(pz0-pz1)/2, hx=ghw-0.3; AS.box(pf,-hx,hx,y0-0.6,y0+0.02,-hz,hz,AC,0.5,0x3f^8); addFloor(pf,a2,-hx,hx,-hz,hz,y0+0.02);
+      /* no steps in front of the station: the asphalt runs up to the door as a gentle ramp (player: "sve je na asfaltu") */
+      const z1=-hz-3.2; const gy=(x)=>{ const p=pf(x,0,z1); return getHeight(p[0],p[2])+0.05; }; AS.quad(pf(-hx,y0+0.02,-hz),pf(hx,y0+0.02,-hz),[pf(hx,0,z1)[0],gy(hx),pf(hx,0,z1)[2]],[pf(-hx,0,z1)[0],gy(-hx),pf(-hx,0,z1)[2]],[0,0],[1,0],[1,1],[0,1],AC,[0,1,0]);
+      for(const sx of [-1,1]){ const xx=sx*hx; AS.tri(pf(xx,y0+0.02,-hz),[pf(xx,0,z1)[0],gy(xx),pf(xx,0,z1)[2]],pf(xx,y0-0.6,-hz),[0,0],[1,0],[0,1],AC,[sx,0,0]); } }
   }
   localCollider(F,a2,gx-ghw,gx+ghw,gz0,gz1,y0-3,y0+11);
   // ---- dormers ----

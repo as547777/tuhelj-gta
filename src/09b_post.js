@@ -67,7 +67,7 @@ function setupPost(renderer){
 }
 // eye adaptation: walking into the church / a house the picture slowly brightens, outside it settles back
 function exposureTick(renderer){ const P=typeof PLAYER!=='undefined'?PLAYER:null; let indoor=false; if(P&&GAME.started&&!P.driving){ indoor=(typeof INSIDE!=='undefined'&&!!INSIDE)||floorAt(P.pos.x,P.pos.z)>getHeight(P.pos.x,P.pos.z)+0.3; }
-  const base=1.08, want=indoor?((typeof INSIDE!=='undefined'&&INSIDE)?1.25:1.9):base; POST.expo=POST.expo===undefined?base:POST.expo+(want-POST.expo)*0.04; if(POST.comp) POST.comp.uniforms.exposure.value=POST.expo; renderer.toneMappingExposure=POST.expo; }
+  const nt=(typeof SKY!=='undefined'&&SKY.night)||0; const base=1.08*(1+0.6*nt), want=indoor?((typeof INSIDE!=='undefined'&&INSIDE)?1.25:1.9):base; /* eyes adapt at night: you can still see the street */ POST.expo=POST.expo===undefined?base:POST.expo+(want-POST.expo)*0.04; if(POST.comp) POST.comp.uniforms.exposure.value=POST.expo; renderer.toneMappingExposure=POST.expo; }
 function renderFrame(renderer,scene,camera){ exposureTick(renderer);
   if(!POST.enabled){ renderer.setRenderTarget(null); renderer.render(scene,camera); return; }
   renderer.setRenderTarget(POST.rt); renderer.render(scene,camera);
