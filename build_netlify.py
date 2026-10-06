@@ -7,7 +7,7 @@ os.makedirs(D,exist_ok=True)
 W=os.path.join(H,'web')
 if os.path.isdir(W):
     for f in os.listdir(W): shutil.copy2(os.path.join(W,f),os.path.join(D,f))
-subprocess.run([sys.executable,os.path.join(H,'build.py'),os.path.join(D,'index.html'),'<link rel="manifest" href="manifest.json">\n<link rel="apple-touch-icon" href="icon-192.png">'],check=True)
+subprocess.run([sys.executable,os.path.join(H,'build.py'),os.path.join(D,'index.html'),'<link rel="manifest" href="manifest.json">\n<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">'],check=True)
 p=os.path.join(D,'index.html'); src=open(p,encoding='utf-8').read()
 cdn='<script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>'
 local=('<script src="three.min.js"></script>\n<script>window.THREE||document.write(\'<script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"><\\/script>\')</script>\n'
