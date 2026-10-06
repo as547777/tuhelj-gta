@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' }
+def run = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+android {
+    namespace 'hr.tuhelj.igra'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'hr.tuhelj.igra'
+        minSdk 24
+        targetSdk 34
+        versionCode run
+        versionName "1.0.${run}"
+    }
+    signingConfigs {
+        // one fixed key kept in the repo, so a newer APK installs over the old one (updates keep your progress)
+        tuhelj { storeFile file('tuhelj.keystore'); storePassword 'tuhelj123'; keyAlias 'tuhelj'; keyPassword 'tuhelj123' }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.tuhelj }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies { implementation 'androidx.webkit:webkit:1.11.0' }

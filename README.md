@@ -1,6 +1,7 @@
 # Tuhelj GTA 🏡🚗
 
 ### 🎮 [▶ PLAY NOW](https://as547777.github.io/tuhelj-gta/)
+### 📱 [⬇ ANDROID APK](https://github.com/as547777/tuhelj-gta/releases/download/android/Tuhelj.apk)
 
 An open-world 3D game in the browser, set in the village of **Tuhelj** in Hrvatsko zagorje, Croatia, built from real OpenStreetMap data. It has driving, missions, police, firefighters, poker at the local pub, shops you can walk into, and multiplayer with friends.
 
@@ -10,6 +11,8 @@ An open-world 3D game in the browser, set in the village of **Tuhelj** in Hrvats
 - **Online:** [https://as547777.github.io/tuhelj-gta/](https://as547777.github.io/tuhelj-gta/)
 - **On a computer:** double-click `docs/index.html` (Chrome or Edge).
 - **On a phone:** open the online address; the game adapts to touch controls automatically.
+- **Android app:** download [Tuhelj.apk](https://github.com/as547777/tuhelj-gta/releases/download/android/Tuhelj.apk), open it on the phone and allow installing from this source. The game is inside the app, so it also runs offline. Built automatically by GitHub Actions (`android/`, `.github/workflows/android.yml`) after every change to `docs/`.
+- **iPhone:** open the online address in Safari → Share → *Add to Home Screen*.
 
 Basic controls: **WASD** + mouse (third-person camera, **V** switches to first person), **E** to interact (talk, start a mission, enter a car or building, wardrobe), **mouse wheel** or **1–6** to switch weapons, left click to shoot, right click to aim, **M** map, **P** phone.
 
