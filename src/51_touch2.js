@@ -13,7 +13,7 @@ function mapBlank(){ try{ if(!MAP.c) return true; const g=MAP.c.getContext('2d')
 (function(){ const st=document.createElement('style'); st.textContent=`
 #mapx{position:fixed;z-index:61;top:calc(10px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:48px;height:48px;border-radius:50%;border:3px solid #fff;background:#d1262e;color:#fff;font:700 26px/40px Manrope,sans-serif;text-align:center;display:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.45)}
 body.mapon #mapx{display:block}
-body.mapon #mini,body.mapon #hudpanel,body.mapon #touchui,body.mapon #tgear,body.mapon #gearpop,body.mapon #tphone,body.mapon #tgun,body.mapon #gtacash,body.mapon #gstars{visibility:hidden!important}
+body.mapon #mini,body.mapon #hudpanel,body.mapon #touchui,body.mapon #tgear,body.mapon #gearpop,body.mapon #tphone,body.mapon #twpn,body.mapon #gtacash,body.mapon #gstars{visibility:hidden!important}
 body.touch #tbtns{display:none!important}
 body.touch #mini{top:calc(6px + env(safe-area-inset-top,0px))!important;right:calc(6px + env(safe-area-inset-right,0px))!important}
 #tgear{position:fixed;z-index:30;left:calc(10px + env(safe-area-inset-left,0px));top:calc(8px + env(safe-area-inset-top,0px));width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(20,22,24,.55);color:#fff;font-size:24px;line-height:40px;text-align:center;display:none;-webkit-tap-highlight-color:transparent}
@@ -24,9 +24,9 @@ body.touch #gtacash{left:calc(66px + env(safe-area-inset-left,0px))!important}
 body:not(.driving) #gearpop #tcam{display:none!important}
 body.touch #tphone{position:fixed!important;z-index:30;left:calc(12px + env(safe-area-inset-left,0px));top:calc(50% - 6px);width:48px;height:48px;border-radius:50%;padding:0;font-size:22px;display:block;border:2px solid rgba(255,255,255,.5);background:rgba(20,22,24,.55);color:#fff}
 body.touch #tphone #phonebadge{position:absolute;right:-2px;top:-2px}
-body.touch #tgun{position:fixed!important;z-index:30;width:64px;height:64px;border-radius:50%;padding:0;border:3px solid rgba(255,255,255,.42);background:rgba(20,22,24,.5);color:#fff;font:800 9px Manrope,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
-body.touch #tgun img{width:52px;height:22px;object-fit:contain;filter:drop-shadow(0 1px 1px #000)}
-body.touch.driving #tgun,body:not(.ingame) #tgun{display:none!important}
+body.touch #twpn{position:fixed!important;z-index:30;width:64px;height:64px;border-radius:50%;padding:0;border:3px solid rgba(255,255,255,.42);background:rgba(20,22,24,.5);color:#fff;font:800 9px Manrope,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+body.touch #twpn img{width:52px;height:22px;object-fit:contain;filter:drop-shadow(0 1px 1px #000)}
+body.touch.driving #twpn,body:not(.ingame) #twpn{display:none!important}
 body.touch.armed #carbtn,body.touch.armed #gtabtn,body.touch.armed #barbtn,body.touch.armed #pokerbtn{transform:translateX(-118px)}
 #twheel{position:fixed;inset:0;z-index:41;display:none;background:rgba(0,0,0,.25);touch-action:none} #twheel.on{display:block}`; document.head.appendChild(st); })();
 function t2Setup(){ if(t2Setup.done||!GAME.touch) return; t2Setup.done=true;
@@ -42,7 +42,7 @@ function t2Setup(){ if(t2Setup.done||!GAME.touch) return; t2Setup.done=true;
   document.addEventListener('pointerdown',e=>{ if(pop.classList.contains('on')&&!pop.contains(e.target)&&e.target!==gear) pop.classList.remove('on'); },true);
   // 📱 and the gun button out of the old bar
   const ph=document.getElementById('tphone'); if(ph) document.body.appendChild(ph);
-  const gun=document.getElementById('tgun'); if(gun){ document.body.appendChild(gun); const fresh=gun.cloneNode(false); gun.replaceWith(fresh); fresh.id='tgun'; fresh.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); t2Wheel(true); }); }
+  const gun=document.getElementById('tgun'); if(gun){ document.body.appendChild(gun); const fresh=gun.cloneNode(false); gun.replaceWith(fresh); fresh.id='twpn'; fresh.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); t2Wheel(true); }); }
   // radar → big map
   const mini=document.getElementById('mini'); if(mini) mini.addEventListener('pointerdown',e=>{ if(!GAME.started) return; e.preventDefault(); openMap(true); });
   // the weapon wheel for fingers
@@ -57,14 +57,15 @@ function t2Setup(){ if(t2Setup.done||!GAME.touch) return; t2Setup.done=true;
     fb.addEventListener('touchstart',e=>{ const t=e.changedTouches[0]; if(fid===null&&t){ fid=t.identifier; fx=t.clientX; fy=t.clientY; } },{passive:false});
     fb.addEventListener('touchmove',e=>{ for(const t of e.changedTouches){ if(t.identifier!==fid) continue; const zs=GAME.camera.fov/72; PLAYER.yaw-=(t.clientX-fx)*0.0055*zs; PLAYER.pitch=clamp(PLAYER.pitch-(t.clientY-fy)*0.0055*zs,-1.45,1.45); fx=t.clientX; fy=t.clientY; } e.preventDefault(); },{passive:false});
     const end=e=>{ for(const t of e.changedTouches) if(t.identifier===fid) fid=null; }; fb.addEventListener('touchend',end); fb.addEventListener('touchcancel',end); }
-  setInterval(t2Tick,300); }
+  setInterval(t2Tick,150); }
 function t2Wheel(on){ const tw=document.getElementById('twheel'); if(!tw) return; if(on){ if(!canHoldGun()) return; const S=wheelSlots(); WHEEL.open=true; WHEEL.hold=true; WHEEL.sel=COMBAT.armed?Math.max(0,S.indexOf(COMBAT.wi)):0; tw.classList.add('on'); renderWheel(); }
   else { WHEEL.open=false; WHEEL.hold=false; tw.classList.remove('on'); const el=document.getElementById('wwheel'); if(el) el.classList.remove('on'); } }
 // keep the gun button next to the aim / fire buttons and showing the current weapon
-function t2Tick(){ const gun=document.getElementById('tgun'), ab=document.getElementById('aimbtn'), fb=document.getElementById('firebtn'); document.body.classList.toggle('mapon',!!UI.mapOpen);
+function t2Tick(){ const gun=document.getElementById('twpn'), ab=document.getElementById('aimbtn'), fb=document.getElementById('firebtn'); document.body.classList.toggle('mapon',!!UI.mapOpen);
   if(!gun) return; const jb=document.getElementById('jumpbtn'); const q=jb?jb.getBoundingClientRect():null; /* fixed elements have no offsetParent */ // bottom row, left of the jump button (clear of the Vozi / uđi buttons)
   if(q&&q.width){ gun.style.left=(q.left-64-14)+'px'; gun.style.top=(q.top+q.height/2-32)+'px'; gun.style.right='auto'; gun.style.bottom='auto'; }
-  const k=COMBAT.armed?COMBAT.wi:-1; if(gun._k!==k||!gun.querySelector('img')){ gun._k=k; gun.innerHTML=''; const im=document.createElement('img'); im.src=weaponIcon(k<0?'fist':WEAPONS[k].ico); im.alt=''; const s=document.createElement('span'); s.textContent=k<0?'ORUŽJE':WEAPONS[k].n.toUpperCase(); gun.append(im,s); } }
+  const k=COMBAT.armed?COMBAT.wi:-1; if(gun._k!==k){ gun._k=k; gun.innerHTML=''; const im=document.createElement('img'); im.src=weaponIcon(k<0?'fist':WEAPONS[k].ico); im.alt=''; const s=document.createElement('i'); s.className='am'; s.style.fontStyle='normal'; gun.append(im,s); }
+  const am=gun.querySelector('.am'); const t=k<0?'ORUŽJE':(COMBAT.reload>0?'punim…':(COMBAT.mags[k]+' / '+WEAPONS[k].mag)); if(am&&am.textContent!==t) am.textContent=t; }
 { const _sg=startGame; startGame=function(){ _sg(); document.body.classList.add('ingame'); try{ t2Setup(); }catch(e){ console.warn('touch2',e); } }; }
 /* ---- map on phones, part two: Safari's canvas budget is already spent by the time the map is drawn at the end of
    loading, so on phones the map is drawn right after the roads and houses (before murals, signs, normal maps…), and the
@@ -80,5 +81,4 @@ function t2Tick(){ const gun=document.getElementById('tgun'), ab=document.getEle
 /* ---- one rifle: the SMG was the same automatic gun with another name, so the player only has the Puška ---- */
 { const _ow=owned; owned=function(){ return _ow().filter(i=>i!==1); }; const _sw=selectWeapon; selectWeapon=function(i){ _sw(i===1?0:i); }; if(COMBAT.wi===1) COMBAT.wi=0; }
 /* ---- ammo on the weapon button, not a second "SMG 36/40" label on the screen ---- */
-(function(){ const st=document.createElement('style'); st.textContent='body.touch #ammo{display:none!important} body.touch #tgun .am{font:800 11px Manrope,sans-serif;color:#ffd24a;margin-top:1px}'; document.head.appendChild(st); })();
-setInterval(()=>{ const gun=document.getElementById('tgun'); if(!gun||!GAME.touch) return; let a=gun.querySelector('.am'); if(!COMBAT.armed){ if(a) a.remove(); return; } if(!a){ a=document.createElement('i'); a.className='am'; a.style.fontStyle='normal'; gun.appendChild(a); } const W=WEAPONS[COMBAT.wi]; const t=COMBAT.reload>0?'punim…':(COMBAT.mags[COMBAT.wi]+' / '+W.mag); if(a.textContent!==t) a.textContent=t; const s=gun.querySelector('span'); if(s) s.style.display='none'; },200);
+(function(){ const st=document.createElement('style'); st.textContent='body.touch #ammo{display:none!important} body.touch #twpn .am{font:800 11px Manrope,sans-serif;color:#ffd24a;margin-top:1px}'; document.head.appendChild(st); })();

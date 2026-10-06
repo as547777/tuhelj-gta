@@ -225,3 +225,7 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - SMG maknut s igrača (owned/selectWeapon) — ostaje Puška; NPC-ovi i dalje imaju SMG.
 - Na mobitelu nema natpisa #ammo; meci su na okruglom gumbu oružja.
 
+
+## Gumb oružja bez treperenja
+- 51_touch2.js: premješteni gumb dobiva id #twpn (stari kod upisuje naziv u #tgun pa je natpis skakao); jedan crtač: ikona + broj metaka, mijenja se samo broj.
+
