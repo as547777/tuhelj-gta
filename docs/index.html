@@ -11393,7 +11393,7 @@ function ttInit(){ const s=document.getElementById('start'); if(!s||TT.el) retur
   P.forEach((u,k)=>{ const im=new Image(); im.onload=()=>{ setTimeout(()=>{ try{ const url=comicArt(im,W); const d=document.createElement('div'); d.className='pan'; const L=lay[TT.arts.length%3]; Object.assign(d.style,{left:L.l,top:L.t,width:L.w,height:L.h,backgroundImage:'url('+url+')'}); d.style.setProperty('--r',L.r); art.appendChild(d); TT.arts.push(d); if(TT.arts.length===1) d.classList.add('on'); }catch(e){} },120*k); }; im.src=u; });
   const anyKey=()=>{ if(TT.ready&&!el.classList.contains('menu')) ttMenu(); }; addEventListener('keydown',anyKey); el.addEventListener('pointerup',anyKey); }
 function ttMenu(){ const el=TT.el; el.classList.add('menu'); const m=el.querySelector('.menu'); const n=(typeof STORY!=='undefined')?STORY.ch:0; const go=document.getElementById('go');
-  const items=[[n>=7?'SLOBODNA IGRA':n?'NASTAVI PRIČU':'PRIČA',n?('Poglavlje '+Math.min(7,n+1)+' od 7'):'Deset godina u Njemačkoj — sad si opet doma',()=>go.click()],
+  const items=[[(n>=7?'SLOBODNA IGRA':n?'NASTAVI PRIČU':'NOVA PRIČA')+' ▶',(n?('Poglavlje '+Math.min(7,n+1)+' od 7 · '):'')+(GAME.touch?'Dodirni za početak':'Klikni ili Enter za početak'),()=>go.click()],
     ['KONTROLE',GAME.touch?'Dodirne kontrole':'Tipkovnica i miš',()=>{ const h=el.querySelector('.help'); h.classList.toggle('on'); h.innerHTML=GAME.touch?'Lijevi krug — hodanje · prst po ekranu — pogled · gumbi desno — skok, trčanje, pucanje · Vozi — uđi u auto · 📻 — radio':'W A S D hodanje · Shift trčanje · Space skok · C čučanj<br>E vrata, auto, razgovor · V pogled iz auta · R radio u autu<br>Kotačić / Tab oružje · lijevi klik puca · desni nišani<br>M karta · P mobitel · Esc izbornik'; }]];
   if((typeof STORY!=='undefined'&&STORY.ch>0)||GTA.home) items.push(['NOVA IGRA','Briše napredak',()=>{ const ng=document.getElementById('newgame'); if(ng) ng.click(); }]);
   m.innerHTML=''; items.forEach((it,i)=>{ const b=document.createElement('button'); b.innerHTML=it[0]+'<small>'+it[1]+'</small>'; if(!i) b.classList.add('sel'); b.addEventListener('click',e=>{ e.stopPropagation(); it[2](); }); b.addEventListener('pointerenter',()=>{ m.querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b)); }); m.appendChild(b); });
@@ -11401,8 +11401,8 @@ function ttMenu(){ const el=TT.el; el.classList.add('menu'); const m=el.querySel
   const pn=document.getElementById('pname'); if(pn){ const inp=document.createElement('input'); inp.placeholder='Tvoje ime'; inp.maxLength=16; inp.value=pn.value; inp.addEventListener('input',()=>{ pn.value=inp.value; pn.dispatchEvent(new Event('input')); }); inp.addEventListener('pointerup',e=>e.stopPropagation()); m.appendChild(inp); }
   let sel=0; addEventListener('keydown',e=>{ if(GAME.started||!el.classList.contains('menu')) return; const bs=[...m.querySelectorAll('button')]; if(e.code==='ArrowDown'||e.code==='KeyS'){ sel=(sel+1)%bs.length; } else if(e.code==='ArrowUp'||e.code==='KeyW'){ sel=(sel+bs.length-1)%bs.length; } else if(e.code==='Enter'||e.code==='Space'){ bs[sel].click(); return; } else return; bs.forEach((x,j)=>x.classList.toggle('sel',j===sel)); }); }
 function ttTick(dt){ if(!TT.el){ try{ ttInit(); }catch(e){ return; } } if(GAME.started){ TT.el.style.display='none'; return; } TT.el.style.display='';
-  const bar=document.getElementById('bar'); const p=TT.el.querySelector('.pct'); if(bar&&p) p.style.width=bar.style.width||'0';
-  const go=document.getElementById('go'); if(go&&!go.disabled&&!TT.ready){ TT.ready=true; TT.el.classList.add('ready'); TT.el.querySelector('.load span').textContent='SPREMNO'; TT.el.querySelector('.load s').style.display='none'; }
+  const bar=document.getElementById('bar'); const p=TT.el.querySelector('.pct'); if(bar&&p) p.style.width=(0.85*(parseFloat(bar.style.width)||0))+'%';
+  const go=document.getElementById('go'); if(go&&!go.disabled&&!TT.ready&&ttAllLoaded(p)){ TT.ready=true; TT.el.classList.add('ready'); TT.el.querySelector('.load span').textContent='SPREMNO'; TT.el.querySelector('.load s').style.display='none'; }
   TT.t-=dt; if(TT.t<=0&&TT.arts.length>1){ TT.t=6; TT.arts.forEach(a=>a.classList.remove('on')); TT.arts[++TT.i%TT.arts.length].classList.add('on'); } }
 // runs while loading too (the game loop has not started yet)
 (function loop(){ let last=performance.now(); const f=()=>{ const n=performance.now(); try{ ttTick((n-last)/1000); }catch(e){} last=n; if(!GAME.started) setTimeout(f,100); else ttTick(0); }; if(document.readyState==='loading') addEventListener('DOMContentLoaded',f); else setTimeout(f,0); })();
@@ -11417,6 +11417,26 @@ function uiSnd(kind){ try{ if(!RADIO.ctx) return; const C=RADIO.ctx, t=C.current
 { const _menu=ttMenu; ttMenu=function(){ ttMusicStart(); uiSnd('pick'); _menu(); const m=TT.el.querySelector('.menu'); m.querySelectorAll('button,.q span').forEach(b=>{ b.addEventListener('pointerenter',()=>uiSnd('hover')); b.addEventListener('click',()=>uiSnd('pick')); }); };
   addEventListener('keydown',e=>{ if(!GAME.started&&TT.el&&TT.el.classList.contains('menu')&&/Arrow|Key[WS]/.test(e.code)) uiSnd('hover'); });
   const _tick=ttTick; ttTick=function(dt){ _tick(dt); ttMusicTick(); }; }
+
+/* wait for everything (people, animations, cars, guns, first shader compile) before showing the menu,
+   so the game is ready the moment the story starts instead of popping in for another ~10 s */
+function ttAllLoaded(pct){ if(!TT.wt0) TT.wt0=performance.now(); try{ rbInit(); }catch(e){}
+  const ok=n=>!!(MODELS.gltf[n]||MODELS.failed[n]); const parts=[ok('vehicles'),ok('weapons'),ok('anims'),ok(peoplePack()),!!REAL.rbReady||!waitingPeople()];
+  const done=parts.filter(Boolean).length, all=done===parts.length, late=performance.now()-TT.wt0>45000;
+  if(pct) pct.style.width=(85+15*done/parts.length)+'%';
+  const ls=TT.el&&TT.el.querySelector('.load span'); if(ls&&!all) ls.textContent='UČITAVAM LJUDE I AUTE…';
+  if(!all&&!late) return false;
+  if(!TT.warm){ TT.warm=true; try{ ttWarm(); }catch(e){ console.warn('warm',e); } }
+  return true; }
+function ttWarm(){ const sc=GAME.scene, cam=GAME.camera, tmp=[]; const put=o=>{ const d=new THREE.Vector3(); cam.getWorldDirection(d); o.position.copy(cam.position).addScaledVector(d,6); sc.add(o); tmp.push(o); };
+  try{ if(typeof modelsTick==='function') modelsTick(); }catch(e){}
+  const keys=Object.keys(REAL.rb||{}).slice(0,2); for(const k of keys){ const m=THREE.SkeletonUtils.clone(REAL.rb[k].scene); put(m); }
+  try{ GAME.renderer.compile(sc,cam); GAME.renderer.render(sc,cam); }catch(e){}
+  for(const o of tmp) sc.remove(o); }
+(function(){ const st=document.createElement('style'); st.textContent=`
+#tt .menu button:first-of-type{background:#ffd24a;color:#111;text-shadow:none;animation:ttgo 1.6s ease-in-out infinite}
+#tt .menu button:first-of-type small{color:#3a2c00}
+@keyframes ttgo{50%{box-shadow:0 0 0 6px rgba(255,210,74,.35)}}`; document.head.appendChild(st); })();
 
 /* ===================== emergency vehicles & helicopter, detailed =====================
    Police: the realistic sedan in Croatian police livery (white, blue band, POLICIJA, light bar).

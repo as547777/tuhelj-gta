@@ -181,3 +181,8 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - Animacija likova blizu kamere svaki frame na dodiru (nema trzanja pri hodu).
 - Hardverski antialiasing (MSAA) umjesto post-obrade na mobitelu: glatki rubovi i brže.
 
+
+## Naslovni zaslon čeka sve modele
+- SPREMNO tek kad su učitani ljudi, animacije, auti i oružje (najviše 45 s), plus zagrijavanje shadera; traka ide do 85 % za svijet, ostatak za modele.
+- Prvi gumb NOVA PRIČA ▶ žut i pulsira, s uputom 'Dodirni za početak'.
+
