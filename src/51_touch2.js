@@ -8,7 +8,7 @@
      where you tap or slide to the gun you want.
    · Fire button: keep your thumb on it and slide — the gun follows your thumb (aim while you shoot). */
 function mapBlank(){ try{ if(!MAP.c) return true; const g=MAP.c.getContext('2d'); if(!g) return true; const W=MAP.c.width, H=MAP.c.height; let ok=0; for(const [fx,fy] of [[0.5,0.5],[0.3,0.4],[0.7,0.6]]){ const d=g.getImageData((W*fx)|0,(H*fy)|0,1,1).data; if(d[3]>200) ok++; } return ok===0; }catch(e){ return true; } }
-{ const _bm=buildMapCanvas; buildMapCanvas=function(){ if(GAME.touch) MAP.scale=0.4; _bm(); if(GAME.touch&&mapBlank()){ MAP.scale=0.26; MAP.c=null; MAP.labels=null; try{ _bm(); }catch(e){} } MAP.retry=mapBlank(); };
+{ const _bm=buildMapCanvas; buildMapCanvas=function(){ if(GAME.touch){ MAP.scale=0.4; MAP.c=null; } _bm(); if(GAME.touch&&mapBlank()){ MAP.scale=0.26; MAP.c=null; MAP.labels=null; try{ _bm(); }catch(e){} } MAP.retry=mapBlank(); };
   setInterval(()=>{ if(!MAP.retry||!GAME.started) return; try{ MAP.scale=0.26; buildMapCanvas(); }catch(e){} },6000); }
 (function(){ const st=document.createElement('style'); st.textContent=`
 #mapx{position:fixed;z-index:61;top:calc(10px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:48px;height:48px;border-radius:50%;border:3px solid #fff;background:#d1262e;color:#fff;font:700 26px/40px Manrope,sans-serif;text-align:center;display:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.45)}
@@ -66,3 +66,19 @@ function t2Tick(){ const gun=document.getElementById('tgun'), ab=document.getEle
   if(q&&q.width){ gun.style.left=(q.left-64-14)+'px'; gun.style.top=(q.top+q.height/2-32)+'px'; gun.style.right='auto'; gun.style.bottom='auto'; }
   const k=COMBAT.armed?COMBAT.wi:-1; if(gun._k!==k||!gun.querySelector('img')){ gun._k=k; gun.innerHTML=''; const im=document.createElement('img'); im.src=weaponIcon(k<0?'fist':WEAPONS[k].ico); im.alt=''; const s=document.createElement('span'); s.textContent=k<0?'ORUŽJE':WEAPONS[k].n.toUpperCase(); gun.append(im,s); } }
 { const _sg=startGame; startGame=function(){ _sg(); document.body.classList.add('ingame'); try{ t2Setup(); }catch(e){ console.warn('touch2',e); } }; }
+/* ---- map on phones, part two: Safari's canvas budget is already spent by the time the map is drawn at the end of
+   loading, so on phones the map is drawn right after the roads and houses (before murals, signs, normal maps…), and the
+   place names are drawn live on the big map instead of in a second full-size canvas. */
+{ const _br=buildRoads; buildRoads=function(scene){ const r=_br(scene); if(GAME.touch){ try{ MAP.early=true; MAP.scale=0.4; MAP.noLabels=true; buildMapCanvas(); MAP.earlyOk=!mapBlank(); }catch(e){ console.warn('karta',e); } } return r; }; }
+{ const _bm2=buildMapCanvas; buildMapCanvas=function(){ if(GAME.touch&&MAP.earlyOk&&!MAP.early){ return; } if(GAME.touch&&MAP.early){ MAP.early=false; }
+    if(GAME.touch){ MAP.c=null; MAP.labels=null; } _bm2(); }; }
+{ const _cv=cvs; cvs=function(w,h){ if(MAP.noLabels&&MAP.c&&w===MAP.W&&h===MAP.H){ /* the labels canvas: tiny on phones */ return _cv(1,1); } return _cv(w,h); }; }
+{ const _dm=drawMap; drawMap=function(){ _dm(); if(!GAME.touch) return; const c=$('mapc'), g=c.getContext('2d'), t=mapXform(); const dpr=Math.min(2,devicePixelRatio||1); g.textAlign='center'; g.textBaseline='middle';
+    const lab=(txt,x,z,size,col)=>{ const X=t.ox+(x-X0)*t.s, Z=t.oz+(z-Z0)*t.s; if(X<-80||Z<-40||X>t.W+80||Z>t.H+40) return; g.font=`800 ${size*dpr}px Manrope, Arial`; g.lineWidth=4*dpr; g.strokeStyle='rgba(255,255,255,.85)'; g.strokeText(txt,X,Z); g.fillStyle=col; g.fillText(txt,X,Z); };
+    for(const p of D.places) lab(p.n,p.x,p.z,p.n==='Tuhelj'?18:13,'#2a2622');
+    for(const [tx,o] of [['Crkva',LANDMARKS.church],['Općina · Pošta',LANDMARKS.townhall],['Vatrogasni dom',LANDMARKS.fire],['Škola',LANDMARKS.school],['Kafić Putniku',LANDMARKS.cafe]]) if(o) lab(tx,o.x,o.z+12,11,'#5a2a1a'); }; }
+/* ---- one rifle: the SMG was the same automatic gun with another name, so the player only has the Puška ---- */
+{ const _ow=owned; owned=function(){ return _ow().filter(i=>i!==1); }; const _sw=selectWeapon; selectWeapon=function(i){ _sw(i===1?0:i); }; if(COMBAT.wi===1) COMBAT.wi=0; }
+/* ---- ammo on the weapon button, not a second "SMG 36/40" label on the screen ---- */
+(function(){ const st=document.createElement('style'); st.textContent='body.touch #ammo{display:none!important} body.touch #tgun .am{font:800 11px Manrope,sans-serif;color:#ffd24a;margin-top:1px}'; document.head.appendChild(st); })();
+setInterval(()=>{ const gun=document.getElementById('tgun'); if(!gun||!GAME.touch) return; let a=gun.querySelector('.am'); if(!COMBAT.armed){ if(a) a.remove(); return; } if(!a){ a=document.createElement('i'); a.className='am'; a.style.fontStyle='normal'; gun.appendChild(a); } const W=WEAPONS[COMBAT.wi]; const t=COMBAT.reload>0?'punim…':(COMBAT.mags[COMBAT.wi]+' / '+W.mag); if(a.textContent!==t) a.textContent=t; const s=gun.querySelector('span'); if(s) s.style.display='none'; },200);

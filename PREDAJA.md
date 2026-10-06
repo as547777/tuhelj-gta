@@ -219,3 +219,9 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - Gumb za pucanje: drži i kliži palcem — pogled/nišan prati palac.
 - 02_textures.js: ?cvlog bilježi veličine canvasa (dev).
 
+
+## Karta rano na mobitelu, jedna puška, meci na gumbu
+- 51_touch2.js: na dodiru karta se crta odmah nakon cesta (buildRoads omot) dok Safari još ima budžeta za canvas; nazivi se crtaju uživo na veliku kartu (bez druge pune slike).
+- SMG maknut s igrača (owned/selectWeapon) — ostaje Puška; NPC-ovi i dalje imaju SMG.
+- Na mobitelu nema natpisa #ammo; meci su na okruglom gumbu oružja.
+
