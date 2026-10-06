@@ -212,3 +212,10 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - 50_missions.js: missionWhere() daje cilj i koracima bez mjesta (požar, kamion, auto, Vukovi, općina…); požar bez misije također označen. Duže misije: Gori u selu!, Dostava za Putnika (+ sir s Pristave), Taksi za Martina (čekanje mise, pa doma), Banda Crni Vukovi.
 - 49_routines.js: A* po mreži 0.5 m oko BHASH zidova; Kenka i Jovo povremeno izlaze (trgovina, trg, crkva, općina, terasa), Lidija poslužuje po brtiji, Prgac i Tuljulju šetaju zajedno.
 
+
+## Mobitel: karta, ⚙, krug oružja, nišanjenje palcem
+- 51_touch2.js: karta na dodiru s MAP.scale 0.4 (Safari ima budžet memorije za canvas; karta je bila prazna), provjera i ponovna izrada ako je prazna; crveni ✕ na velikoj karti; HUD skriven ispod karte.
+- Gornja traka maknuta: ⚙ (Karta, Let, Kamera, Cijeli zaslon, Izbornik), dodir radara otvara kartu, 📱 lijevo, okrugli gumb oružja lijevo od skoka otvara krug za izbor (dodir ili klizanje).
+- Gumb za pucanje: drži i kliži palcem — pogled/nišan prati palac.
+- 02_textures.js: ?cvlog bilježi veličine canvasa (dev).
+

@@ -1,6 +1,7 @@
 /* ===================== procedural textures ===================== */
 let ANISO = 8;
-function cvs(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; }
+function cvs(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h; if(window.__CVLOG) __CVLOG.push([new WeakRef(c),w,h,(new Error().stack||'').split('\n')[2]||'']); return c; }
+if(/[?&]cvlog/.test(location.search)) window.__CVLOG=[];
 function mkTex(c,{repeat=true,srgb=true,mip=true}={}){
   const t=new THREE.CanvasTexture(c);
   if(repeat){ t.wrapS=t.wrapT=THREE.RepeatWrapping; }
