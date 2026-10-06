@@ -150,3 +150,11 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - dućan (44_shop.js): police s pakiranjima iz atlasa (mlijeko, kruh, kava...), 15 artikala, svaka polica je mjesto za kupnju (E)
 - pucanje: krv prema smjeru metka, lokva krvi, pad unazad od pogotka (knock), puška u ramenu u visini oka
 - DVD: stepenica ispred ulaza → asfaltna rampa; živice svjetlije; daleke krošnje grudaste (5 blobova)
+
+## Runda: policija, hitna, bijeg ljudi, vatra (listopad 2026, 8)
+- policija: 1 auto (1-2★), 2 (3-4★), 3 (5★); dolaze tek nakon 14 s (6 s kod 3★+) s 260 m, jedan po jedan svakih 10 s;
+  dok te ne vide samo pretražuju zadnje mjesto (INVESTIGATE → SEARCH); pucaju tek kod 2★ i ako si naoružan (ili 3★+), rjeđe i slabije
+- hitna: najviše jedna, dolazi nakon 18-30 s s 240 m
+- AI auti se razmiču jedni od drugih i od parkiranih (aiSeparate), promet koči iza drugih
+- ljudi: pogođeni i oni u 35 m oko pucnjave bježe trčeći (fleeFrom/fleeStep, spdOv=5.6), nakon bijega se vrate kad su daleko
+- vatra (45_fire.js): 70 plamenih čestica, stup crnog dima, iskre, treperavo svjetlo (desktop), čađavi krov

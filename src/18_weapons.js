@@ -165,7 +165,7 @@ function shootRay(o,d,maxR,W,wantVeh){ let best=null; for(const R of NET.remotes
   const pp=peopleRay(o,d,veh?veh.t:(best?best.t:end)); let person=null; if(pp){ person=pp; end=pp.t; best=null; veh=null; }
   if(veh){ end=veh.t; best=null; } else if(best) end=best.t;
   return {end,best,person,veh,wall}; }
-function fireGun(){ const C=COMBAT, W=curW(); if(!C.armed||C.dead||C.cd>0||C.reload>0||PLAYER.driving||PLAYER.riding||C.drink||(typeof PKC!=='undefined'&&PKC.sit)) return; if(!W.auto&&C.hold&&C.fired) return; C.fired=true; if(C.mags[C.wi]<=0){ sfx('dry'); reloadGun(); return; }
+function fireGun(){ if(COMBAT.armed&&COMBAT.cd<=0&&!COMBAT.dead&&typeof panicAround==='function'&&(!COMBAT._pt||GAME.time>COMBAT._pt)){ COMBAT._pt=GAME.time+1; try{ panicAround(PLAYER.pos,35); }catch(e){} } const C=COMBAT, W=curW(); if(!C.armed||C.dead||C.cd>0||C.reload>0||PLAYER.driving||PLAYER.riding||C.drink||(typeof PKC!=='undefined'&&PKC.sit)) return; if(!W.auto&&C.hold&&C.fired) return; C.fired=true; if(C.mags[C.wi]<=0){ sfx('dry'); reloadGun(); return; }
   buildWeaponModels(); fxInit(); C.cd=W.cd; C.mags[C.wi]--; C.mag=C.mags[C.wi]; C.recoil=Math.min(W.rocket?0.2:0.14,C.recoil+(W.rocket?0.16:C.wi===2?0.1:W.pellets?0.12:C.wi===4?0.06:0.03)); const vm=WMODELS[C.wi]; const fl=vm&&vm.userData.flash; if(fl){ fl.visible=true; fl.material.rotation=Math.random()*TAU; C.flash=0.05; C.flashM=fl; }
   const cam=GAME.camera; const o=cam.getWorldPosition(new THREE.Vector3()); const d0=new THREE.Vector3(0,0,-1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion())).normalize();
   const tps=typeof tpsActive==='function'&&tpsActive(); if(tps) o.addScaledVector(d0,TPS.cur+0.2);
