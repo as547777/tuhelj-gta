@@ -100,9 +100,7 @@ function pubInterior(cs,scene,o){
     // speakers, gas heater, projection screen with quiz + desk with laptop
     for(const c of [[4.0,-5.55],[10.0,-5.55],[10.0,3.2]]){ const p=f(c[0],0,c[1]); T.box(frame(p[0],p[2],ang,0),-0.15,0.15,ea-0.8,ea-0.35,-0.15,0.15,lin('#141516')); }
     { const p=f(9.75,0,-4.9); const hf=frame(p[0],p[2],ang,y0); Ch.cyl(hf,0.24,0.24,0,0.06,12,WHITE,1,true); Ch.cyl(hf,0.045,0.045,0.06,2.15,8,WHITE,1,false); lathe(Ch,hf,[[0.08,2.15],[0.44,2.28],[0.46,2.32],[0,2.3]],14,WHITE); addCollider(p[0],p[2],ang,0.5,0.5,y0-1,y0+2.4); }
-    { const m=segMap(f,ang,[10.4-th,-6.0+th+0.01],[3.6,-6.0+th+0.01]); const q=(s2,y)=>m.P(s2,y,-0.01); const s0=3.2, s1=6.0; const scr=new THREE.Mesh(new THREE.PlaneGeometry(s1-s0,1.65),new THREE.MeshStandardMaterial({map:quizTex(),emissive:0xffffff,emissiveMap:null,emissiveIntensity:0.08,roughness:0.9}));
-      const c2=q((s0+s1)/2,y0+1.8); scr.position.set(c2[0],c2[1],c2[2]); const N=m.W(0,0,1); scr.rotation.y=Math.atan2(N[0],N[2]); scene.add(scr); T.box(m.T,s0-0.05,s1+0.05,y0+2.63,y0+2.7,-0.12,-0.02,lin('#e8e8e4'));
-      const dp=f(6.1,0,-5.05); const df=frame(dp[0],dp[2],ang,y0); Wd.box(df,-0.45,0.45,0,0.95,-0.28,0.28,lin('#2a2a2a')); T.box(df,-0.18,0.18,0.95,0.97,-0.12,0.12,lin('#8d9196')); T.box(df,-0.18,0.18,0.97,1.2,0.1,0.12,lin('#1c1f22')); addCollider(dp[0],dp[2],ang,1.0,0.7,y0-1,y0+1.1); }
+    /* no projection screen or laptop desk in the pub (player) */
   }
   // plaster pier where the house wall meets the long room: hides the outer corner trim and closes the gap (seen from inside)
   G.box(f,3.55,4.0,y0-0.02,ea,-5.75,-4.85,lin('#f2f2ef')); localCollider(f,ang,3.55,4.0,-5.75,-4.85,y0-1,ea);
