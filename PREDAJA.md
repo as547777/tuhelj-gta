@@ -271,3 +271,8 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 ## Hodaj i pričaj
 - 61_talk.js: za vrijeme razgovora igrač se slobodno kreće (29_story više ne okreće lika prema govorniku dok se krećeš; filmska kamera se ugasi kad kreneš). Sugovornik s rutom (npr. Poljanec Martin) stane ispred tebe, a kad hodaš hoda uz tebe; nakon razgovora se vrati na svoju rutu.
 
+
+## Razgovor kao misija + glasovi
+- 61_talk.js: tko govori maše rukama i kima (TGZ, preko animacije); kad hodate zajedno kamera vas prati sa strane; uz cestu projuri auto i zatrubi, a sugovornik to komentira (umetne se kao sljedeća rečenica razgovora).
+- 62_voice.js: bez snimke rečenicu izgovara hrvatski glas uređaja (najbolji dostupan: Edge Natural, iPhone Lana, Google, Windows Matej), visina/brzina po liku; razgovor čeka kraj rečenice; POSTAVKE → GLASOVI za isključivanje. Snimke u voices/ uvijek imaju prednost.
+
