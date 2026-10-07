@@ -258,3 +258,7 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - 58_story2.js: 8 Gost iz Stuttgarta (praćenje crnog auta 15–120 m do Terma), 9 Dug iz Njemačke (kapelica, Draganovi ljudi, uništi auto, mobitel Kikiju), 10 Pravi šef (Horvat bježi u službenom autu, njegovi ljudi, izgubi policiju, slavlje). STORY_LAST=10 (29_story, 30_look, 42_title, 46_menu).
 - Filmski uvod: prije svakog poglavlja kamera polako kruži oko dvoje koji razgovaraju (CINE), uz trake.
 
+
+## Faza 5b: poslovi koji se ponavljaju
+- 59_jobs.js: mobitel → Poslovi: Taksi (putnik kraj ceste, cijena po duljini + napojnica za brzinu), Dostava pizze (iz brtije, 3 kuće po turi, na vrijeme), Hitna pomoć (pacijent kraj ceste → ambulanta kod općine), Vatrogasac (svaki požar 120 €). Kartica posla lijevo (✕ za kraj), žuti stup na cilju.
+
