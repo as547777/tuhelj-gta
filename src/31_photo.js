@@ -244,7 +244,7 @@ function photoCentre(cs,scene){ const Mt=cs.get('metal',CENTER[0],CENTER[1]), G=
       for(let k=-GW2;k<=GW2+0.01;k+=2){ for(const zz of [-GD,GD]) Mt.box(gf,k-0.03,k+0.03,0,0.9,zz-0.03,zz+0.03,GRN); } for(let k=-GD;k<=GD+0.01;k+=2){ for(const xx of [-GW2,GW2]) Mt.box(gf,xx-0.03,xx+0.03,0,0.9,k-0.03,k+0.03,GRN); }
       for(const zz of [-GD,GD]) Mt.box(gf,-GW2,GW2,0.85,0.9,zz-0.02,zz+0.02,GRN); for(const xx of [-GW2,GW2]) Mt.box(gf,xx-0.02,xx+0.02,0.85,0.9,-GD,GD,GRN);
       const eq=[[-5.5,-2.5,'pull'],[-2,-2.5,'bars'],[1.5,-2.5,'pull'],[5,-2.5,'step'],[-4,2.2,'bench'],[0,2.2,'bars'],[4.5,2.2,'pull']];
-      for(const [ex,ez,k] of eq){ const ef=frame(...(()=>{ const p=gf(ex,0,ez); return [p[0],p[2]]; })(),a,gy+0.06);
+      for(const [ex,ez,k] of eq){ const ef=frame(...(()=>{ const p=gf(ex,0,ez); return [p[0],p[2]]; })(),a,gy+0.06); { const c=ef(0,0,0); (window.GYM=window.GYM||[]).push({x:c[0],y:c[1],z:c[2],a,k}); }
         if(k==='pull'){ for(const px of [-0.9,0.9]) Mt.box(ef,px-0.06,px+0.06,0,2.4,-0.06,0.06,GRN); Mt.box(ef,-0.9,0.9,2.25,2.31,-0.03,0.03,lin('#c9ced2')); }
         if(k==='bars'){ for(const pz of [-0.3,0.3]){ for(const px of [-0.9,0.9]) Mt.box(ef,px-0.05,px+0.05,0,1.1,pz-0.05,pz+0.05,GRN); Mt.box(ef,-0.95,0.95,1.05,1.1,pz-0.03,pz+0.03,lin('#c9ced2')); } }
         if(k==='step'){ Mt.box(ef,-0.6,0.6,0,0.4,-0.3,0.3,GRN); Mt.box(ef,-0.05,0.05,0,1.2,-0.05,0.05,GRN); }

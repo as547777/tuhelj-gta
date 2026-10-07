@@ -244,3 +244,8 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 ## Faza 2: meci i lovački pult
 - 55_guns.js: zaliha metaka po oružju (localStorage tuhelj_ammo; početno pištolj 60, puška 120…), punjenje uzima iz zalihe (15_combat.js ammoTake), prazno → poruka. U trgovini na dnu 'LOVAČKI PULT': oružje koje nemaš i kutije metaka. Gumb oružja: spremnik / zaliha.
 
+
+## Faza 3: lik napreduje, park za vježbanje
+- 56_stats.js: KONDICIJA (brži sprint, 10_player statRun), SNAGA (jači udarac), GAĐANJE (manje rasipanje), VOŽNJA (jače ubrzanje); rastu sprintom, udarcima, pogocima, brzom vožnjom; spremaju se (tuhelj_stats); prikaz u izborniku (IGRA).
+- Park kraj stanice (31_photo.js izvozi GYM): E kod sprave = serija od 10 (zgibovi/propadanja → snaga, step/trbušnjaci → kondicija), +3, odmor 20 s, posebna kamera sa strane.
+
