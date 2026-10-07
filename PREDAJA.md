@@ -253,3 +253,8 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 ## Faza 4: auti, nekretnine, garaža
 - 57_property.js: mobitel → Autokuća (7 auta, 9 boja, dostava pred kuću, spremljeno u tuhelj_own; 2 mjesta, s garažom 5) i Nekretnine (garaža 1500, vikendica Pristava 82 +70/dan, udio u trgovini +110/dan, brtija +240/dan; isplata u 8 h). Garaža kod kuće (E u autu ispred kuće): boja 250, felge 400, motor 3 stupnja, popravak 60.
 
+
+## Faza 5a: priča 8–10 i filmski uvodi
+- 58_story2.js: 8 Gost iz Stuttgarta (praćenje crnog auta 15–120 m do Terma), 9 Dug iz Njemačke (kapelica, Draganovi ljudi, uništi auto, mobitel Kikiju), 10 Pravi šef (Horvat bježi u službenom autu, njegovi ljudi, izgubi policiju, slavlje). STORY_LAST=10 (29_story, 30_look, 42_title, 46_menu).
+- Filmski uvod: prije svakog poglavlja kamera polako kruži oko dvoje koji razgovaraju (CINE), uz trake.
+

@@ -1,8 +1,9 @@
 /* ===================== priča: "Povratak u Tuhelj" (7 poglavlja) =====================
    Nakon deset godina u Njemačkoj vraćaš se u Tuhelj. Baka Ruža ti je ostavila stan, Kenka je dužan Crnim
    Vukovima, a netko u općini im drži leđa. Poglavlja se otključavaju redom (★ na karti), sporedne misije (!) uvijek. */
+const STORY_LAST=10; // chapters 8–10 live in 58_story2.js
 const STORY={ch:0,ward:false,pax:null,deskT:0,tags:new Set()};
-try{ const s=+localStorage.getItem('tuhelj_story'); if(Number.isFinite(s)&&s>=0) STORY.ch=Math.min(7,s); }catch(e){}
+try{ const s=+localStorage.getItem('tuhelj_story'); if(Number.isFinite(s)&&s>=0) STORY.ch=Math.min(10,s); }catch(e){}
 function storySave(){ try{ localStorage.setItem('tuhelj_story',String(STORY.ch)); }catch(e){} }
 function storyDone(n){ if(STORY.ch<n){ STORY.ch=n; storySave(); } }
 const HIDE=[118,-26]; // Vukova jazbina — stari štagalj istočno iza sela
@@ -63,7 +64,7 @@ const STORY_M=[
     {t:'Uništi aute Crnih Vukova',ok:()=>(STORY.cars||[]).every(C=>C.wreck),show:()=>'Uništi aute Crnih Vukova ('+(STORY.cars||[]).filter(C=>!C.wreck).length+' preostalo)'},
     {t:'Slavlje u brtiji!',at:CAFE_POS,r:7}],
   outro:[['Kenka','Živio! Živio naš junak! Lidija, gemišt za sve!'],['Lidija','Tuhelj je opet naš. Hvala ti.'],['Jovo','Vukova više nema. Sad si pravi Tuheljčan.']],
-  done:()=>{ storyDone(7); clearThugs('s7'); setTimeout(()=>banner('KRAJ PRIČE','TUHELJ JE SLOBODAN','#6fe08a'),3400); }}];
+  done:()=>{ storyDone(7); clearThugs('s7'); setTimeout(()=>banner('TUHELJ JE SLOBODAN','…ZASAD','#6fe08a'),3400); }}];
 for(const M of STORY_M){ const last=M.steps[M.steps.length-1]; const od=last.onDone; last.onDone=()=>{ if(od) od(); try{ M.done(); }catch(e){ console.warn(e); } }; MISSIONS.push(M); }
 function missionOpen(M){ if(!M.story) return true; return M.story===STORY.ch+1; }
 function storyNext(){ return STORY_M.find(M=>M.story===STORY.ch+1)||null; }

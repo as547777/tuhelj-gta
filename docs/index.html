@@ -10246,8 +10246,9 @@ function homeTick(dt){ if(typeof homeIntInit==='function') homeIntInit(); if(HOM
 /* ===================== priča: "Povratak u Tuhelj" (7 poglavlja) =====================
    Nakon deset godina u Njemačkoj vraćaš se u Tuhelj. Baka Ruža ti je ostavila stan, Kenka je dužan Crnim
    Vukovima, a netko u općini im drži leđa. Poglavlja se otključavaju redom (★ na karti), sporedne misije (!) uvijek. */
+const STORY_LAST=10; // chapters 8–10 live in 58_story2.js
 const STORY={ch:0,ward:false,pax:null,deskT:0,tags:new Set()};
-try{ const s=+localStorage.getItem('tuhelj_story'); if(Number.isFinite(s)&&s>=0) STORY.ch=Math.min(7,s); }catch(e){}
+try{ const s=+localStorage.getItem('tuhelj_story'); if(Number.isFinite(s)&&s>=0) STORY.ch=Math.min(10,s); }catch(e){}
 function storySave(){ try{ localStorage.setItem('tuhelj_story',String(STORY.ch)); }catch(e){} }
 function storyDone(n){ if(STORY.ch<n){ STORY.ch=n; storySave(); } }
 const HIDE=[118,-26]; // Vukova jazbina — stari štagalj istočno iza sela
@@ -10308,7 +10309,7 @@ const STORY_M=[
     {t:'Uništi aute Crnih Vukova',ok:()=>(STORY.cars||[]).every(C=>C.wreck),show:()=>'Uništi aute Crnih Vukova ('+(STORY.cars||[]).filter(C=>!C.wreck).length+' preostalo)'},
     {t:'Slavlje u brtiji!',at:CAFE_POS,r:7}],
   outro:[['Kenka','Živio! Živio naš junak! Lidija, gemišt za sve!'],['Lidija','Tuhelj je opet naš. Hvala ti.'],['Jovo','Vukova više nema. Sad si pravi Tuheljčan.']],
-  done:()=>{ storyDone(7); clearThugs('s7'); setTimeout(()=>banner('KRAJ PRIČE','TUHELJ JE SLOBODAN','#6fe08a'),3400); }}];
+  done:()=>{ storyDone(7); clearThugs('s7'); setTimeout(()=>banner('TUHELJ JE SLOBODAN','…ZASAD','#6fe08a'),3400); }}];
 for(const M of STORY_M){ const last=M.steps[M.steps.length-1]; const od=last.onDone; last.onDone=()=>{ if(od) od(); try{ M.done(); }catch(e){ console.warn(e); } }; MISSIONS.push(M); }
 function missionOpen(M){ if(!M.story) return true; return M.story===STORY.ch+1; }
 function storyNext(){ return STORY_M.find(M=>M.story===STORY.ch+1)||null; }
@@ -10354,9 +10355,9 @@ function lookTick(dt){ if(GAME.started) return;
 function lookInit(){ // photos → slideshow; chapter progress; buttons
   const P=Array.isArray(window.TUHELJ_PHOTOS)?window.TUHELJ_PHOTOS:[]; const sl=document.getElementById('slides');
   if(P.length&&sl){ for(const u of P){ const im=new Image(); im.src=u; im.alt=''; im.decoding='async'; sl.appendChild(im); LOOK.photos.push(im); } LOOK.photos[0].classList.add('on'); sl.classList.add('on'); }
-  const ch=document.getElementById('chap'); if(ch){ const n=(typeof STORY!=='undefined')?STORY.ch:0; for(let i=0;i<7;i++){ const s=document.createElement('i'); if(i<n) s.className='d'; ch.appendChild(s); } const b=document.createElement('b'); b.textContent=n>=7?'Priča završena':n?('Poglavlje '+(n+1)+' / 7'):'Nova priča'; ch.appendChild(b); }
+  const ch=document.getElementById('chap'); if(ch){ const n=(typeof STORY!=='undefined')?STORY.ch:0; for(let i=0;i<STORY_LAST;i++){ const s=document.createElement('i'); if(i<n) s.className='d'; ch.appendChild(s); } const b=document.createElement('b'); b.textContent=n>=STORY_LAST?'Priča završena':n?('Poglavlje '+(n+1)+' / '+STORY_LAST):'Nova priča'; ch.appendChild(b); }
   const ng=document.getElementById('newgame'); if(ng){ const any=(typeof STORY!=='undefined'&&STORY.ch>0)||GTA.home; ng.style.display=any?'':'none'; ng.addEventListener('click',()=>{ if(!confirm('Započeti priču ispočetka? Novac, stan, oružje i namještaj se brišu.')) return; try{ for(const k of ['tuhelj_story','tuhelj_money','tuhelj_home','tuhelj_done','tuhelj_arms','tuhelj_decor','tuhelj_save']) localStorage.removeItem(k); }catch(e){} location.reload(); }); } }
-function goLabel(){ const n=(typeof STORY!=='undefined')?STORY.ch:0; return n>=7?'Igraj slobodno':n?'Nastavi priču':'Započni priču'; }
+function goLabel(){ const n=(typeof STORY!=='undefined')?STORY.ch:0; return n>=STORY_LAST?'Igraj slobodno':n?'Nastavi priču':'Započni priču'; }
 /* your own photo framed on the wall at home (first photo from photos/) */
 function homePhoto(){ const P=window.TUHELJ_PHOTOS; if(!P||!P.length||!HOME.photo||HOME.photoSet) return; HOME.photoSet=true; new THREE.TextureLoader().load(P[0],t=>{ t.colorSpace=THREE.SRGBColorSpace; HOME.photo.material.map=t; HOME.photo.material.needsUpdate=true; }); }
 
@@ -11423,7 +11424,7 @@ function ttInit(){ const s=document.getElementById('start'); if(!s||TT.el) retur
 function ttPlay(){ const el=TT.el; if(el.classList.contains('loading')) return; el.classList.remove('menu'); el.classList.add('loading'); try{ TTM.stop=true; if(TTM.g) TTM.g.gain.setTargetAtTime(0,RADIO.ctx.currentTime,0.35); }catch(e){} /* the lounge theme fades out while the village loads */ setTimeout(()=>{ try{ mainGo(); }catch(e){ console.error(e); } },60); }
 function ttNewGame(){ if(!confirm('Započeti priču ispočetka? Novac, stan, oružje i namještaj se brišu.')) return; try{ for(const k of ['tuhelj_story','tuhelj_money','tuhelj_home','tuhelj_done','tuhelj_arms','tuhelj_decor','tuhelj_save']) localStorage.removeItem(k); }catch(e){} location.reload(); }
 function ttMenu(){ const el=TT.el; el.classList.add('menu'); const m=el.querySelector('.menu'); const n=(typeof STORY!=='undefined')?STORY.ch:0; const go=document.getElementById('go');
-  const items=[[(n>=7?'SLOBODNA IGRA':n?'NASTAVI PRIČU':'NOVA PRIČA')+' ▶',(n?('Poglavlje '+Math.min(7,n+1)+' od 7 · '):'')+(GAME.touch?'Dodirni za početak':'Klikni ili Enter za početak'),()=>ttPlay()],
+  const items=[[(n>=STORY_LAST?'SLOBODNA IGRA':n?'NASTAVI PRIČU':'NOVA PRIČA')+' ▶',(n?('Poglavlje '+Math.min(STORY_LAST,n+1)+' od '+STORY_LAST+' · '):'')+(GAME.touch?'Dodirni za početak':'Klikni ili Enter za početak'),()=>ttPlay()],
     ['KONTROLE',GAME.touch?'Dodirne kontrole':'Tipkovnica i miš',()=>{ const h=el.querySelector('.help'); h.classList.toggle('on'); h.innerHTML=GAME.touch?'Lijevi krug — hodanje · prst po ekranu — pogled · gumbi desno — skok, trčanje, pucanje · Vozi — uđi u auto · 📻 — radio':'W A S D hodanje · Shift trčanje · Space skok · C čučanj<br>E vrata, auto, razgovor · V pogled iz auta · R radio u autu<br>Kotačić / Tab oružje · lijevi klik puca · desni nišani<br>M karta · P mobitel · Esc izbornik'; }]];
   if((typeof STORY!=='undefined'&&STORY.ch>0)||GTA.home) items.push(['NOVA IGRA','Briše napredak',()=>ttNewGame()]);
   m.innerHTML=''; items.forEach((it,i)=>{ const b=document.createElement('button'); b.innerHTML=it[0]+'<small>'+it[1]+'</small>'; if(!i) b.classList.add('sel'); b.addEventListener('click',e=>{ e.stopPropagation(); it[2](); }); b.addEventListener('pointerenter',()=>{ m.querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b)); }); m.appendChild(b); });
@@ -11662,7 +11663,7 @@ function pmBuild(){ const sh=document.querySelector('#pause .sheet'); if(!sh||sh
     const item=(txt,fn)=>{ const b=document.createElement('button'); b.textContent=txt; b.addEventListener('click',()=>{ pmSnd('pick'); fn(); }); b.addEventListener('pointerenter',()=>pmSnd('hover')); list.appendChild(b); return b; };
     if(t==='igra'){ item('NASTAVI',()=>click('resume')).classList.add('sel'); item('KARTA',()=>click('openmap')); item('MOBITEL',()=>{ click('resume'); setTimeout(()=>{ try{ togglePhone(true); }catch(e){} },80); }); item('CIJELI ZASLON',()=>click('fsbtn'));
       const n=(typeof STORY!=='undefined')?STORY.ch:0; const M=GTA.mission;
-      panel.innerHTML='<h4>PRIČA</h4>Poglavlje '+Math.min(7,n+1)+' od 7<br>'+(M?'Misija: <b>'+M.title+'</b>':'Nema aktivne misije — potraži žuti uskličnik na karti.')+'<h4 style="margin-top:18px">STANJE</h4>Zdravlje '+Math.round(COMBAT.hp)+' · novac €'+(GTA.money|0)+' · traženost '+('★'.repeat(GTA.wanted|0)||'—'); }
+      panel.innerHTML='<h4>PRIČA</h4>Poglavlje '+Math.min(STORY_LAST,n+1)+' od '+STORY_LAST+'<br>'+(M?'Misija: <b>'+M.title+'</b>':'Nema aktivne misije — potraži žuti uskličnik na karti.')+'<h4 style="margin-top:18px">STANJE</h4>Zdravlje '+Math.round(COMBAT.hp)+' · novac €'+(GTA.money|0)+' · traženost '+('★'.repeat(GTA.wanted|0)||'—'); }
     if(t==='karta'){ item('OTVORI KARTU',()=>click('openmap')); panel.innerHTML='<h4>KARTA</h4>Kotačić miša zumira, povuci za pomicanje.<br>Klik na kartu postavlja točku puta (ljubičasta linija na radaru).'; }
     if(t==='post'){ item('NAZAD',()=>show('igra')); const h=document.createElement('h4'); h.textContent='POSTAVKE'; panel.appendChild(h);
       const row=(lab,el)=>{ const r=document.createElement('div'); r.className='row'; const l=document.createElement('label'); l.textContent=lab; r.append(l,el); panel.appendChild(r); };
@@ -12213,6 +12214,64 @@ function garageMenu(){ const v=PLAYER.driving; if(!v) return; const T=tuneOf(v);
 { const _sg=startGame; startGame=function(){ _sg(); try{ ownSpawnAll(); }catch(e){ console.warn(e); } }; }
 setInterval(()=>{ try{ propTick(); }catch(e){} },1000);
 addEventListener('keydown',e=>{ if(e.code==='Escape'){ const el=document.getElementById('ownmenu'); if(el&&el.classList.contains('on')){ e.preventDefault(); ownClose(); } } });
+
+/* ===================== story, part two: chapters 8–10 and cinematic intros =====================
+   8 · Gost iz Stuttgarta — a black car with Stuttgart plates asks around for you: tail it without being seen.
+   9 · Dug iz Njemačke — Dragan, the man you owed money to in Germany, wants 5 000 €; his men wait at the chapel.
+  10 · Pravi šef — the papers from chapter 5 and Dragan's phone point to policajac Horvat: he runs from you.
+   Before every story chapter the intro plays like a cut-scene: letterbox bars and a slow camera move round the
+   two people talking. */
+STORY_SMS[8]='Ej, neki tip u crnom autu sa stuttgartskim tablicama pita za tebe po selu. Dođi u brtiju. — Kenka';
+STORY_SMS[9]='Onaj Švabo ti je ostavil poruku za šankom. Nije dobro, sine. Dođi. — Jovo';
+STORY_SMS[10]='Bratić, pogledala sam Draganov mobitel. Znam tko je pravi šef. Nađimo se. — Kiki';
+const S2={tail:null,tailT:0,lost:0};
+function s2Road(x,z,r){ const n=nearestRoad(x,z,r||160); return n?[n.s.x,n.s.z]:[x,z]; }
+// a car that drives to a point on its own (not a chaser): used for the car you have to tail
+function s2Car(kind,x,z,to){ const C=makeAI(kind); C.st.x=x; C.st.z=z; C.st.yaw=faceYaw(to[0]-x,to[1]-z); C.to=to; C.v.st=C.st; poseVehicle(C.v); return C; }
+function s2Tick(dt){ const C=S2.tail; if(!C) return; const w=routeTo(C,C.to[0],C.to[1],dt); const d=Math.hypot(C.to[0]-C.st.x,C.to[1]-C.st.z); const pd=Math.hypot(C.st.x-PLAYER.pos.x,C.st.z-PLAYER.pos.z);
+  // it waits for you if you fall far behind, speeds up if you sit right on its bumper
+  const sp=d<10?0:pd>110?4:pd<14?20:13; driveAI(C,w[0],w[1],sp,dt); C.arrived=d<12; }
+function s2Remove(){ if(S2.tail){ GAME.scene.remove(S2.tail.v.group); S2.tail=null; } }
+const STORY2=[
+ {id:'s8',story:8,giver:'Kenka',title:'8 · Gost iz Stuttgarta',reward:800,
+  intro:[['Kenka','Slušaj… neki tip u crnom autu sa stuttgartskim tablicama pital je za tebe. Rekal je da mu duguješ.'],['Kenka','Sad je parkiran pred općinom. Prati ga, al ne preblizu — da vidimo kam ide.'],['Kenka','I nemoj mu pucati u gume, dečko. Prvo saznaj tko je.']],
+  steps:[{t:'Sjedni u auto',ok:()=>!!PLAYER.driving&&!PLAYER.driving.bike},
+    {t:'Dođi do općine',at:()=>LANDMARKS.townhall?[LANDMARKS.townhall.x,LANDMARKS.townhall.z]:[-294,-55],r:45,car:true,onStart:()=>{ const a=s2Road(-286,-48,40), to=s2Road(330,-60,260); S2.tail=s2Car('banda',a[0],a[1],to); S2.tail.v.group.traverse(o=>{ if(o.isMesh&&o.material&&o.material.color&&o.material===S2.tail.v.paint) o.material.color.set('#0e0f12'); }); }},
+    {t:'Prati crni auto (ne bliže od 15 m, ne dalje od 120 m)',where:()=>S2.tail?[S2.tail.st.x,S2.tail.st.z]:null,onStart:()=>{ S2.tailT=0; S2.lost=0; },
+     ok:()=>{ const C=S2.tail; if(!C) return true; const d=Math.hypot(C.st.x-PLAYER.pos.x,C.st.z-PLAYER.pos.z); if(d>120||d<15) S2.lost+=1/60; else S2.lost=Math.max(0,S2.lost-1/120); if(S2.lost>6){ failMission(d<15?'primijetio te':'izgubio si ga'); s2Remove(); return false; } return C.arrived; },
+     show:()=>{ const C=S2.tail; const d=C?Math.round(Math.hypot(C.st.x-PLAYER.pos.x,C.st.z-PLAYER.pos.z)):0; return 'Prati crni auto · '+d+' m'+(S2.lost>1?(d<15?' · PREBLIZU!':' · PREDALEKO!'):''); },
+     onDone:()=>{ sayDialog([['Ti','Stao je kod Terma… i telefonira.'],['Nepoznati','(na telefonu) Ja, ja… našao sam ga. Dragan je rekao: pet tisuća, ili ide u jamu.'],['Ti','Dragan. Iz Stuttgarta. Mislio sam da je to gotovo.']]); }},
+    {t:'Vrati se Kenki u brtiju',at:()=>npcPos('Kenka'),r:3.4,onStart:()=>{ setTimeout(s2Remove,8000); }}],
+  outro:[['Kenka','Dragan? Onaj kojem si radil na bauštelama? Kaj ti on hoće?'],['Ti','Posudil sam od njega kad sam ostal bez posla. Vratil sam mu sve… al on misli da nisam.'],['Kenka','E pa, ovdje si doma. Nismo sami.']],
+  done:()=>storyDone(8)},
+ {id:'s9',story:9,giver:'Jovo',title:'9 · Dug iz Njemačke',reward:1200,
+  intro:[['Jovo','Ostavil ti je ceduljicu: „Kapelica, ponoć. Donesi pet tisuća. — D."'],['Jovo','Ja ti velim: ne nosi novce. Nosi pušku. Ja ću biti u blizini.']],
+  steps:[{t:'Dođi do kapelice na brijegu',at:()=>LANDMARKS.chapel?[LANDMARKS.chapel.x,LANDMARKS.chapel.z]:[56,127],r:40,onStart:()=>{ STORY.cars=[]; const c=LANDMARKS.chapel||{x:56,z:127}; for(const [dx,dz] of [[9,6],[-8,8],[3,-11]]) spawnThug(c.x+dx,c.z+dz,{tag:'s9',hp:90}); STORY.cars.push(storyGangCar(c.x+14,c.z-4)); }},
+    {t:'Sredi Draganove ljude',ok:()=>thugsLeft('s9')===0,show:()=>'Sredi Draganove ljude ('+thugsLeft('s9')+' preostalo)'},
+    {t:'Dragan bježi — uništi njegov auto',ok:()=>(STORY.cars||[]).every(C=>C.wreck),onStart:()=>{ for(const C of STORY.cars||[]){ C.wait=false; } sayDialog([['Dragan','Ti si lud! Ovo nije gotovo!']]); },where:()=>{ const C=(STORY.cars||[]).find(c=>!c.wreck); return C?[C.st.x,C.st.z]:null; }},
+    {t:'Uzmi Draganov mobitel iz olupine',at:()=>{ const C=(STORY.cars||[])[0]; return C?[C.st.x,C.st.z]:null; },r:4,onDone:()=>{ UI.toast('📱 Imaš Draganov mobitel'); }},
+    {t:'Odnesi mobitel Kikiju',at:()=>npcPos('Kiki Poljanec'),r:3.4}],
+  outro:[['Kiki Poljanec','Daj da vidim… Poruke… „H." … Uplate… Ovo je isti broj s onih papira iz općine!'],['Jovo','Znači netko odavde je zval Švabu na tebe. Netko kome si smetal.'],['Kiki Poljanec','Daj mi dan-dva. Saznat ću tko je „H.".']],
+  done:()=>{ storyDone(9); clearThugs('s9'); }},
+ {id:'s10',story:10,giver:'Kiki Poljanec',title:'10 · Pravi šef',reward:3000,
+  intro:[['Kiki Poljanec','„H." je Horvat. Policajac. On je potpisal zemljište Vukovima, on je zval Dragana.'],['Kiki Poljanec','Sad zna da znamo. Upravo je sjel u službeni auto i bježi prema Klanjcu!'],['Kiki Poljanec','Zaustavi ga. Ja zovem novinare i županijsku policiju.']],
+  steps:[{t:'Sjedni u auto',ok:()=>!!PLAYER.driving&&!PLAYER.driving.bike,onStart:()=>{ const p=s2Road(PLAYER.pos.x+90,PLAYER.pos.z+40,120); const C=makeAI('policija'); C.kind='banda'; C.story=true; C.st.x=p[0]; C.st.z=p[1]; C.st.yaw=0; C.v.st=C.st; poseVehicle(C.v); C.hp=180; GTA.chasers.push(C); STORY.cars=[C]; }},
+    {t:'Uništi Horvatov auto',ok:()=>(STORY.cars||[]).every(C=>C.wreck),where:()=>{ const C=(STORY.cars||[]).find(c=>!c.wreck); return C?[C.st.x,C.st.z]:null; },onStart:()=>{ crimeEvent(PLAYER.pos.x,PLAYER.pos.z,2); }},
+    {t:'Horvat bježi pješke — sredi njegove ljude',ok:()=>thugsLeft('s10')===0,onStart:()=>{ const C=(STORY.cars||[])[0]; const q=C?[C.st.x,C.st.z]:[PLAYER.pos.x,PLAYER.pos.z]; for(const [dx,dz] of [[8,5],[-7,6],[5,-9],[-9,-5]]) spawnThug(q[0]+dx,q[1]+dz,{tag:'s10',hp:100}); },show:()=>'Sredi Horvatove ljude ('+thugsLeft('s10')+' preostalo)'},
+    {t:'Izgubi policiju',ok:()=>GTA.wanted===0&&GTA.stepT>3,time:300},
+    {t:'Slavlje u brtiji',at:CAFE_POS,r:7}],
+  outro:[['Kiki Poljanec','Gotovo je! Županijska je uhitila Horvata na izlazu iz sela. Sve je u novinama!'],['Kenka','Naš Nijemac! Pa ti si heroj, dečko!'],['Lidija','Ovo piće je od kuće. I sljedeće. I ono iza.'],['Jovo','Sad si stvarno doma.']],
+  done:()=>{ storyDone(10); clearThugs('s10'); setTimeout(()=>banner('KRAJ PRIČE','HVALA ŠTO SI IGRAO · TUHELJ JE TVOJ','#6fe08a'),3400); }}];
+for(const M of STORY2){ const last=M.steps[M.steps.length-1]; const od=last.onDone; last.onDone=()=>{ if(od) od(); try{ M.done(); }catch(e){ console.warn(e); } }; STORY_M.push(M); MISSIONS.push(M); }
+{ const _fm=failMission; failMission=function(why){ const M=GTA.mission; _fm(why); if(M&&M.id==='s8') s2Remove(); if(M&&(M.id==='s9'||M.id==='s10')) clearThugs(M.id); }; }
+/* ---- cut-scene intros ---- */
+const CINE={on:false,t:0,a:0};
+{ const _sm=startMission; startMission=function(M){ if(M&&M.story){ CINE.on=true; CINE.t=0; CINE.who=M.giver; CINE.a=PLAYER.yaw+Math.PI*0.6; } _sm(M); }; }
+{ const _ac=applyCamera; applyCamera=function(cam){ if(CINE.on&&!GTA.dlg) CINE.on=false; if(!CINE.on||window.CAMO||PLAYER.driving) return _ac(cam);
+    const q=npcPos(CINE.who)||[PLAYER.pos.x+1,PLAYER.pos.z]; const mx=(q[0]+PLAYER.pos.x)/2, mz=(q[1]+PLAYER.pos.z)/2; const y=PLAYER.pos.y+1.55; const a=CINE.a+CINE.t*0.06; const r=3.6+Math.hypot(q[0]-PLAYER.pos.x,q[1]-PLAYER.pos.z)*0.5;
+    const cx=mx+Math.sin(a)*r, cz=mz+Math.cos(a)*r; const p=new THREE.Vector3(cx,y+0.25,cz); if(typeof tpsFree==='function'){ const piv=new THREE.Vector3(mx,y,mz); const f=tpsFree(piv,p); p.lerpVectors(piv,p,Math.max(0.35,f)); }
+    cam.position.copy(p); cam.lookAt(mx,y-0.05,mz); }; }
+{ const _ct=combatTick; combatTick=function(dt){ _ct(dt); if(CINE.on) CINE.t+=dt; try{ s2Tick(dt); }catch(e){} }; }
 
 document.addEventListener('DOMContentLoaded',()=>{});
 (function(){ const tm=document.getElementById('tmap'), tu=document.getElementById('tmenu'); if(tm) tm.addEventListener('pointerdown',(e)=>{ e.preventDefault(); if(!GAME.started) return; openMap(!UI.mapOpen); if(!UI.mapOpen) resumeGame(); }); if(tu) tu.addEventListener('pointerdown',(e)=>{ e.preventDefault(); if(!GAME.started) return; togglePause(!GAME.paused); }); const tf=document.getElementById('tfs'); if(tf) tf.addEventListener('pointerdown',(e)=>{ e.preventDefault(); toggleFullscreen(); }); const fb=document.getElementById('fsbtn'); if(fb) fb.addEventListener('click',()=>toggleFullscreen()); const cb=document.getElementById('carbtn'); if(cb) cb.addEventListener('touchstart',e=>{ e.preventDefault(); useCarKey(); },{passive:false}); const eb=document.getElementById('exitbtn'); if(eb) eb.addEventListener('touchstart',e=>{ e.preventDefault(); if(PLAYER.heli) exitHeli(); else if(PLAYER.riding) exitRide(); else exitCar(); },{passive:false}); const pn=document.getElementById('pname'); if(pn){ try{ pn.value=localStorage.getItem('tuhelj_name')||''; }catch(e){} pn.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'&&!document.getElementById('go').disabled) startGame(); }); } const $$=(id)=>document.getElementById(id);
