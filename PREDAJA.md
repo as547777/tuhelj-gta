@@ -267,3 +267,7 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - 09_sky.js: zlatni sat (sunce < ~12° nad obzorom): breskvasto-narančast obzor, ljubičasto nebo, narančasto sunce (SKY.gold).
 - 60_look.js: kiša smoči asfalt (04_roads ROADMATS: tamnije, sjajnije, više refleksije; polako se suši), noćni sjaj svih uličnih lampi u jednom pozivu crtanja (THREE.Points).
 
+
+## Hodaj i pričaj
+- 61_talk.js: za vrijeme razgovora igrač se slobodno kreće (29_story više ne okreće lika prema govorniku dok se krećeš; filmska kamera se ugasi kad kreneš). Sugovornik s rutom (npr. Poljanec Martin) stane ispred tebe, a kad hodaš hoda uz tebe; nakon razgovora se vrati na svoju rutu.
+

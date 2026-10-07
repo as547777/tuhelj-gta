@@ -50,7 +50,7 @@ for(const M of STORY2){ const last=M.steps[M.steps.length-1]; const od=last.onDo
 /* ---- cut-scene intros ---- */
 const CINE={on:false,t:0,a:0};
 { const _sm=startMission; startMission=function(M){ if(M&&M.story){ CINE.on=true; CINE.t=0; CINE.who=M.giver; CINE.a=PLAYER.yaw+Math.PI*0.6; } _sm(M); }; }
-{ const _ac=applyCamera; applyCamera=function(cam){ if(CINE.on&&!GTA.dlg) CINE.on=false; if(!CINE.on||window.CAMO||PLAYER.driving) return _ac(cam);
+{ const _ac=applyCamera; applyCamera=function(cam){ if(CINE.on&&(!GTA.dlg||(typeof talkMoving==='function'&&talkMoving()))) CINE.on=false; if(!CINE.on||window.CAMO||PLAYER.driving) return _ac(cam);
     const q=npcPos(CINE.who)||[PLAYER.pos.x+1,PLAYER.pos.z]; const mx=(q[0]+PLAYER.pos.x)/2, mz=(q[1]+PLAYER.pos.z)/2; const y=PLAYER.pos.y+1.55; const a=CINE.a+CINE.t*0.06; const r=3.6+Math.hypot(q[0]-PLAYER.pos.x,q[1]-PLAYER.pos.z)*0.5;
     const cx=mx+Math.sin(a)*r, cz=mz+Math.cos(a)*r; const p=new THREE.Vector3(cx,y+0.25,cz); if(typeof tpsFree==='function'){ const piv=new THREE.Vector3(mx,y,mz); const f=tpsFree(piv,p); p.lerpVectors(piv,p,Math.max(0.35,f)); }
     cam.position.copy(p); cam.lookAt(mx,y-0.05,mz); }; }

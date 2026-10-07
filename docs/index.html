@@ -10334,7 +10334,7 @@ function storyTick(dt){ if(!GAME.started) return;
   if(N){ const v=PLAYER.driving; if(v&&!v.bike){ const p=new THREE.Vector3(-0.28,v.seatY!==undefined?v.seatY:-0.33,0.38); v.group.updateMatrixWorld(); v.group.localToWorld(p); N.A.group.position.copy(p); N.A.group.rotation.set(0,v.st.yaw,0); N.A.seatT=GAME.time; N.A.group.visible=true; STORY.paxN=N; } }
   // dialogue: bars + face the speaker
   const cine=!!GTA.dlg; if(document.body.classList.contains('cine')!==cine) document.body.classList.toggle('cine',cine);
-  if(cine&&!PLAYER.driving){ const who=GTA.dlg.lines[GTA.dlg.i]&&GTA.dlg.lines[GTA.dlg.i][0]; const q=who&&npcPos(who); if(q){ const want=faceYaw(q[0]-PLAYER.pos.x,q[1]-PLAYER.pos.z); TPS.face=angLerp(TPS.face,want,Math.min(1,dt*5)); PLAYER.yaw=angLerp(PLAYER.yaw,want-0.45,Math.min(1,dt*2)); PLAYER.pitch+=(-0.12-PLAYER.pitch)*Math.min(1,dt*2); } }
+  if(cine&&!PLAYER.driving&&!(typeof talkMoving==='function'&&talkMoving())){ const who=GTA.dlg.lines[GTA.dlg.i]&&GTA.dlg.lines[GTA.dlg.i][0]; const q=who&&npcPos(who); if(q){ const want=faceYaw(q[0]-PLAYER.pos.x,q[1]-PLAYER.pos.z); TPS.face=angLerp(TPS.face,want,Math.min(1,dt*5)); PLAYER.yaw=angLerp(PLAYER.yaw,want-0.45,Math.min(1,dt*2)); PLAYER.pitch+=(-0.12-PLAYER.pitch)*Math.min(1,dt*2); } }
   // HUD hint: what the story wants next
   let el=document.getElementById('storyhint'); if(!el){ el=document.createElement('div'); el.id='storyhint'; document.body.appendChild(el); const st=document.createElement('style'); st.textContent='#storyhint{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));top:calc(270px + env(safe-area-inset-top,0px));max-width:280px;background:rgba(10,12,10,.62);border-left:4px solid #ff8a2a;border-radius:10px;padding:7px 12px;color:#f5f1e8;font:600 12.5px Manrope,system-ui,sans-serif;z-index:14;pointer-events:none;display:none}#storyhint b{display:block;color:#ff8a2a;font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}body.cine::before,body.cine::after{content:"";position:fixed;left:0;right:0;height:9vh;background:#000;z-index:44;pointer-events:none;animation:cinebar .4s ease-out}body.cine::before{top:0}body.cine::after{bottom:0}@keyframes cinebar{from{height:0}}body.cine #hudpanel,body.cine #wbox,body.cine #mini,body.cine #storyhint,body.cine #objcard{opacity:0;transition:opacity .3s}@media (max-height:520px){#storyhint{top:calc(200px + env(safe-area-inset-top,0px));max-width:220px}}'; document.head.appendChild(st); }
   // the next chapter arrives as an SMS on the phone (P), not as a card on screen
@@ -12270,7 +12270,7 @@ for(const M of STORY2){ const last=M.steps[M.steps.length-1]; const od=last.onDo
 /* ---- cut-scene intros ---- */
 const CINE={on:false,t:0,a:0};
 { const _sm=startMission; startMission=function(M){ if(M&&M.story){ CINE.on=true; CINE.t=0; CINE.who=M.giver; CINE.a=PLAYER.yaw+Math.PI*0.6; } _sm(M); }; }
-{ const _ac=applyCamera; applyCamera=function(cam){ if(CINE.on&&!GTA.dlg) CINE.on=false; if(!CINE.on||window.CAMO||PLAYER.driving) return _ac(cam);
+{ const _ac=applyCamera; applyCamera=function(cam){ if(CINE.on&&(!GTA.dlg||(typeof talkMoving==='function'&&talkMoving()))) CINE.on=false; if(!CINE.on||window.CAMO||PLAYER.driving) return _ac(cam);
     const q=npcPos(CINE.who)||[PLAYER.pos.x+1,PLAYER.pos.z]; const mx=(q[0]+PLAYER.pos.x)/2, mz=(q[1]+PLAYER.pos.z)/2; const y=PLAYER.pos.y+1.55; const a=CINE.a+CINE.t*0.06; const r=3.6+Math.hypot(q[0]-PLAYER.pos.x,q[1]-PLAYER.pos.z)*0.5;
     const cx=mx+Math.sin(a)*r, cz=mz+Math.cos(a)*r; const p=new THREE.Vector3(cx,y+0.25,cz); if(typeof tpsFree==='function'){ const piv=new THREE.Vector3(mx,y,mz); const f=tpsFree(piv,p); p.lerpVectors(piv,p,Math.max(0.35,f)); }
     cam.position.copy(p); cam.lookAt(mx,y-0.05,mz); }; }
@@ -12336,6 +12336,29 @@ function lookTick(dt){ if(!GAME.started) return; LOOK2.t-=dt; if(LOOK2.t>0) retu
     const m=new THREE.PointsMaterial({map:t,size:3.2,sizeAttenuation:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}); LOOK2.halo=new THREE.Points(g,m); LOOK2.halo.frustumCulled=false; LOOK2.halo.renderOrder=5; GAME.scene.add(LOOK2.halo); }
   if(LOOK2.halo){ const n=SKY.night||0; LOOK2.halo.material.opacity=n*(0.75+0.25*w); LOOK2.halo.visible=n>0.05; LOOK2.halo.material.size=3.2+w*1.2; } }
 { const _ct=combatTick; combatTick=function(dt){ _ct(dt); try{ lookTick(dt); }catch(e){} }; }
+
+/* ===================== walk and talk =====================
+   During a conversation you are free to move (the game used to keep turning you towards the speaker, so you stood
+   still while e.g. Poljanec Martin kept walking his route). Now the person you talk to leaves their own route:
+   if you stand, they stop in front of you and look at you; if you walk, they walk beside you while the subtitles
+   carry on (E / tap still skips a line). When the talk is over they stroll back to where they were going. */
+const TALK={A:null,V:null,f:null,back:null};
+function talkMoving(){ return !!((KEYS.KeyW||KEYS.KeyA||KEYS.KeyS||KEYS.KeyD||KEYS.ArrowUp||KEYS.ArrowDown||KEYS.ArrowLeft||KEYS.ArrowRight)||Math.hypot(TOUCH.mx||0,TOUCH.mz||0)>0.15)&&!PLAYER.driving; }
+function talkPartner(){ const D=GTA.dlg; if(!D) return null; for(let i=D.i;i<D.lines.length;i++){ const who=D.lines[i]&&D.lines[i][0]; if(!who||who==='Ti'||who==='Tuhelj'||who===NET.name) continue; const V=LIFE.villagers.find(v=>v.n===who); if(V) return {A:V.A,V}; const A=typeof npcA==='function'?npcA(who):null; if(A) return {A,V:null}; } return null; }
+function talkWalk(A,tx,tz,sp,dt,faceX,faceZ){ const p=A.group.position; const dx=tx-p.x, dz=tz-p.z, d=Math.hypot(dx,dz); let moved=0;
+  if(d>0.15){ const s=Math.min(d,sp*dt); const q=new THREE.Vector3(p.x+dx/d*s,0,p.z+dz/d*s); BHASH.collide(q,0.3,groundAt(q.x,q.z)+0.5); p.x=q.x; p.z=q.z; moved=s/dt; }
+  p.y=groundAt(p.x,p.z); const fy=moved>0.4?faceYaw(dx,dz):faceYaw(faceX-p.x,faceZ-p.z); A.group.rotation.set(0,angLerp(A.group.rotation.y,fy,Math.min(1,dt*7)),0); A.spdOv=moved; A.seatT=-1;
+  const ph=(A.talkPh=(A.talkPh||0)+dt*moved*3.4); const sw=moved>0.3?Math.sin(ph)*0.5:0; if(A.legL){ A.legL.rotation.x=sw; A.legR.rotation.x=-sw; } return d; }
+function talkTick(dt){ if(!GAME.started) return;
+  if(GTA.dlg&&!PLAYER.driving){ if(!TALK.A){ const P=talkPartner(); if(P&&P.V&&!P.V.bike&&P.V.path){ TALK.A=P.A; TALK.V=P.V; TALK.f=P.V.f; P.V.f=()=>{}; TALK.back=null; } }
+    if(TALK.A){ const A=TALK.A, p=PLAYER.pos, q=A.group.position; const sp=Math.hypot(PLAYER.vel.x,PLAYER.vel.z);
+      if(sp>0.6){ const fx=PLAYER.vel.x/sp, fz=PLAYER.vel.z/sp; const rx=-fz, rz=fx; const side=((q.x-p.x)*rx+(q.z-p.z)*rz)>=0?1:-1; talkWalk(A,p.x+rx*side*1.15-fx*0.15,p.z+rz*side*1.15-fz*0.15,Math.min(7,sp*1.25+1),dt,p.x+fx*5,p.z+fz*5); }
+      else { const dx=q.x-p.x, dz=q.z-p.z, d=Math.hypot(dx,dz)||1; const k=d>2.2?1.6/d:d<1.1?1.3/d:1; talkWalk(A,p.x+dx*k,p.z+dz*k,2.2,dt,p.x,p.z); } }
+    return; }
+  // the talk is over: walk back to the route, then carry on as before
+  if(TALK.A&&!TALK.back){ const V=TALK.V, P=V.path; let bi=0, bd=1e9; const q=TALK.A.group.position; for(let i=0;i<P.length;i++){ const d=Math.hypot(P[i][0]-q.x,P[i][1]-q.z); if(d<bd){ bd=d; bi=i; } } TALK.back={i:bi,pt:P[bi]}; }
+  if(TALK.back){ const A=TALK.A, b=TALK.back; const d=talkWalk(A,b.pt[0],b.pt[1],1.3,dt,b.pt[0]+1,b.pt[1]); if(d<0.3||GTA.dlg){ TALK.V.u=b.i; TALK.V.f=TALK.f; A.spdOv=undefined; TALK.A=TALK.V=TALK.f=TALK.back=null; } } }
+{ const _ct=combatTick; combatTick=function(dt){ _ct(dt); try{ talkTick(dt); }catch(e){ if(!TALK.err){ TALK.err=1; console.warn('razgovor',e); } } }; }
 
 document.addEventListener('DOMContentLoaded',()=>{});
 (function(){ const tm=document.getElementById('tmap'), tu=document.getElementById('tmenu'); if(tm) tm.addEventListener('pointerdown',(e)=>{ e.preventDefault(); if(!GAME.started) return; openMap(!UI.mapOpen); if(!UI.mapOpen) resumeGame(); }); if(tu) tu.addEventListener('pointerdown',(e)=>{ e.preventDefault(); if(!GAME.started) return; togglePause(!GAME.paused); }); const tf=document.getElementById('tfs'); if(tf) tf.addEventListener('pointerdown',(e)=>{ e.preventDefault(); toggleFullscreen(); }); const fb=document.getElementById('fsbtn'); if(fb) fb.addEventListener('click',()=>toggleFullscreen()); const cb=document.getElementById('carbtn'); if(cb) cb.addEventListener('touchstart',e=>{ e.preventDefault(); useCarKey(); },{passive:false}); const eb=document.getElementById('exitbtn'); if(eb) eb.addEventListener('touchstart',e=>{ e.preventDefault(); if(PLAYER.heli) exitHeli(); else if(PLAYER.riding) exitRide(); else exitCar(); },{passive:false}); const pn=document.getElementById('pname'); if(pn){ try{ pn.value=localStorage.getItem('tuhelj_name')||''; }catch(e){} pn.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'&&!document.getElementById('go').disabled) startGame(); }); } const $$=(id)=>document.getElementById(id);
