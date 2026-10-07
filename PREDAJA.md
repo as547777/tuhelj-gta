@@ -249,3 +249,7 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - 56_stats.js: KONDICIJA (brži sprint, 10_player statRun), SNAGA (jači udarac), GAĐANJE (manje rasipanje), VOŽNJA (jače ubrzanje); rastu sprintom, udarcima, pogocima, brzom vožnjom; spremaju se (tuhelj_stats); prikaz u izborniku (IGRA).
 - Park kraj stanice (31_photo.js izvozi GYM): E kod sprave = serija od 10 (zgibovi/propadanja → snaga, step/trbušnjaci → kondicija), +3, odmor 20 s, posebna kamera sa strane.
 
+
+## Faza 4: auti, nekretnine, garaža
+- 57_property.js: mobitel → Autokuća (7 auta, 9 boja, dostava pred kuću, spremljeno u tuhelj_own; 2 mjesta, s garažom 5) i Nekretnine (garaža 1500, vikendica Pristava 82 +70/dan, udio u trgovini +110/dan, brtija +240/dan; isplata u 8 h). Garaža kod kuće (E u autu ispred kuće): boja 250, felge 400, motor 3 stupnja, popravak 60.
+
