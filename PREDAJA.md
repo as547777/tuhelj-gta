@@ -234,3 +234,9 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - 52_fists.js: bez oružja lijevi klik / ✊ gumb = udarac (lijeva-desna), udarac u prazno ili u osobu ispred (1.7 m, 22 štete, odbacivanje, 'Au!'), zvuk, poza ruku preko animacije; ponekad zvijezda traženosti.
 - 51_touch2.js: platno karte za mobitel rezervira se odmah pri otvaranju stranice (MAP.reserve), prije nego ostalo potroši Safarijev budžet.
 
+
+## Faza 1: zvuk, šake, novac
+- 53_sound.js: motor s 5 brzina (okretaji, 3 sloja + usis, filtar se otvara pri gasu; traktor sporije), škripa guma (bočno, kočenje, ručna); zvona u 7/12/19 h (glasnija kraj crkve), psi, kokoši, traktor u daljini, cvrčci noću.
+- 52_fists.js: gard (šake kod lica), zamah unatrag, udarac s okretom tijela; kutovi izmjereni na Rocketbox kosturu; FPZ čuva pozu iz animacije da se zakreti ne zbrajaju.
+- 54_cash.js: tko padne ispusti novac (mještani 5–50, policija 25–85, Vukovi 40–150), pokupi se prolaskom, nestane za 60 s.
+
