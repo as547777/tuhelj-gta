@@ -240,3 +240,7 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 - 52_fists.js: gard (šake kod lica), zamah unatrag, udarac s okretom tijela; kutovi izmjereni na Rocketbox kosturu; FPZ čuva pozu iz animacije da se zakreti ne zbrajaju.
 - 54_cash.js: tko padne ispusti novac (mještani 5–50, policija 25–85, Vukovi 40–150), pokupi se prolaskom, nestane za 60 s.
 
+
+## Faza 2: meci i lovački pult
+- 55_guns.js: zaliha metaka po oružju (localStorage tuhelj_ammo; početno pištolj 60, puška 120…), punjenje uzima iz zalihe (15_combat.js ammoTake), prazno → poruka. U trgovini na dnu 'LOVAČKI PULT': oružje koje nemaš i kutije metaka. Gumb oružja: spremnik / zaliha.
+

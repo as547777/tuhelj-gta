@@ -65,7 +65,7 @@ function t2Tick(){ const gun=document.getElementById('twpn'), ab=document.getEle
   if(!gun) return; const jb=document.getElementById('jumpbtn'); const q=jb?jb.getBoundingClientRect():null; /* fixed elements have no offsetParent */ // bottom row, left of the jump button (clear of the Vozi / uđi buttons)
   if(q&&q.width){ gun.style.left=(q.left-64-14)+'px'; gun.style.top=(q.top+q.height/2-32)+'px'; gun.style.right='auto'; gun.style.bottom='auto'; }
   const k=COMBAT.armed?COMBAT.wi:-1; if(gun._k!==k){ gun._k=k; gun.innerHTML=''; const im=document.createElement('img'); im.src=weaponIcon(k<0?'fist':WEAPONS[k].ico); im.alt=''; const s=document.createElement('i'); s.className='am'; s.style.fontStyle='normal'; gun.append(im,s); }
-  const am=gun.querySelector('.am'); const t=k<0?'ORUŽJE':(COMBAT.reload>0?'punim…':(COMBAT.mags[k]+' / '+WEAPONS[k].mag)); if(am&&am.textContent!==t) am.textContent=t; }
+  const am=gun.querySelector('.am'); const t=k<0?'ORUŽJE':(COMBAT.reload>0?'punim…':(COMBAT.mags[k]+' / '+(typeof ammoRes==='function'?ammoRes(k):WEAPONS[k].mag))); if(am&&am.textContent!==t) am.textContent=t; }
 { const _sg=startGame; startGame=function(){ _sg(); document.body.classList.add('ingame'); try{ t2Setup(); }catch(e){ console.warn('touch2',e); } }; }
 /* ---- map on phones, part two: Safari's canvas budget is already spent by the time the map is drawn at the end of
    loading, so on phones the map is drawn right after the roads and houses (before murals, signs, normal maps…), and the

@@ -52,7 +52,7 @@ function orderDrink(i){ const D=DRINKS[i]; const pr=priceOf(D); if(GTA.money<pr)
 function buildDrinkMenu(){ const list=document.getElementById('drinklist'); if(!list) return; list.replaceChildren(...DRINKS.map((D,i)=>{ const b=document.createElement('button'); b.className='drink'; const n=document.createElement('span'); n.textContent=D.n; const p=document.createElement('b'); p.textContent=D.p; b.append(n,p); b.addEventListener('click',()=>orderDrink(i)); return b; })); document.getElementById('drinkclose').addEventListener('click',closeDrinks); }
 /* ---- per-frame ---- */
 function combatTick(dt){ const C=COMBAT; C.cd=Math.max(0,C.cd-dt); C.recoil*=Math.exp(-dt*10);
-  if(C.reload>0){ C.reload-=dt; if(C.reload<=0){ C.reload=0; C.mags[C.wi]=WEAPONS[C.wi].mag; C.mag=C.mags[C.wi]; updateCombatHUD(); } }
+  if(C.reload>0){ C.reload-=dt; if(C.reload<=0){ C.reload=0; const need=WEAPONS[C.wi].mag-C.mags[C.wi]; const take=typeof ammoTake==='function'?ammoTake(C.wi,need):need; C.mags[C.wi]+=take; C.mag=C.mags[C.wi]; updateCombatHUD(); } }
   if(C.flash>0){ C.flash-=dt; if(C.flash<=0&&FLASHM) FLASHM.visible=false; }
   if(RIFLE){ RIFLE.visible=C.armed&&!C.dead&&!PLAYER.driving&&!PLAYER.riding&&!C.drink; RIFLE.position.z=-0.38+C.recoil*1.4; RIFLE.rotation.x=C.recoil*2.2+(C.reload>0?-0.6*Math.sin(Math.min(1,(1.4-C.reload)/1.4)*Math.PI):0); }
   for(let i=TRACERS.length-1;i>=0;i--){ const T=TRACERS[i]; T.t-=dt; T.l.material.opacity=Math.max(0,T.t/0.09); if(T.t<=0){ GAME.scene.remove(T.l); T.l.geometry.dispose(); T.l.material.dispose(); TRACERS.splice(i,1); } }
