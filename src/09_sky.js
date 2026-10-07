@@ -47,6 +47,9 @@ function setTimeOfDay(renderer,scene,hour){
   SKY.uni.uZen.value.setRGB(lerp(0.05,0.12,warm),lerp(0.17,0.22,warm),lerp(0.62,0.48,warm));
   SKY.uni.uGlow.value.setRGB(1,lerp(0.88,0.62,warm),lerp(0.72,0.4,warm));
   const night=smooth(0.07,-0.14,el); SKY.night=night; for(const u of [SKY.uni.uHor.value,SKY.uni.uZen.value]) u.lerp(new THREE.Color(0.02,0.03,0.07),night*0.93); SKY.uni.uGlow.value.lerp(new THREE.Color(0.2,0.22,0.35),night);
+  // golden hour: when the sun is within ~12° of the horizon the horizon turns peach-pink, the sky above violet-blue,
+  // the sun glow and sunlight deep orange (then night takes over)
+  { const gold=smooth(0.22,0.03,el)*smooth(-0.1,0.02,el)*(1-night); if(gold>0){ SKY.uni.uHor.value.lerp(new THREE.Color(1.0,0.46,0.24),gold*0.88); SKY.uni.uZen.value.lerp(new THREE.Color(0.1,0.1,0.34),gold*0.7); SKY.uni.uGlow.value.lerp(new THREE.Color(1.0,0.38,0.1),gold*0.92); SKY.sun.color.lerp(new THREE.Color(1.0,0.5,0.24),gold*0.75); } SKY.gold=gold; }
   scene.fog.color.copy(SKY.uni.uHor.value).multiplyScalar(0.98);
   SKY.hemi.intensity=lerp(1.1,0.75,warm)*smooth(-0.1,0.1,el)+0.1+night*0.06; SKY.hemi.color.setRGB(lerp(0.81,0.35,night),lerp(0.88,0.42,night),lerp(1,0.7,night));
   // environment from sky

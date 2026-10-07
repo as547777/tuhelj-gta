@@ -262,3 +262,8 @@ Web igra u three.js r159 (bez bundlera). Svi moduli iz `src/` spajaju se u JEDAN
 ## Faza 5b: poslovi koji se ponavljaju
 - 59_jobs.js: mobitel → Poslovi: Taksi (putnik kraj ceste, cijena po duljini + napojnica za brzinu), Dostava pizze (iz brtije, 3 kuće po turi, na vrijeme), Hitna pomoć (pacijent kraj ceste → ambulanta kod općine), Vatrogasac (svaki požar 120 €). Kartica posla lijevo (✕ za kraj), žuti stup na cilju.
 
+
+## Faza 6a: zalazak, mokra cesta, sjaj lampi
+- 09_sky.js: zlatni sat (sunce < ~12° nad obzorom): breskvasto-narančast obzor, ljubičasto nebo, narančasto sunce (SKY.gold).
+- 60_look.js: kiša smoči asfalt (04_roads ROADMATS: tamnije, sjajnije, više refleksije; polako se suši), noćni sjaj svih uličnih lampi u jednom pozivu crtanja (THREE.Points).
+

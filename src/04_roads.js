@@ -58,7 +58,7 @@ function buildRoads(scene){
   const matLocal=new THREE.MeshStandardMaterial({map:TEX.asphaltOld,roughness:0.9,metalness:0,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
   const matTrack=new THREE.MeshStandardMaterial({map:TEX.track,roughness:1,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
   const matPaint=new THREE.MeshStandardMaterial({color:0xe9e8e0,roughness:0.65,metalness:0,polygonOffset:true,polygonOffsetFactor:-5,polygonOffsetUnits:-5});
-  const matCurb=new THREE.MeshStandardMaterial({map:TEX.concrete,roughness:0.9,vertexColors:true});
+  const matCurb=new THREE.MeshStandardMaterial({map:TEX.concrete,roughness:0.9,vertexColors:true}); window.ROADMATS=[matMain,matLocal,matPaint,matCurb]; // rain makes these wet (60_look.js)
   const cs=new ChunkSet(500);
   const LIFT=0.07;
   const surfY=(x,z,tx,tz,st)=> Math.max(getHeight(x,z), getHeight(x+tx*st*0.5,z+tz*st*0.5), getHeight(x-tx*st*0.5,z-tz*st*0.5))+LIFT;
